@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>App</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="container">
+        <h1>Public App</h1>
+      </div>
+    </header>
+    <main class="container">
+      <div class="card">
+        <h2>Probes</h2>
+        <div class="row mb-12">
+          <button id="btn-health">Check /healthz</button>
+          <button id="btn-ready">Check /readyz</button>
+        </div>
+        <p>Health: <span id="health">-</span></p>
+        <p>Ready: <span id="ready">-</span></p>
+        <p>Admin page: <a class="link" href="/admin.html">/admin.html</a></p>
+      </div>
+    </main>
+    <script src="/js/app.js" defer></script>
+  </body>
+</html>
