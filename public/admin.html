@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="container">
+        <h1>Admin</h1>
+      </div>
+    </header>
+    <main class="container">
+      <div class="card" style="margin-bottom: 16px">
+        <h2>Login</h2>
+        <form id="login-form">
+          <div class="row" style="margin-bottom: 12px">
+            <div>
+              <label for="email">Email</label>
+              <input
+                id="email"
+                type="email"
+                placeholder="admin@example.com"
+                required
+              />
+            </div>
+            <div>
+              <label for="password">Password</label>
+              <input
+                id="password"
+                type="password"
+                placeholder="••••••"
+                required
+              />
+            </div>
+            <div style="align-self: end">
+              <button type="submit">Login</button>
+            </div>
+          </div>
+        </form>
+        <div>
+          <p>Status: <span id="admin-status">-</span></p>
+          <p>Token:</p>
+          <pre id="token"></pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Admin Status</h2>
+        <div class="row" style="margin-bottom: 12px">
+          <button id="btn-status">GET /admin/status</button>
+        </div>
+        <p>Response:</p>
+        <pre id="status"></pre>
+      </div>
+    </main>
+    <script src="/js/admin.js" defer></script>
+  </body>
+</html>
