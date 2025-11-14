@@ -26,32 +26,20 @@ const config = {
     origins: parseList(process.env.CORS_ORIGINS), // e.g. https://app.example.com,https://admin.example.com
   },
   security: {
-    jwtSecret: process.env.JWT_SECRET || '',
+    jwtSecret: process.env.JWT_SECRET || 'dev-secret',
     enableDemoAuth: parseBoolean(process.env.ENABLE_DEMO_AUTH, false),
   },
   db: {
-    server: process.env.DB_SERVER || '',
-    user: process.env.DB_USER || '',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || '',
-    port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 1433,
-    pool: {
-      max: process.env.DB_POOL_MAX ? Number(process.env.DB_POOL_MAX) : 10,
-      min: process.env.DB_POOL_MIN ? Number(process.env.DB_POOL_MIN) : 0,
-      idleTimeoutMillis: process.env.DB_POOL_IDLE
-        ? Number(process.env.DB_POOL_IDLE)
-        : 30000,
-    },
-    options: {
-      encrypt: true, // Required for Azure / production per rules
-      trustServerCertificate: false, // Do not relax TLS by default
-    },
-    connectionTimeout: process.env.DB_CONN_TIMEOUT
-      ? Number(process.env.DB_CONN_TIMEOUT)
-      : 10000,
-    requestTimeout: process.env.DB_REQ_TIMEOUT
-      ? Number(process.env.DB_REQ_TIMEOUT)
-      : 15000,
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 5432,
+    name: process.env.DB_NAME || 'dentalappdb',
+    user: process.env.DB_USER || 'dentaluser',
+    pass: process.env.DB_PASS || 'StrongPass123!',
+    ssl: parseBoolean(process.env.DB_SSL, false),
+    max: process.env.DB_POOL_MAX ? Number(process.env.DB_POOL_MAX) : 10,
+    idleTimeoutMillis: process.env.DB_POOL_IDLE
+      ? Number(process.env.DB_POOL_IDLE)
+      : 30000,
   },
 };
 

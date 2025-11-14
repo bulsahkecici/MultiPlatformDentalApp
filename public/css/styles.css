@@ -61,6 +61,15 @@ label {
 .row > * {
   flex: 1;
 }
+.mb-16 {
+  margin-bottom: 16px;
+}
+.mb-12 {
+  margin-bottom: 12px;
+}
+.align-end {
+  align-self: flex-end;
+}
 pre {
   white-space: pre-wrap;
   word-break: break-word;
