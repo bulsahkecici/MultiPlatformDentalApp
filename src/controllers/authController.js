@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { getPool } = require('../db');
+const { query } = require('../db');
 const config = require('../config');
 const { AppError } = require('../utils/errorResponder');
 const { parseRolesCsv } = require('../utils/roles');
@@ -12,27 +12,24 @@ async function login(req, res, next) {
       return next(new AppError('Invalid credentials', 400));
     }
 
-    const pool = await getPool();
-    const result = await pool
-      .request()
-      .input('email', email)
-      .query(
-        'SELECT Id, Email, PasswordHash, Roles FROM dbo.Users WHERE Email = @email',
-      );
+    const result = await query(
+      'SELECT id, email, password_hash, roles FROM users WHERE email = $1',
+      [email],
+    );
 
-    const user = result.recordset && result.recordset[0];
+    const user = result.rows && result.rows[0];
     if (!user) {
       return next(new AppError('Unauthorized', 401));
     }
 
-    const ok = await bcrypt.compare(password, user.PasswordHash);
+    const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) {
       return next(new AppError('Unauthorized', 401));
     }
 
-    const roles = parseRolesCsv(user.Roles);
+    const roles = parseRolesCsv(user.roles);
     const token = jwt.sign(
-      { sub: user.Id, email: user.Email, roles },
+      { sub: user.id, email: user.email, roles },
       config.security.jwtSecret,
       { expiresIn: '1h' },
     );

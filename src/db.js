@@ -1,54 +1,34 @@
-const sql = require('mssql');
+const { Pool } = require('pg');
 const config = require('./config');
 const logger = require('./utils/logger');
 
-let poolPromise;
+const pool = new Pool({
+  host: config.db.host,
+  port: config.db.port,
+  database: config.db.name,
+  user: config.db.user,
+  password: config.db.pass,
+  max: config.db.max,
+  idleTimeoutMillis: config.db.idleTimeoutMillis,
+  ssl: config.db.ssl ? { rejectUnauthorized: false } : undefined,
+});
 
-function getMssqlConfig() {
-  const { db } = config;
-  return {
-    server: db.server,
-    user: db.user,
-    password: db.password,
-    database: db.database,
-    port: db.port,
-    pool: db.pool,
-    options: db.options,
-    connectionTimeout: db.connectionTimeout,
-    requestTimeout: db.requestTimeout,
-  };
-}
+pool.on('error', (err) => {
+  logger.error({ err }, 'PostgreSQL pool error');
+});
 
-async function getPool() {
-  if (!poolPromise) {
-    const conf = getMssqlConfig();
-    poolPromise = sql
-      .connect(conf)
-      .then((pool) => {
-        logger.info('MSSQL connected');
-        pool.on('error', (err) => {
-          logger.error({ err }, 'MSSQL pool error');
-        });
-        return pool;
-      })
-      .catch((err) => {
-        logger.error({ err }, 'MSSQL connection error');
-        poolPromise = undefined; // allow retry on next call
-        throw err;
-      });
-  }
-  return poolPromise;
+async function query(text, params = []) {
+  return pool.query(text, params);
 }
 
 async function pingDb() {
   try {
-    const pool = await getPool();
-    const result = await pool.request().query('SELECT 1 AS ok');
-    return result && result.recordset && result.recordset[0]?.ok === 1;
+    await pool.query('SELECT 1');
+    return true;
   } catch (err) {
-    logger.warn({ err }, 'MSSQL ping failed');
+    logger.warn({ err }, 'PostgreSQL ping failed');
     return false;
   }
 }
 
-module.exports = { getPool, pingDb };
+module.exports = { pool, query, pingDb };
