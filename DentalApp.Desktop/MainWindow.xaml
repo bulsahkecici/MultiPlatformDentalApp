@@ -1,0 +1,33 @@
+﻿<Window x:Class="DentalApp.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DentalApp.Desktop"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Use full namespace for MaterialDesign controls if needed, but standard controls adapt with the theme -->
+        <TextBlock Text="{Binding WelcomeMessage}" 
+                   HorizontalAlignment="Center" 
+                   VerticalAlignment="Center" 
+                   FontSize="24"
+                   Margin="20"/>
+
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="20">
+            <Button Content="Simulate Login" 
+                    Command="{Binding LoginCommand}" 
+                    Width="200" 
+                    Height="40"
+                    Margin="0,0,0,10"/>
+            
+            <TextBlock Text="Is Logged In:" FontWeight="Bold" Margin="0,10,0,5"/>
+            <TextBlock Text="{Binding IsLoggedIn}" FontSize="16"/>
+        </StackPanel>
+    </Grid>
+</Window>
