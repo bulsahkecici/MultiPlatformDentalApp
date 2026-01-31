@@ -29,4 +29,39 @@ function requireRole(role) {
   };
 }
 
-module.exports = { requireAuth, requireRole };
+/**
+ * Require user to access their own resource only
+ */
+function requireSelf(req, res, next) {
+  if (!req.user) {
+    return next(new AppError('Unauthorized', 401));
+  }
+
+  const userId = parseInt(req.params.id, 10);
+  if (isNaN(userId) || req.user.sub !== userId) {
+    return next(new AppError('Forbidden', 403));
+  }
+
+  return next();
+}
+
+/**
+ * Require user to access their own resource OR be an admin
+ */
+function requireSelfOrAdmin(req, res, next) {
+  if (!req.user) {
+    return next(new AppError('Unauthorized', 401));
+  }
+
+  const userId = parseInt(req.params.id, 10);
+  const isAdmin = req.user.roles && req.user.roles.includes('admin');
+  const isSelf = req.user.sub === userId;
+
+  if (!isSelf && !isAdmin) {
+    return next(new AppError('Forbidden', 403));
+  }
+
+  return next();
+}
+
+module.exports = { requireAuth, requireRole, requireSelf, requireSelfOrAdmin };

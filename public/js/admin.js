@@ -1,8 +1,9 @@
-let jwtToken = '';
+let accessToken = '';
+let refreshToken = '';
 
 async function fetchJson(url, options) {
   const headers = { 'Content-Type': 'application/json' };
-  if (jwtToken) headers.Authorization = `Bearer ${jwtToken}`;
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
   const res = await fetch(url, {
     headers,
     credentials: 'same-origin',
@@ -18,12 +19,13 @@ async function login(e) {
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
   try {
-    const data = await fetchJson('/api/login', {
+    const data = await fetchJson('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    jwtToken = data.token;
-    document.getElementById('token').textContent = jwtToken;
+    accessToken = data.accessToken;
+    refreshToken = data.refreshToken;
+    document.getElementById('token').textContent = accessToken;
     document.getElementById('admin-status').textContent = 'Logged in';
   } catch (err) {
     document.getElementById('admin-status').textContent = err.message;
@@ -33,7 +35,7 @@ async function login(e) {
 async function getAdminStatus() {
   try {
     const data = await fetchJson('/admin/status');
-    document.getElementById('status').textContent = JSON.stringify(data);
+    document.getElementById('status').textContent = JSON.stringify(data, null, 2);
   } catch (err) {
     document.getElementById('status').textContent = err.message;
   }

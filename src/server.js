@@ -1,5 +1,6 @@
 const path = require('path');
 const express = require('express');
+const http = require('http');
 const compression = require('compression');
 const cors = require('cors');
 
@@ -13,12 +14,22 @@ const {
   errorResponder,
 } = require('./middlewares/error');
 const { generalLimiter } = require('./middlewares/rateLimit');
+const { initializeSocketIO } = require('./services/notificationHub');
 
 const healthRouter = require('./routes/health');
 const authRouter = require('./routes/auth');
 const adminRouter = require('./routes/admin');
+const usersRouter = require('./routes/users');
+const patientsRouter = require('./routes/patients');
+const appointmentsRouter = require('./routes/appointments');
+const treatmentsRouter = require('./routes/treatments');
+const notificationsRouter = require('./routes/notifications');
 
 const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+initializeSocketIO(server);
 
 // Logging
 app.use(httpLogger());
@@ -54,8 +65,13 @@ app.use(
 
 // Routes
 app.use('/', healthRouter);
-app.use('/', authRouter); // provides /api/login
-app.use('/', adminRouter); // provides /admin/*
+app.use('/', authRouter);
+app.use('/', adminRouter);
+app.use('/', usersRouter);
+app.use('/', patientsRouter);
+app.use('/', appointmentsRouter);
+app.use('/', treatmentsRouter);
+app.use('/', notificationsRouter);
 
 // 404 and error handlers
 app.use(notFoundHandler);
@@ -64,8 +80,8 @@ app.use(errorResponder);
 
 function start() {
   const port = config.port;
-  app.listen(port, () => {
-    logger.info({ port }, `Server listening on port ${port}`);
+  server.listen(port, () => {
+    logger.info({ port }, `Server listening on port ${port} with Socket.IO`);
   });
 }
 
@@ -73,4 +89,4 @@ if (require.main === module) {
   start();
 }
 
-module.exports = { app, start };
+module.exports = { app, server, start };
