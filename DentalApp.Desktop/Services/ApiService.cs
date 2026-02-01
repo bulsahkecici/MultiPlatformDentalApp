@@ -11,7 +11,7 @@ namespace DentalApp.Desktop.Services
         private string? _accessToken;
         private string? _refreshToken;
 
-        public string BaseUrl { get; set; } = "http://localhost:3000";
+        public string BaseUrl { get; set; } = "http://localhost:3000/api";
 
         public ApiService()
         {
@@ -38,14 +38,11 @@ namespace DentalApp.Desktop.Services
             try
             {
                 var response = await _httpClient.GetAsync($"{BaseUrl}{endpoint}");
-                response.EnsureSuccessStatusCode();
-                var content = await response.Content.ReadAsStringAsync();
-                return JsonConvert.DeserializeObject<T>(content);
+                return await HandleResponseAsync<T>(response);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"GET Error: {ex.Message}");
-                throw;
+                throw new Exception($"GET {endpoint} failed: {ex.Message}", ex);
             }
         }
 
@@ -56,14 +53,11 @@ namespace DentalApp.Desktop.Services
                 var json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var response = await _httpClient.PostAsync($"{BaseUrl}{endpoint}", content);
-                response.EnsureSuccessStatusCode();
-                var responseContent = await response.Content.ReadAsStringAsync();
-                return JsonConvert.DeserializeObject<T>(responseContent);
+                return await HandleResponseAsync<T>(response);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"POST Error: {ex.Message}");
-                throw;
+                throw new Exception($"POST {endpoint} failed: {ex.Message}", ex);
             }
         }
 
@@ -74,14 +68,11 @@ namespace DentalApp.Desktop.Services
                 var json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var response = await _httpClient.PutAsync($"{BaseUrl}{endpoint}", content);
-                response.EnsureSuccessStatusCode();
-                var responseContent = await response.Content.ReadAsStringAsync();
-                return JsonConvert.DeserializeObject<T>(responseContent);
+                return await HandleResponseAsync<T>(response);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"PUT Error: {ex.Message}");
-                throw;
+                throw new Exception($"PUT {endpoint} failed: {ex.Message}", ex);
             }
         }
 
@@ -94,9 +85,25 @@ namespace DentalApp.Desktop.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"DELETE Error: {ex.Message}");
-                throw;
+                throw new Exception($"DELETE {endpoint} failed: {ex.Message}", ex);
             }
+        }
+
+        private async Task<T?> HandleResponseAsync<T>(HttpResponseMessage response)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                // Try to parse error message from backend
+                try {
+                    var errorObj = JsonConvert.DeserializeAnonymousType(content, new { error = new { message = "" } });
+                    throw new Exception(errorObj?.error?.message ?? response.ReasonPhrase);
+                } catch {
+                    throw new Exception($"API Error ({response.StatusCode}): {response.ReasonPhrase}");
+                }
+            }
+            
+            return JsonConvert.DeserializeObject<T>(content);
         }
     }
 }

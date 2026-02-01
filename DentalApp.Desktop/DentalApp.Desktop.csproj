@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <AssemblyName>DentalApp.Desktop</AssemblyName>
+    <RootNamespace>DentalApp.Desktop</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

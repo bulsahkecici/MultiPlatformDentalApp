@@ -1,59 +1,53 @@
 using DentalApp.Desktop.Helpers;
 using DentalApp.Desktop.Services;
-using System.Windows;
 using System.Windows.Input;
 
 namespace DentalApp.Desktop.ViewModels
 {
     public class MainViewModel : ObservableObject
     {
+        private readonly ApiService _apiService;
         private readonly AuthService _authService;
-        private readonly NotificationService _notificationService;
+        private readonly PatientService _patientService;
+        private readonly AppointmentService _appointmentService;
         
-        private string _welcomeMessage = "Welcome to Dental App";
-
-        public string WelcomeMessage
+        private object? _currentView;
+        public object? CurrentView
         {
-            get => _welcomeMessage;
-            set => SetProperty(ref _welcomeMessage, value);
+            get => _currentView;
+            set => SetProperty(ref _currentView, value);
         }
-
-        private bool _isLoggedIn;
-        public bool IsLoggedIn
-        {
-            get => _isLoggedIn;
-            set => SetProperty(ref _isLoggedIn, value);
-        }
-
-        public ICommand LoginCommand { get; }
 
         public MainViewModel()
         {
-            // In a real app, use Dependency Injection
-            var apiService = new ApiService();
-            _authService = new AuthService(apiService);
-            _notificationService = new NotificationService();
+            _apiService = new ApiService();
+            _authService = new AuthService(_apiService);
+            _patientService = new PatientService(_apiService);
+            _appointmentService = new AppointmentService(_apiService);
 
-            LoginCommand = new RelayCommand(ExecuteLogin);
+            ShowLogin();
         }
 
-        private async void ExecuteLogin(object? parameter)
+        private void ShowLogin()
         {
-            // This is just a simulation for now since we don't have the full LoginView yet
-            // In a real scenario, this would open a LoginWindow or switch views
-            WelcomeMessage = "Logging in...";
-            
-            // Hardcoded credentials for quick test if backend is running, 
-            // or just simulate success if not.
-            // Let's assume backend might not be running or credentials unknown, 
-            // so we'll just toggle UI state for demonstration.
-            
-            await Task.Delay(1000); // Simulate network delay
-            
-            IsLoggedIn = true;
-            WelcomeMessage = "Logged in successfully!";
-            
-            MessageBox.Show("Login functionality simulated. Backend connection would happen here.");
+            var loginVM = new LoginViewModel(_authService);
+            loginVM.OnLoginSuccess += () => {
+                ShowDashboard();
+            };
+            CurrentView = loginVM;
         }
+
+        private void ShowDashboard()
+        {
+            // For now, let's jump straight to Patients view as a test
+            var patientsVM = new PatientsViewModel(_patientService);
+            _ = patientsVM.LoadPatientsAsync();
+            CurrentView = patientsVM;
+        }
+
+        public ICommand LogoutCommand => new RelayCommand(_ => {
+            _authService.Logout();
+            ShowLogin();
+        });
     }
 }
