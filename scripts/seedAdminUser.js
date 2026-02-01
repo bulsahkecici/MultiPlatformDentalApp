@@ -6,7 +6,7 @@ const { serializeRolesCsv } = require('../src/utils/roles');
 
 async function ensureAdminUser() {
   const email = process.env.ADMIN_EMAIL || 'admin@mail.com';
-  const password = process.env.ADMIN_PASSWORD || '123456';
+  const password = process.env.ADMIN_PASSWORD || 'Admin@123456';
   const rolesCsv = serializeRolesCsv(['admin']);
 
   const existing = await pool.query('SELECT id FROM users WHERE email = $1', [

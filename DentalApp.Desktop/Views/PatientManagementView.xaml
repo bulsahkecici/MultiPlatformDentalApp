@@ -1,0 +1,64 @@
+<UserControl x:Class="DentalApp.Desktop.Views.PatientManagementView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="1000">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Patient Management" Style="{StaticResource MaterialDesignHeadline4TextBlock}" Margin="0,0,0,20"/>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,20">
+            <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" 
+                     materialDesign:HintAssist.Hint="Search Patients..." 
+                     Width="300" 
+                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                     Margin="0,0,20,0"/>
+            
+            <Button materialDesign:ButtonAssist.CornerRadius="5" 
+                    Command="{Binding RefreshCommand}" 
+                    Margin="0,0,10,0">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Refresh" Margin="0,0,5,0"/>
+                    <TextBlock Text="REFRESH"/>
+                </StackPanel>
+            </Button>
+
+            <Button Command="{Binding AddPatientCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Plus" Margin="0,0,5,0"/>
+                    <TextBlock Text="ADD PATIENT"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <materialDesign:Card Grid.Row="2" VerticalAlignment="Stretch">
+            <DataGrid ItemsSource="{Binding Patients}" 
+                      SelectedItem="{Binding SelectedPatient}"
+                      AutoGenerateColumns="False" 
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      Style="{StaticResource MaterialDesignDataGrid}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="First Name" Binding="{Binding FirstName}" Width="*"/>
+                    <DataGridTextColumn Header="Last Name" Binding="{Binding LastName}" Width="*"/>
+                    <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="*"/>
+                    <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="*"/>
+                    <DataGridTextColumn Header="Created At" Binding="{Binding CreatedAt, StringFormat=d}" Width="Auto"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </materialDesign:Card>
+
+        <ProgressBar Grid.Row="2" Style="{StaticResource MaterialDesignCircularProgressBar}" 
+                     IsIndeterminate="True" 
+                     Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" Width="60" Height="60"/>
+    </Grid>
+</UserControl>

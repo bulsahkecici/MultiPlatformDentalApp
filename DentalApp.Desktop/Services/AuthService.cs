@@ -17,7 +17,7 @@ namespace DentalApp.Desktop.Services
         {
             try
             {
-                var response = await _apiService.PostAsync<LoginResponse>("/api/auth/login", new
+                var response = await _apiService.PostAsync<LoginResponse>("/auth/login", new
                 {
                     email,
                     password
@@ -32,9 +32,11 @@ namespace DentalApp.Desktop.Services
 
                 return false;
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                // Better to throw or handle error UI side
+                Console.WriteLine($"Login failed: {ex.Message}");
+                throw;
             }
         }
 

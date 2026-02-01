@@ -3,31 +3,55 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:DentalApp.Desktop"
+        xmlns:vm="clr-namespace:DentalApp.Desktop.ViewModels"
+        xmlns:v="clr-namespace:DentalApp.Desktop.Views"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Dental Management System" Height="700" Width="1100"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="14"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="Auto"
+        Background="{DynamicResource MaterialDesignPaper}"
+        FontFamily="{materialDesign:MaterialDesignFont}">
+    
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:LoginViewModel}">
+            <v:LoginView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PatientsViewModel}">
+            <v:PatientManagementView/>
+        </DataTemplate>
+    </Window.Resources>
+
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+        <materialDesign:DialogHost Identifier="RootDialog">
+            <materialDesign:DrawerHost IsLeftDrawerOpen="{Binding ElementName=MenuToggleButton, Path=IsChecked}">
+                <materialDesign:DrawerHost.LeftDrawerContent>
+                    <StackPanel Width="200">
+                        <ToggleButton Style="{StaticResource MaterialDesignFlatButton}"
+                                    IsChecked="{Binding ElementName=MenuToggleButton, Path=IsChecked, Mode=TwoWay}"
+                                    Margin="10" HorizontalAlignment="Right">
+                            <materialDesign:PackIcon Kind="MenuOpen" />
+                        </ToggleButton>
+                        
+                        <!-- Menu items could go here -->
+                        <Button Content="LOGOUT" Command="{Binding LogoutCommand}" Margin="10" Style="{StaticResource MaterialDesignFlatButton}"/>
+                    </StackPanel>
+                </materialDesign:DrawerHost.LeftDrawerContent>
+                
+                <DockPanel>
+                    <materialDesign:ColorZone Padding="16" materialDesign:ColorZoneAssist.Mode="PrimaryMid" DockPanel.Dock="Top">
+                        <DockPanel>
+                            <ToggleButton x:Name="MenuToggleButton" Style="{StaticResource MaterialDesignHamburgerToggleButton}"/>
+                            <TextBlock VerticalAlignment="Center" Margin="16 0 0 0" FontSize="20" Text="Dental Desktop"/>
+                        </DockPanel>
+                    </materialDesign:ColorZone>
 
-        <!-- Use full namespace for MaterialDesign controls if needed, but standard controls adapt with the theme -->
-        <TextBlock Text="{Binding WelcomeMessage}" 
-                   HorizontalAlignment="Center" 
-                   VerticalAlignment="Center" 
-                   FontSize="24"
-                   Margin="20"/>
-
-        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="20">
-            <Button Content="Simulate Login" 
-                    Command="{Binding LoginCommand}" 
-                    Width="200" 
-                    Height="40"
-                    Margin="0,0,0,10"/>
-            
-            <TextBlock Text="Is Logged In:" FontWeight="Bold" Margin="0,10,0,5"/>
-            <TextBlock Text="{Binding IsLoggedIn}" FontSize="16"/>
-        </StackPanel>
+                    <ContentControl Content="{Binding CurrentView}" Margin="10"/>
+                </DockPanel>
+            </materialDesign:DrawerHost>
+        </materialDesign:DialogHost>
     </Grid>
 </Window>
