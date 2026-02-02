@@ -76,6 +76,18 @@ namespace DentalApp.Desktop.ViewModels
 
         // Tooth chart collections
         public ObservableCollection<ToothHotspot> ToothHotspots { get; } = new();
+        
+        // Multi-tooth selection
+        public ObservableCollection<int> SelectedTeeth { get; } = new();
+        
+        // Multi-procedure support: Dictionary<ToothNumber, List<ProcedureItem>>
+        public Dictionary<int, ObservableCollection<ProcedureItem>> ToothPlans { get; } = new();
+        
+        // Available procedures for selected category
+        public ObservableCollection<ProcedureItem> AvailableProcedures { get; } = new();
+        
+        // Selected procedures for current tooth
+        public ObservableCollection<ProcedureItem> SelectedProcedures { get; } = new();
 
         public string? SelectedToothNumber
         {
@@ -85,6 +97,7 @@ namespace DentalApp.Desktop.ViewModels
                 if (SetProperty(ref _selectedToothNumber, value))
                 {
                     Treatment.ToothNumber = value ?? string.Empty;
+                    UpdateSelectedProcedures();
                 }
             }
         }
@@ -148,6 +161,9 @@ namespace DentalApp.Desktop.ViewModels
         public ICommand CancelCommand { get; }
         public ICommand AddTariffItemCommand { get; }
         public ICommand SelectToothCommand { get; }
+        public ICommand AddProcedureCommand { get; }
+        public ICommand RemoveProcedureCommand { get; }
+        public ICommand SavePlanCommand { get; }
 
         public bool CanViewPrices { get; }
 
@@ -196,6 +212,9 @@ namespace DentalApp.Desktop.ViewModels
             CancelCommand = new RelayCommand(_ => SaveCompleted?.Invoke(false));
             AddTariffItemCommand = new RelayCommand(_ => AddSelectedTariffItemToTreatment(), _ => SelectedTariffItem != null);
             SelectToothCommand = new RelayCommand(OnSelectTooth);
+            AddProcedureCommand = new RelayCommand<ProcedureItem>(OnAddProcedure, _ => SelectedTariffItem != null);
+            RemoveProcedureCommand = new RelayCommand<ProcedureItem>(OnRemoveProcedure);
+            SavePlanCommand = new RelayCommand(async _ => await SavePlanAsync(), _ => !IsBusy && ToothPlans.Count > 0);
 
             // Initialize tooth hotspots (FDI numbering: 11-18, 21-28, 31-38, 41-48)
             InitializeToothHotspots();
@@ -230,6 +249,7 @@ namespace DentalApp.Desktop.ViewModels
         private void OnCategoryChanged()
         {
             TariffItems.Clear();
+            AvailableProcedures.Clear();
             SearchText = string.Empty; // Arama kutusunu temizle
             
             if (SelectedCategory != null)
@@ -240,6 +260,13 @@ namespace DentalApp.Desktop.ViewModels
                 foreach (var item in SelectedCategory.Items)
                 {
                     TariffItems.Add(item);
+                    AvailableProcedures.Add(new ProcedureItem 
+                    { 
+                        Code = item.Code, 
+                        Name = item.Name, 
+                        Price = item.PriceInclVat,
+                        Category = SelectedCategory.Name
+                    });
                 }
             }
             
@@ -407,12 +434,176 @@ namespace DentalApp.Desktop.ViewModels
         {
             if (parameter is int toothNumber)
             {
-                SelectedToothNumber = toothNumber.ToString();
+                ToggleToothSelection(toothNumber);
             }
             else if (parameter is string toothNumberStr && int.TryParse(toothNumberStr, out var toothNum))
             {
-                SelectedToothNumber = toothNum.ToString();
+                ToggleToothSelection(toothNum);
             }
+        }
+        
+        private void ToggleToothSelection(int toothNumber)
+        {
+            if (SelectedTeeth.Contains(toothNumber))
+            {
+                SelectedTeeth.Remove(toothNumber);
+                ToothPlans.Remove(toothNumber);
+            }
+            else
+            {
+                SelectedTeeth.Add(toothNumber);
+                if (!ToothPlans.ContainsKey(toothNumber))
+                {
+                    ToothPlans[toothNumber] = new ObservableCollection<ProcedureItem>();
+                }
+            }
+            
+            // Update selected tooth number for display
+            if (SelectedTeeth.Count > 0)
+            {
+                SelectedToothNumber = string.Join(", ", SelectedTeeth.OrderBy(t => t));
+            }
+            else
+            {
+                SelectedToothNumber = null;
+            }
+            
+            UpdateSelectedProcedures();
+        }
+        
+        private void UpdateSelectedProcedures()
+        {
+            SelectedProcedures.Clear();
+            if (SelectedTeeth.Count == 1)
+            {
+                var tooth = SelectedTeeth.First();
+                if (ToothPlans.ContainsKey(tooth))
+                {
+                    foreach (var proc in ToothPlans[tooth])
+                    {
+                        SelectedProcedures.Add(proc);
+                    }
+                }
+            }
+        }
+        
+        private void OnAddProcedure(ProcedureItem? procedure)
+        {
+            if (procedure == null || SelectedTariffItem == null) return;
+            
+            var procItem = new ProcedureItem
+            {
+                Code = SelectedTariffItem.Code,
+                Name = SelectedTariffItem.Name,
+                Price = SelectedTariffItem.PriceInclVat,
+                Category = SelectedCategory?.Name ?? ""
+            };
+            
+            // Add to all selected teeth
+            foreach (var tooth in SelectedTeeth)
+            {
+                if (!ToothPlans.ContainsKey(tooth))
+                {
+                    ToothPlans[tooth] = new ObservableCollection<ProcedureItem>();
+                }
+                
+                // Check if already added
+                if (!ToothPlans[tooth].Any(p => p.Code == procItem.Code))
+                {
+                    ToothPlans[tooth].Add(procItem);
+                }
+            }
+            
+            UpdateSelectedProcedures();
+        }
+        
+        private void OnRemoveProcedure(ProcedureItem? procedure)
+        {
+            if (procedure == null) return;
+            
+            foreach (var toothPlan in ToothPlans.Values)
+            {
+                var item = toothPlan.FirstOrDefault(p => p.Code == procedure.Code);
+                if (item != null)
+                {
+                    toothPlan.Remove(item);
+                }
+            }
+            
+            UpdateSelectedProcedures();
+        }
+        
+        private async Task SavePlanAsync()
+        {
+            IsBusy = true;
+            try
+            {
+                // Save treatment plan for each tooth
+                foreach (var toothPlan in ToothPlans)
+                {
+                    var toothNumber = toothPlan.Key;
+                    var procedures = toothPlan.Value;
+                    
+                    foreach (var proc in procedures)
+                    {
+                        var treatment = new Treatment
+                        {
+                            PatientId = Treatment.PatientId,
+                            TreatmentDate = Treatment.TreatmentDate,
+                            TreatmentType = proc.Category,
+                            ToothNumber = toothNumber.ToString(),
+                            Description = $"{proc.Name} (Kod: {proc.Code})",
+                            Cost = CanViewPrices ? proc.Price : null,
+                            Currency = "TRY",
+                            Status = "planned"
+                        };
+                        
+                        await _treatmentService.CreateTreatmentAsync(treatment);
+                    }
+                }
+                
+                SaveCompleted?.Invoke(true);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Tedavi planı kaydedilirken hata: {ex.Message}", "Hata", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+    }
+    
+    public class ProcedureItem : ObservableObject
+    {
+        private string _code = string.Empty;
+        private string _name = string.Empty;
+        private decimal _price;
+        private string _category = string.Empty;
+        
+        public string Code
+        {
+            get => _code;
+            set => SetProperty(ref _code, value);
+        }
+        
+        public string Name
+        {
+            get => _name;
+            set => SetProperty(ref _name, value);
+        }
+        
+        public decimal Price
+        {
+            get => _price;
+            set => SetProperty(ref _price, value);
+        }
+        
+        public string Category
+        {
+            get => _category;
+            set => SetProperty(ref _category, value);
         }
     }
 }

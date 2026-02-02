@@ -34,6 +34,7 @@
             <helpers:StatusToTurkishConverter x:Key="StatusToTurkishConverter"/>
             <helpers:NullToBooleanConverter x:Key="NullToBooleanConverter"/>
             <helpers:ToothNumberEqualityConverter x:Key="ToothNumberEqualityConverter"/>
+            <helpers:ToothInCollectionConverter x:Key="ToothInCollectionConverter"/>
             
             <!-- Global DatePicker Style for Turkish -->
             <Style TargetType="DatePicker">

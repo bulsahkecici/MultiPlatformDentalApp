@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using DentalApp.Desktop.ViewModels;
 
 namespace DentalApp.Desktop.Views
@@ -17,6 +18,16 @@ namespace DentalApp.Desktop.Views
                 }
                 Close();
             };
+        }
+        
+        private void DatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (DataContext is PatientFormViewModel vm)
+            {
+                // Patient.DateOfBirth değişti, yaşı güncelle
+                var patient = vm.Patient;
+                vm.Patient = patient; // Property set ederek PatientAge'ı güncelle
+            }
         }
     }
 }

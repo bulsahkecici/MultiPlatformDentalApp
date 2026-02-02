@@ -2,6 +2,7 @@ using DentalApp.Desktop.Helpers;
 using DentalApp.Desktop.Models;
 using DentalApp.Desktop.Services;
 using DentalApp.Desktop.Views;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 
@@ -27,6 +28,7 @@ namespace DentalApp.Desktop.ViewModels
 
         // Rol kontrolü helper metodları
         public bool IsAdmin => CurrentUser?.Roles.Contains("admin") ?? false;
+        public bool IsPatron => IsAdmin; // Patron = Admin
         public bool IsSecretary => CurrentUser?.Roles.Contains("secretary") ?? false;
         public bool IsDentist => CurrentUser?.Roles.Contains("dentist") ?? false;
         public bool CanViewPrices => IsAdmin || IsSecretary;
@@ -38,6 +40,8 @@ namespace DentalApp.Desktop.ViewModels
         public ICommand NavigateToDentistEarningsCommand { get; }
         public ICommand NavigateToPaymentsCommand { get; }
         public ICommand NavigateToAdminManagementCommand { get; }
+        public ICommand NavigateToProsthesisCommand { get; }
+        public ICommand NavigateToSMSCommand { get; }
         public ICommand LogoutCommand { get; }
 
         public MainViewModel()
@@ -56,6 +60,8 @@ namespace DentalApp.Desktop.ViewModels
             NavigateToDentistEarningsCommand = new RelayCommand(_ => ShowDentistEarnings());
             NavigateToPaymentsCommand = new RelayCommand(_ => ShowPayments());
             NavigateToAdminManagementCommand = new RelayCommand(_ => ShowAdminManagement());
+            NavigateToProsthesisCommand = new RelayCommand(_ => ShowProsthesis());
+            NavigateToSMSCommand = new RelayCommand(_ => ShowSMS());
             LogoutCommand = new RelayCommand(_ => Logout());
 
             ShowLogin();
@@ -87,6 +93,7 @@ namespace DentalApp.Desktop.ViewModels
                 OnPropertyChanged(nameof(IsAuthenticated));
                 OnPropertyChanged(nameof(CurrentUser));
                 OnPropertyChanged(nameof(IsAdmin));
+                OnPropertyChanged(nameof(IsPatron));
                 OnPropertyChanged(nameof(IsSecretary));
                 OnPropertyChanged(nameof(IsDentist));
                 OnPropertyChanged(nameof(CanViewPrices));
@@ -99,7 +106,7 @@ namespace DentalApp.Desktop.ViewModels
         {
             try
             {
-                var dashboardVM = new DashboardViewModel(_patientService, _appointmentService, _treatmentService);
+                var dashboardVM = new DashboardViewModel(_patientService, _appointmentService, _treatmentService, _apiService, IsPatron, IsSecretary, IsDentist);
                 CurrentView = dashboardVM;
                 // Load data asynchronously without blocking UI
                 _ = dashboardVM.LoadDashboardDataAsync();
@@ -122,7 +129,7 @@ namespace DentalApp.Desktop.ViewModels
 
         private void ShowAppointments()
         {
-            var appointmentsVM = new AppointmentsViewModel(_appointmentService, _patientService);
+            var appointmentsVM = new AppointmentsViewModel(_appointmentService, _patientService, _apiService);
             appointmentsVM.AddAppointmentRequested += () => ShowAppointmentForm(null);
             appointmentsVM.EditAppointmentRequested += (appointment) => ShowAppointmentForm(appointment);
             _ = appointmentsVM.LoadAppointmentsAsync();
@@ -132,7 +139,7 @@ namespace DentalApp.Desktop.ViewModels
 
         private void ShowTreatments()
         {
-            var treatmentsVM = new TreatmentsViewModel(_treatmentService, _patientService);
+            var treatmentsVM = new TreatmentsViewModel(_treatmentService, _patientService, CanViewPrices);
             treatmentsVM.AddTreatmentRequested += () => ShowTreatmentForm(null);
             treatmentsVM.EditTreatmentRequested += (treatment) => ShowTreatmentForm(treatment);
             _ = treatmentsVM.LoadTreatmentsAsync();
@@ -142,7 +149,14 @@ namespace DentalApp.Desktop.ViewModels
 
         private void ShowPatientForm(Patient? patient)
         {
-            var formVM = new PatientFormViewModel(_patientService, patient);
+            // PaymentsViewModel'den InstitutionAgreements'i al
+            ObservableCollection<ViewModels.InstitutionAgreement>? agreements = null;
+            if (CurrentView is PaymentsViewModel paymentsVM)
+            {
+                agreements = paymentsVM.InstitutionAgreements;
+            }
+            
+            var formVM = new PatientFormViewModel(_patientService, patient, agreements);
             var dialog = new PatientFormDialog(formVM);
             dialog.Owner = Application.Current.MainWindow;
             dialog.ShowDialog();
@@ -156,15 +170,25 @@ namespace DentalApp.Desktop.ViewModels
 
         private void ShowAppointmentForm(Appointment? appointment)
         {
-            var formVM = new AppointmentFormViewModel(_appointmentService, _patientService, appointment);
-            var dialog = new AppointmentFormDialog(formVM);
-            dialog.Owner = Application.Current.MainWindow;
-            var result = dialog.ShowDialog();
-            
-            // Refresh appointments list if we're on appointments view
-            if (CurrentView is AppointmentsViewModel appointmentsVM)
+            try
             {
-                _ = appointmentsVM.LoadAppointmentsAsync();
+                var formVM = new AppointmentFormViewModel(_appointmentService, _patientService, appointment);
+                var dialog = new AppointmentFormDialog(formVM);
+                dialog.Owner = Application.Current.MainWindow;
+                var result = dialog.ShowDialog();
+                
+                // Refresh appointments list if we're on appointments view
+                if (CurrentView is AppointmentsViewModel appointmentsVM)
+                {
+                    _ = appointmentsVM.LoadAppointmentsAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Randevu formu açılırken hata: {ex.Message}\n\nDetay: {ex.InnerException?.Message ?? "Detay yok"}", "Hata",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                System.Diagnostics.Debug.WriteLine($"ShowAppointmentForm Error: {ex}");
+                System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
             }
         }
 
@@ -201,7 +225,8 @@ namespace DentalApp.Desktop.ViewModels
         private void ShowPayments()
         {
             if (!IsSecretary && !IsAdmin) return;
-            var paymentsVM = new PaymentsViewModel(_apiService, _patientService);
+            var tariffService = new Services.TariffService();
+            var paymentsVM = new PaymentsViewModel(_apiService, _patientService, tariffService);
             CurrentView = paymentsVM;
             _ = paymentsVM.LoadDataAsync();
         }
@@ -212,6 +237,26 @@ namespace DentalApp.Desktop.ViewModels
             var adminVM = new AdminManagementViewModel(_apiService);
             CurrentView = adminVM;
             _ = adminVM.LoadStatisticsAsync();
+        }
+
+        private void ShowProsthesis()
+        {
+            // Placeholder - Yakında
+            System.Windows.MessageBox.Show(
+                "Protez İş Süreçleri modülü yakında eklenecektir.",
+                "Yakında",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
+        }
+
+        private void ShowSMS()
+        {
+            // Placeholder - Yakında
+            System.Windows.MessageBox.Show(
+                "SMS gönderme özelliği yakında eklenecektir.",
+                "Yakında",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
         }
 
         private void Logout()

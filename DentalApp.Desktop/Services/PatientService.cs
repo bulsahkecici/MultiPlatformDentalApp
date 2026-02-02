@@ -46,7 +46,7 @@ namespace DentalApp.Desktop.Services
                 phone = patient.Phone,
                 address = patient.Address,
                 city = patient.City,
-                postalCode = patient.PostalCode,
+                // postalCode removed - backend doesn't support it
                 country = patient.Country,
                 bloodType = patient.BloodType,
                 allergies = patient.Allergies,
@@ -75,7 +75,7 @@ namespace DentalApp.Desktop.Services
                 phone = patient.Phone,
                 address = patient.Address,
                 city = patient.City,
-                postalCode = patient.PostalCode,
+                // postalCode removed - backend doesn't support it
                 country = patient.Country,
                 bloodType = patient.BloodType,
                 allergies = patient.Allergies,

@@ -48,11 +48,13 @@
                              Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                              Margin="0,0,0,10"/>
 
-                <TextBox Text="{Binding SelectedToothNumber, UpdateSourceTrigger=PropertyChanged}" 
-                         materialDesign:HintAssist.Hint="Diş Numarası" 
-                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                <TextBlock Text="Seçilen Dişler:" 
+                         Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
+                         Margin="0,10,0,5"/>
+                <TextBlock Text="{Binding SelectedToothNumber, StringFormat='Diş: {0}'}" 
+                         Style="{StaticResource MaterialDesignBody1TextBlock}" 
                          Margin="0,0,0,10"
-                         IsReadOnly="True"/>
+                         Visibility="{Binding SelectedTeeth.Count, Converter={StaticResource NullToBooleanConverter}}"/>
 
                 <!-- Diş Şeması -->
                 <TextBlock Text="Diş Şeması" 
@@ -91,7 +93,7 @@
                                                     <DataTrigger Value="True">
                                                         <DataTrigger.Binding>
                                                             <MultiBinding Converter="{StaticResource ToothNumberEqualityConverter}">
-                                                                <Binding Path="DataContext.SelectedToothNumber" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                                <Binding Path="DataContext.SelectedTeeth" RelativeSource="{RelativeSource AncestorType=Window}"/>
                                                                 <Binding Path="ToothNumber"/>
                                                             </MultiBinding>
                                                         </DataTrigger.Binding>
@@ -139,11 +141,13 @@
                          MinHeight="60"
                          Margin="0,0,0,10"/>
 
-                <TextBox Text="{Binding CostString, UpdateSourceTrigger=PropertyChanged}" 
-                         materialDesign:HintAssist.Hint="Maliyet" 
-                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                         Visibility="{Binding CanViewPrices, Converter={StaticResource BooleanToVisibilityConverter}}"
-                         Margin="0,0,0,10"/>
+                <!-- Ücret alanı sadece Patron/Sekreter görür -->
+                <TextBlock Text="Maliyet bilgisi sadece Patron ve Sekreter tarafından görüntülenebilir." 
+                         Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                         Foreground="Gray"
+                         Visibility="{Binding CanViewPrices, Converter={StaticResource InverseBooleanConverter}}"
+                         Margin="0,0,0,10"
+                         TextWrapping="Wrap"/>
 
                     <ComboBox ItemsSource="{Binding StatusOptions}"
                              SelectedValuePath="Value"
@@ -191,9 +195,64 @@
                     </ListView>
 
                     <Button Content="Seçili Kalemi Ekle"
-                           Command="{Binding AddTariffItemCommand}"
+                           Command="{Binding AddProcedureCommand}"
+                           CommandParameter="{Binding SelectedTariffItem}"
                            Style="{StaticResource MaterialDesignRaisedButton}"
                            Margin="0,5,0,0"/>
+                    
+                    <TextBlock Text="Seçilen İşlemler" 
+                             Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
+                             Margin="0,15,0,5"/>
+                    
+                    <ListView ItemsSource="{Binding SelectedProcedures}"
+                             MaxHeight="150"
+                             Margin="0,0,0,10">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding Code, StringFormat='Kod: {0}'}" FontSize="11"/>
+                                        <TextBlock Text="{Binding Price, StringFormat='Fiyat: {0:F2} TRY'}" 
+                                                 FontSize="11"
+                                                 Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1"
+                                          Command="{Binding DataContext.RemoveProcedureCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                          CommandParameter="{Binding}"
+                                          Style="{StaticResource MaterialDesignIconButton}"
+                                          Foreground="Red">
+                                        <materialDesign:PackIcon Kind="Delete"/>
+                                    </Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    
+                    <TextBlock Text="Diş Bazlı Plan Özeti" 
+                             Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
+                             Margin="0,10,0,5"/>
+                    <ListView ItemsSource="{Binding ToothPlans}"
+                             MaxHeight="200"
+                             Margin="0,0,0,10">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Expander Header="{Binding Key, StringFormat='Diş {0}'}">
+                                    <ItemsControl ItemsSource="{Binding Value}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}" Margin="20,2,0,2"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Expander>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
                 </StackPanel>
             </materialDesign:Card>
         </Grid>

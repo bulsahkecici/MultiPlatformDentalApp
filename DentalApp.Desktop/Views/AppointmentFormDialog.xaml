@@ -29,6 +29,13 @@
                          materialDesign:HintAssist.Hint="Hasta *"
                          Margin="0,0,0,10"/>
 
+                <ComboBox ItemsSource="{Binding Dentists}"
+                         SelectedValuePath="Id"
+                         SelectedValue="{Binding Appointment.DentistId, Mode=TwoWay}"
+                         DisplayMemberPath="Name"
+                         materialDesign:HintAssist.Hint="Diş Hekimi *"
+                         Margin="0,0,0,10"/>
+
                 <DatePicker SelectedDate="{Binding Appointment.AppointmentDate}" 
                            materialDesign:HintAssist.Hint="Randevu Tarihi *"
                            Language="tr-TR"

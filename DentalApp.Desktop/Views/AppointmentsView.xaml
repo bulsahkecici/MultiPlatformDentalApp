@@ -4,14 +4,54 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:vm="clr-namespace:DentalApp.Desktop.ViewModels"
              mc:Ignorable="d" 
              d:DesignHeight="600" d:DesignWidth="1000">
+    <UserControl.Resources>
+        <Style x:Key="AvailableSlotStyle" TargetType="Button">
+            <Setter Property="Background" Value="#90EE90"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#70C070"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#7ACC7A"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <Style x:Key="OccupiedSlotStyle" TargetType="Button">
+            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#2563EB"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#2563EB"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <Style x:Key="UnavailableSlotStyle" TargetType="Button">
+            <Setter Property="Background" Value="#DC2626"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#B91C1C"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="IsEnabled" Value="False"/>
+            <Setter Property="Opacity" Value="0.6"/>
+        </Style>
+    </UserControl.Resources>
+    
     <Grid Margin="20" Background="Transparent">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <TextBlock Text="Randevu Yönetimi" 
@@ -44,55 +84,147 @@
                     <TextBlock Text="RANDEVU EKLE"/>
                 </StackPanel>
             </Button>
-
-            <Button Command="{Binding EditAppointmentCommand}"
-                    Margin="0,0,10,0">
-                <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="Edit" Margin="0,0,5,0"/>
-                    <TextBlock Text="DÜZENLE"/>
-                </StackPanel>
-            </Button>
-
-            <Button Command="{Binding CancelAppointmentCommand}"
-                    Style="{StaticResource MaterialDesignOutlinedButton}">
-                <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="Cancel" Margin="0,0,5,0"/>
-                    <TextBlock Text="İPTAL ET"/>
-                </StackPanel>
-            </Button>
         </StackPanel>
 
-        <materialDesign:Card Grid.Row="2" VerticalAlignment="Stretch">
-            <DataGrid ItemsSource="{Binding Appointments}" 
-                      SelectedItem="{Binding SelectedAppointment}"
-                      AutoGenerateColumns="False" 
-                      CanUserAddRows="False"
-                      IsReadOnly="True"
-                      Style="{StaticResource MaterialDesignDataGrid}">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Tarih" Binding="{Binding AppointmentDate, StringFormat=d}" Width="Auto"/>
-                    <DataGridTextColumn Header="Saat" Binding="{Binding StartTime, StringFormat=hh\\:mm}" Width="Auto"/>
-                    <DataGridTextColumn Header="Hasta" Binding="{Binding PatientFullName}" Width="*"/>
-                    <DataGridTextColumn Header="Tür" Binding="{Binding AppointmentType}" Width="*"/>
-                    <DataGridTextColumn Header="Durum" Binding="{Binding Status, Converter={StaticResource StatusToTurkishConverter}}" Width="Auto"/>
-                    <DataGridTextColumn Header="Diş Hekimi" Binding="{Binding DentistEmail}" Width="*"/>
-                </DataGrid.Columns>
-            </DataGrid>
-        </materialDesign:Card>
-
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
-            <Button Command="{Binding PreviousPageCommand}" 
-                    Style="{StaticResource MaterialDesignFlatButton}"
-                    Margin="0,0,10,0">
-                <materialDesign:PackIcon Kind="ChevronLeft"/>
-            </Button>
-            <TextBlock Text="{Binding PageInfo}" VerticalAlignment="Center" Margin="10,0"/>
-            <Button Command="{Binding NextPageCommand}" 
-                    Style="{StaticResource MaterialDesignFlatButton}"
-                    Margin="10,0,0,0">
-                <materialDesign:PackIcon Kind="ChevronRight"/>
-            </Button>
-        </StackPanel>
+        <!-- SCHEDULER GRID -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Time column header -->
+                <Border Grid.Row="0" Grid.Column="0" 
+                        Background="{StaticResource BulkaMediumBlue}" 
+                        Padding="10"
+                        BorderBrush="{StaticResource BulkaDarkBlue}"
+                        BorderThickness="1">
+                    <TextBlock Text="Saat" 
+                             Foreground="White"
+                             FontWeight="Bold"
+                             HorizontalAlignment="Center"/>
+                </Border>
+                
+                <!-- Dentist headers -->
+                <ItemsControl Grid.Row="0" Grid.Column="1" 
+                            ItemsSource="{Binding Dentists}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="{Binding Dentists.Count}"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{StaticResource BulkaMediumBlue}" 
+                                  Padding="10"
+                                  BorderBrush="{StaticResource BulkaDarkBlue}"
+                                  BorderThickness="1,1,1,1">
+                                <TextBlock Text="{Binding Name}" 
+                                         Foreground="White"
+                                         FontWeight="Bold"
+                                         TextWrapping="Wrap"
+                                         TextAlignment="Center"/>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                
+                <!-- Time slots and appointment slots -->
+                <ItemsControl Grid.Row="1" Grid.Column="0" 
+                            ItemsSource="{Binding TimeSlots}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Height="40"
+                                  BorderBrush="{StaticResource BulkaDarkBlue}"
+                                  BorderThickness="0,0,1,1"
+                                  Background="White"
+                                  Padding="5">
+                                <TextBlock Text="{Binding TimeString}" 
+                                         VerticalAlignment="Center"
+                                         HorizontalAlignment="Center"
+                                         FontWeight="SemiBold"/>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                
+                <!-- Appointment slots grid -->
+                <ItemsControl Grid.Row="1" Grid.Column="1" 
+                            ItemsSource="{Binding AppointmentSlots}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Rows="{Binding DataContext.TimeSlots.Count, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                       Columns="{Binding DataContext.Dentists.Count, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:AppointmentSlot}">
+                            <Button Command="{Binding DataContext.SlotClickCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                  CommandParameter="{Binding}"
+                                  Height="40"
+                                  Margin="0,0,1,1">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Padding" Value="5"/>
+                                        <Setter Property="Cursor" Value="Hand"/>
+                                        <Style.Triggers>
+                                            <!-- Status-based styling -->
+                                            <DataTrigger Binding="{Binding Status}" Value="Available">
+                                                <Setter Property="Background" Value="#90EE90"/>
+                                                <Setter Property="Foreground" Value="Black"/>
+                                                <Setter Property="BorderThickness" Value="1"/>
+                                                <Setter Property="BorderBrush" Value="#70C070"/>
+                                                <Setter Property="IsEnabled" Value="True"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status}" Value="Occupied">
+                                                <Setter Property="Background" Value="#3B82F6"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                                <Setter Property="BorderThickness" Value="1"/>
+                                                <Setter Property="BorderBrush" Value="#2563EB"/>
+                                                <Setter Property="IsEnabled" Value="True"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status}" Value="Unavailable">
+                                                <Setter Property="Background" Value="#DC2626"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                                <Setter Property="BorderThickness" Value="1"/>
+                                                <Setter Property="BorderBrush" Value="#B91C1C"/>
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                                <Setter Property="Opacity" Value="0.6"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding TimeString}" 
+                                             FontSize="10"
+                                             HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding PatientName}" 
+                                             FontSize="9"
+                                             TextWrapping="Wrap"
+                                             HorizontalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding PatientName, Converter={StaticResource NullToBooleanConverter}}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+        </ScrollViewer>
 
         <ProgressBar Grid.Row="2" Style="{StaticResource MaterialDesignCircularProgressBar}" 
                      IsIndeterminate="True" 

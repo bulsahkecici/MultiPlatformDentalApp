@@ -99,13 +99,59 @@ namespace DentalApp.Desktop.Helpers
             if (values == null || values.Length < 2)
                 return false;
 
-            var selectedTooth = values[0]?.ToString();
+            // Support both single tooth (string) and multiple teeth (collection)
+            var selectedTeeth = values[0];
             var currentTooth = values[1]?.ToString();
 
-            return selectedTooth == currentTooth;
+            if (currentTooth == null) return false;
+
+            // If it's a collection (ObservableCollection<int>)
+            if (selectedTeeth is System.Collections.ICollection teethCollection)
+            {
+                foreach (var tooth in teethCollection)
+                {
+                    if (tooth?.ToString() == currentTooth)
+                        return true;
+                }
+                return false;
+            }
+
+            // If it's a string (single tooth or comma-separated)
+            var selectedToothStr = selectedTeeth?.ToString();
+            if (string.IsNullOrWhiteSpace(selectedToothStr))
+                return false;
+
+            // Check if current tooth is in the comma-separated list
+            var teethList = selectedToothStr.Split(',').Select(t => t.Trim());
+            return teethList.Contains(currentTooth);
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+    
+    public class ToothInCollectionConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null || parameter == null)
+                return false;
+
+            var toothNumber = parameter.ToString();
+            if (value is System.Collections.ICollection collection)
+            {
+                foreach (var item in collection)
+                {
+                    if (item?.ToString() == toothNumber)
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }

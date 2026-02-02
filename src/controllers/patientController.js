@@ -18,7 +18,6 @@ async function createPatient(req, res, next) {
             phone,
             address,
             city,
-            postalCode,
             country,
             bloodType,
             allergies,
@@ -29,6 +28,8 @@ async function createPatient(req, res, next) {
             insuranceProvider,
             insurancePolicyNumber,
             notes,
+            institutionAgreementId,
+            discountReasonIds, // Array of discount reason IDs
         } = req.body || {};
 
         // Validate required fields
@@ -44,10 +45,10 @@ async function createPatient(req, res, next) {
         const result = await query(
             `INSERT INTO patients (
         first_name, last_name, date_of_birth, gender, email, phone,
-        address, city, postal_code, country, blood_type, allergies,
+        address, city, country, blood_type, allergies,
         medical_conditions, current_medications, emergency_contact_name,
         emergency_contact_phone, insurance_provider, insurance_policy_number,
-        notes, created_by, updated_by, created_at, updated_at
+        notes, institution_agreement_id, created_by, updated_by, created_at, updated_at
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, NOW(), NOW()
       ) RETURNING *`,
@@ -60,7 +61,6 @@ async function createPatient(req, res, next) {
                 phone || null,
                 address || null,
                 city || null,
-                postalCode || null,
                 country || null,
                 bloodType || null,
                 allergies || null,
@@ -71,12 +71,23 @@ async function createPatient(req, res, next) {
                 insuranceProvider || null,
                 insurancePolicyNumber || null,
                 notes || null,
+                institutionAgreementId || null,
                 req.user.sub,
                 req.user.sub,
             ],
         );
 
         const patient = result.rows[0];
+        
+        // Link discount reasons if provided
+        if (discountReasonIds && Array.isArray(discountReasonIds) && discountReasonIds.length > 0) {
+            for (const reasonId of discountReasonIds) {
+                await query(
+                    'INSERT INTO patient_discount_reasons (patient_id, discount_reason_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+                    [patient.id, reasonId]
+                );
+            }
+        }
 
         const ipAddress = getClientIp(req);
         const userAgent = req.headers['user-agent'] || '';
@@ -160,13 +171,29 @@ async function getPatientById(req, res, next) {
         const patientId = parseInt(req.params.id, 10);
 
         const result = await query(
-            'SELECT * FROM patients WHERE id = $1 AND deleted_at IS NULL',
+            `SELECT p.*, ia.institution_name, ia.discount_percentage
+            FROM patients p
+            LEFT JOIN institution_agreements ia ON p.institution_agreement_id = ia.id
+            WHERE p.id = $1 AND p.deleted_at IS NULL`,
             [patientId],
         );
 
         if (result.rows.length === 0) {
             return next(new AppError('Patient not found', 404));
         }
+
+        const patient = result.rows[0];
+
+        // Get discount reasons
+        const discountReasonsResult = await query(
+            `SELECT dr.id, dr.name 
+            FROM discount_reasons dr
+            INNER JOIN patient_discount_reasons pdr ON dr.id = pdr.discount_reason_id
+            WHERE pdr.patient_id = $1 AND dr.is_active = true`,
+            [patientId],
+        );
+
+        patient.discount_reasons = discountReasonsResult.rows;
 
         const ipAddress = getClientIp(req);
         const userAgent = req.headers['user-agent'] || '';
@@ -180,7 +207,7 @@ async function getPatientById(req, res, next) {
             resourceId: patientId,
         });
 
-        return res.status(200).json({ patient: result.rows[0] });
+        return res.status(200).json({ patient });
     } catch (err) {
         return next(new AppError('Failed to fetch patient', 500));
     }
@@ -204,7 +231,6 @@ async function updatePatient(req, res, next) {
             'phone',
             'address',
             'city',
-            'postal_code',
             'country',
             'blood_type',
             'allergies',
@@ -215,6 +241,7 @@ async function updatePatient(req, res, next) {
             'insurance_provider',
             'insurance_policy_number',
             'notes',
+            'institution_agreement_id',
         ];
 
         const setClauses = [];
@@ -249,6 +276,22 @@ async function updatePatient(req, res, next) {
 
         if (result.rows.length === 0) {
             return next(new AppError('Patient not found', 404));
+        }
+        
+        // Update discount reasons if provided
+        if (updates.discountReasonIds !== undefined) {
+            // Delete existing links
+            await query('DELETE FROM patient_discount_reasons WHERE patient_id = $1', [patientId]);
+            
+            // Add new links
+            if (Array.isArray(updates.discountReasonIds) && updates.discountReasonIds.length > 0) {
+                for (const reasonId of updates.discountReasonIds) {
+                    await query(
+                        'INSERT INTO patient_discount_reasons (patient_id, discount_reason_id) VALUES ($1, $2)',
+                        [patientId, reasonId]
+                    );
+                }
+            }
         }
 
         const ipAddress = getClientIp(req);

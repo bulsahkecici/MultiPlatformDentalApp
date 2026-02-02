@@ -16,7 +16,23 @@ const config = require('../config');
  */
 async function createUser(req, res, next) {
     try {
-        const { email, password, roles = [] } = req.body || {};
+        const { 
+            email, 
+            password, 
+            roles = [],
+            firstName,
+            lastName,
+            phone,
+            tcNo,
+            address,
+            iban,
+            salary,
+            commissionRate,
+            university,
+            diplomaDate,
+            diplomaNo,
+            specializations // Array of specialization names
+        } = req.body || {};
 
         // Validate input
         if (!email || !validator.isEmail(email)) {
@@ -36,6 +52,24 @@ async function createUser(req, res, next) {
                 }),
             );
         }
+        
+        // Role-specific validations
+        const isDentist = roles.includes('dentist');
+        const isSecretary = roles.includes('secretary');
+        
+        if (isDentist) {
+            if (!firstName || !lastName || !phone || !tcNo || !university || !diplomaNo) {
+                return next(new AppError('Doktor için ad, soyad, telefon, TC No, üniversite ve diploma no gereklidir', 400));
+            }
+        } else if (isSecretary) {
+            if (!firstName || !lastName || !phone || !tcNo) {
+                return next(new AppError('Sekreter için ad, soyad, telefon ve TC No gereklidir', 400));
+            }
+        } else if (roles.includes('admin')) {
+            if (!firstName || !lastName || !phone) {
+                return next(new AppError('Patron için ad, soyad ve telefon gereklidir', 400));
+            }
+        }
 
         // Check if user already exists
         const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
@@ -46,13 +80,38 @@ async function createUser(req, res, next) {
         // Hash password
         const passwordHash = await bcrypt.hash(password, 10);
         const rolesCsv = serializeRolesCsv(roles);
+        const specializationsCsv = specializations && Array.isArray(specializations) 
+            ? specializations.join(',') 
+            : null;
 
-        // Create user
+        // Create user with additional fields
         const result = await query(
-            `INSERT INTO users (email, password_hash, roles, email_verified, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, NOW(), NOW())
+            `INSERT INTO users (
+                email, password_hash, roles, email_verified, 
+                first_name, last_name, phone, tc_no, address, iban, 
+                salary, commission_rate, university, diploma_date, diploma_no, specializations,
+                created_at, updated_at
+            )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW())
        RETURNING id, email, roles, email_verified, created_at`,
-            [email, passwordHash, rolesCsv, !config.email.enabled], // Auto-verify if email disabled
+            [
+                email, 
+                passwordHash, 
+                rolesCsv, 
+                !config.email.enabled,
+                firstName || null,
+                lastName || null,
+                phone || null,
+                tcNo || null,
+                address || null,
+                iban || null,
+                salary || null,
+                commissionRate || null,
+                university || null,
+                diplomaDate || null,
+                diplomaNo || null,
+                specializationsCsv
+            ],
         );
 
         const user = result.rows[0];

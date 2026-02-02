@@ -3,6 +3,7 @@ using DentalApp.Desktop.Models;
 using DentalApp.Desktop.Services;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using System.Linq;
 
 namespace DentalApp.Desktop.ViewModels
 {
@@ -10,62 +11,160 @@ namespace DentalApp.Desktop.ViewModels
     {
         private readonly ApiService _apiService;
         private readonly PatientService _patientService;
+        private readonly TariffService _tariffService;
         private bool _isBusy;
-        private Patient? _selectedPatient;
-        private TreatmentPlan? _selectedTreatmentPlan;
-        private decimal _discountAmount;
-        private decimal _discountPercentage;
-
+        private bool _canViewPrices = true; // Patron ve Sekreter için true
+        
+        // İndirim Anlaşmaları
+        private string _newAgreementName = string.Empty;
+        private string _newAgreementDiscount = string.Empty;
+        private ObservableCollection<CategoryDiscount> _categoryDiscounts = new();
+        
+        // Tedavi Planı Onaylama
+        private TreatmentPlanItem? _selectedPlan;
+        
+        // Ödeme Alma
+        private Patient? _selectedPaymentPatient;
+        private string _selectedPaymentMethod = string.Empty;
+        private decimal _paymentAmount;
+        
         public bool IsBusy
         {
             get => _isBusy;
             set => SetProperty(ref _isBusy, value);
         }
-
-        public ObservableCollection<Patient> Patients { get; } = new();
-        public ObservableCollection<TreatmentPlan> TreatmentPlans { get; } = new();
-
-        public Patient? SelectedPatient
+        
+        public bool CanViewPrices
         {
-            get => _selectedPatient;
+            get => _canViewPrices;
+            set => SetProperty(ref _canViewPrices, value);
+        }
+
+        // İndirim Anlaşmaları
+        public ObservableCollection<InstitutionAgreement> InstitutionAgreements { get; } = new();
+        
+        public string NewAgreementName
+        {
+            get => _newAgreementName;
+            set => SetProperty(ref _newAgreementName, value);
+        }
+        
+        public string NewAgreementDiscount
+        {
+            get => _newAgreementDiscount;
+            set => SetProperty(ref _newAgreementDiscount, value);
+        }
+        
+        public ObservableCollection<CategoryDiscount> CategoryDiscounts
+        {
+            get => _categoryDiscounts;
+            set => SetProperty(ref _categoryDiscounts, value);
+        }
+        
+        // Tedavi Planı Onaylama
+        public ObservableCollection<TreatmentPlanItem> PendingTreatmentPlans { get; } = new();
+        
+        public TreatmentPlanItem? SelectedPlan
+        {
+            get => _selectedPlan;
+            set => SetProperty(ref _selectedPlan, value);
+        }
+        
+        public decimal SelectedPlansTotal => PendingTreatmentPlans
+            .Where(p => p.IsSelected)
+            .Sum(p => p.TotalCost);
+        
+        public void RefreshSelectedPlansTotal()
+        {
+            OnPropertyChanged(nameof(SelectedPlansTotal));
+        }
+        
+        // Ödeme Alma
+        public ObservableCollection<Patient> Patients { get; } = new();
+        public ObservableCollection<string> PaymentMethods { get; } = new();
+        
+        public Patient? SelectedPaymentPatient
+        {
+            get => _selectedPaymentPatient;
             set
             {
-                if (SetProperty(ref _selectedPatient, value))
+                if (SetProperty(ref _selectedPaymentPatient, value))
                 {
-                    _ = LoadTreatmentPlansAsync();
+                    CalculatePaymentInfo();
                 }
             }
         }
-
-        public TreatmentPlan? SelectedTreatmentPlan
+        
+        public string SelectedPaymentMethod
         {
-            get => _selectedTreatmentPlan;
-            set => SetProperty(ref _selectedTreatmentPlan, value);
+            get => _selectedPaymentMethod;
+            set => SetProperty(ref _selectedPaymentMethod, value);
         }
-
-        public decimal DiscountAmount
+        
+        public decimal PaymentAmount
         {
-            get => _discountAmount;
-            set => SetProperty(ref _discountAmount, value);
+            get => _paymentAmount;
+            set
+            {
+                if (SetProperty(ref _paymentAmount, value))
+                {
+                    CalculatePaymentInfo();
+                }
+            }
         }
+        
+        public decimal SelectedPaymentPatientTotal { get; private set; }
+        public decimal RemainingDebt { get; private set; }
+        public decimal DentistCommission { get; private set; }
+        public decimal DentistCommissionPercentage { get; private set; }
 
-        public decimal DiscountPercentage
-        {
-            get => _discountPercentage;
-            set => SetProperty(ref _discountPercentage, value);
-        }
-
-        public ICommand ApplyDiscountCommand { get; }
+        public ICommand AddAgreementCommand { get; }
+        public ICommand EditAgreementCommand { get; }
+        public ICommand LoadPendingPlansCommand { get; }
+        public ICommand ApprovePlansCommand { get; }
         public ICommand ProcessPaymentCommand { get; }
         public ICommand RefreshCommand { get; }
 
-        public PaymentsViewModel(ApiService apiService, PatientService patientService)
+        public PaymentsViewModel(ApiService apiService, PatientService patientService, TariffService? tariffService = null)
         {
             _apiService = apiService;
             _patientService = patientService;
-            ApplyDiscountCommand = new RelayCommand(async _ => await ApplyDiscountAsync(), _ => !IsBusy && SelectedTreatmentPlan != null);
-            ProcessPaymentCommand = new RelayCommand(async _ => await ProcessPaymentAsync(), _ => !IsBusy);
+            _tariffService = tariffService ?? new TariffService();
+            
+            AddAgreementCommand = new RelayCommand(async _ => await AddAgreementAsync(), _ => !IsBusy && !string.IsNullOrWhiteSpace(NewAgreementName));
+            EditAgreementCommand = new RelayCommand<InstitutionAgreement>(async a => await EditAgreementAsync(a));
+            LoadPendingPlansCommand = new RelayCommand(async _ => await LoadPendingPlansAsync(), _ => !IsBusy);
+            ApprovePlansCommand = new RelayCommand(async _ => await ApprovePlansAsync(), _ => !IsBusy && PendingTreatmentPlans.Any(p => p.IsSelected));
+            ProcessPaymentCommand = new RelayCommand(async _ => await ProcessPaymentAsync(), _ => !IsBusy && SelectedPaymentPatient != null && PaymentAmount > 0);
             RefreshCommand = new RelayCommand(async _ => await LoadDataAsync(), _ => !IsBusy);
+            
+            PaymentMethods.Add("Kart");
+            PaymentMethods.Add("Nakit");
+            
+            _ = LoadDataAsync();
+            LoadAgreements(); // Placeholder data
+            _ = LoadCategoriesAsync();
+        }
+        
+        private async Task LoadCategoriesAsync()
+        {
+            try
+            {
+                var tariffData = await _tariffService.LoadTariffDataAsync();
+                CategoryDiscounts.Clear();
+                foreach (var category in tariffData.Categories)
+                {
+                    CategoryDiscounts.Add(new CategoryDiscount
+                    {
+                        CategoryName = category.Name,
+                        DiscountPercentage = 0m
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Kategoriler yüklenirken hata: {ex.Message}");
+            }
         }
 
         public async Task LoadDataAsync()
@@ -93,36 +192,59 @@ namespace DentalApp.Desktop.ViewModels
                 IsBusy = false;
             }
         }
-
-        private async Task LoadTreatmentPlansAsync()
+        
+        private void LoadAgreements()
         {
-            if (SelectedPatient == null) return;
-            // TODO: Load treatment plans for selected patient
-            TreatmentPlans.Clear();
+            // TODO: Load from backend when API is ready
+            InstitutionAgreements.Clear();
+            InstitutionAgreements.Add(new InstitutionAgreement { Id = 1, Name = "SGK", DiscountPercentage = 20m });
+            InstitutionAgreements.Add(new InstitutionAgreement { Id = 2, Name = "Özel Sigorta A", DiscountPercentage = 15m });
         }
-
-        private async Task ApplyDiscountAsync()
+        
+        private async Task AddAgreementAsync()
         {
-            if (SelectedTreatmentPlan == null) return;
+            if (string.IsNullOrWhiteSpace(NewAgreementName))
+            {
+                System.Windows.MessageBox.Show("Kurum adı girin.", "Hata",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+            
             IsBusy = true;
             try
             {
-                var request = new
+                // TODO: Save to backend when API is ready
+                // Kategori bazlı indirimleri de kaydet
+                var categoryDiscounts = CategoryDiscounts
+                    .Where(cd => cd.DiscountPercentage > 0)
+                    .ToDictionary(cd => cd.CategoryName, cd => cd.DiscountPercentage);
+                
+                var newAgreement = new InstitutionAgreement
                 {
-                    treatmentPlanId = SelectedTreatmentPlan.Id,
-                    discountAmount = DiscountAmount > 0 ? DiscountAmount : (decimal?)null,
-                    discountPercentage = DiscountPercentage > 0 ? DiscountPercentage : (decimal?)null
+                    Id = InstitutionAgreements.Count + 1,
+                    Name = NewAgreementName,
+                    DiscountPercentage = 0m, // Genel indirim artık kullanılmıyor, kategori bazlı kullanılıyor
+                    CategoryDiscounts = categoryDiscounts
                 };
-
-                var response = await _apiService.PostAsync<object>("/payments/discount", request);
-                System.Windows.MessageBox.Show("İndirim başarıyla uygulandı.", "Başarılı",
+                InstitutionAgreements.Add(newAgreement);
+                OnPropertyChanged(nameof(InstitutionAgreements));
+                
+                NewAgreementName = string.Empty;
+                NewAgreementDiscount = string.Empty;
+                // Kategori indirimlerini sıfırla
+                foreach (var cd in CategoryDiscounts)
+                {
+                    cd.DiscountPercentage = 0m;
+                }
+                OnPropertyChanged(nameof(NewAgreementName));
+                OnPropertyChanged(nameof(NewAgreementDiscount));
+                
+                System.Windows.MessageBox.Show("İndirim anlaşması başarıyla eklendi.", "Başarılı",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
-                DiscountAmount = 0;
-                DiscountPercentage = 0;
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"İndirim uygulanırken hata: {ex.Message}", "Hata",
+                System.Windows.MessageBox.Show($"Anlaşma eklenirken hata: {ex.Message}", "Hata",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
             finally
@@ -130,25 +252,219 @@ namespace DentalApp.Desktop.ViewModels
                 IsBusy = false;
             }
         }
-
-        private Task ProcessPaymentAsync()
+        
+        private async Task EditAgreementAsync(InstitutionAgreement? agreement)
         {
-            // TODO: Implement payment processing
-            System.Windows.MessageBox.Show("Ödeme işlemi yakında eklenecek.", "Bilgi",
+            if (agreement == null) return;
+            // TODO: Edit agreement dialog
+            System.Windows.MessageBox.Show("Düzenleme özelliği yakında eklenecek.", "Bilgi",
                 System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
-            return Task.CompletedTask;
+        }
+        
+        private async Task LoadPendingPlansAsync()
+        {
+            IsBusy = true;
+            try
+            {
+                // TODO: Load from backend when API is ready
+                // Placeholder data
+                PendingTreatmentPlans.Clear();
+                var plan1 = new TreatmentPlanItem
+                {
+                    Id = 1,
+                    PatientName = "Ahmet Yılmaz",
+                    DentistName = "Dr. Ayşe Demir",
+                    ProceduresCount = 3,
+                    TotalCost = 1500m,
+                    IsSelected = false,
+                    ParentViewModel = this
+                };
+                plan1.Procedures.Add(new ProcedureItem { Code = "D001", Name = "Dolgu", Price = 500m, Category = "Restoratif" });
+                plan1.Procedures.Add(new ProcedureItem { Code = "D002", Name = "Temizlik", Price = 400m, Category = "Profilaksi" });
+                plan1.Procedures.Add(new ProcedureItem { Code = "D003", Name = "Kanal Tedavisi", Price = 600m, Category = "Endodonti" });
+                PendingTreatmentPlans.Add(plan1);
+                
+                var plan2 = new TreatmentPlanItem
+                {
+                    Id = 2,
+                    PatientName = "Mehmet Kaya",
+                    DentistName = "Dr. Ahmet Yılmaz",
+                    ProceduresCount = 2,
+                    TotalCost = 800m,
+                    IsSelected = false,
+                    ParentViewModel = this
+                };
+                plan2.Procedures.Add(new ProcedureItem { Code = "D004", Name = "Çekim", Price = 300m, Category = "Cerrahi" });
+                plan2.Procedures.Add(new ProcedureItem { Code = "D005", Name = "Protez", Price = 500m, Category = "Protetik" });
+                PendingTreatmentPlans.Add(plan2);
+                
+                OnPropertyChanged(nameof(SelectedPlansTotal));
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Planlar yüklenirken hata: {ex.Message}", "Hata",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+        
+        private async Task ApprovePlansAsync()
+        {
+            var selectedPlans = PendingTreatmentPlans.Where(p => p.IsSelected).ToList();
+            if (selectedPlans.Count == 0)
+            {
+                System.Windows.MessageBox.Show("Lütfen en az bir plan seçin.", "Uyarı",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+            
+            IsBusy = true;
+            try
+            {
+                // TODO: Approve plans via API
+                var total = selectedPlans.Sum(p => p.TotalCost);
+                
+                System.Windows.MessageBox.Show(
+                    $"{selectedPlans.Count} tedavi planı onaylandı.\nToplam maliyet: {total:F2} TRY\n\nHasta borcu oluşturuldu.",
+                    "Başarılı",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+                
+                // Remove approved plans
+                foreach (var plan in selectedPlans)
+                {
+                    PendingTreatmentPlans.Remove(plan);
+                }
+                
+                OnPropertyChanged(nameof(SelectedPlansTotal));
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Planlar onaylanırken hata: {ex.Message}", "Hata",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+        
+        private void CalculatePaymentInfo()
+        {
+            // TODO: Calculate from backend data
+            // Placeholder calculations
+            SelectedPaymentPatientTotal = 2500m; // Placeholder
+            RemainingDebt = SelectedPaymentPatientTotal - PaymentAmount;
+            
+            // Dentist commission (placeholder: 30%)
+            DentistCommissionPercentage = 30m;
+            DentistCommission = PaymentAmount * (DentistCommissionPercentage / 100m);
+            
+            OnPropertyChanged(nameof(SelectedPaymentPatientTotal));
+            OnPropertyChanged(nameof(RemainingDebt));
+            OnPropertyChanged(nameof(DentistCommission));
+            OnPropertyChanged(nameof(DentistCommissionPercentage));
+        }
+
+        private async Task ProcessPaymentAsync()
+        {
+            if (SelectedPaymentPatient == null || PaymentAmount <= 0)
+            {
+                System.Windows.MessageBox.Show("Lütfen hasta seçin ve ödeme miktarı girin.", "Uyarı",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+            
+            IsBusy = true;
+            try
+            {
+                // TODO: Process payment via API
+                var request = new
+                {
+                    patientId = SelectedPaymentPatient.Id,
+                    amount = PaymentAmount,
+                    method = SelectedPaymentMethod,
+                    remainingDebt = RemainingDebt
+                };
+                
+                System.Windows.MessageBox.Show(
+                    $"Ödeme başarıyla işlendi.\nAlınan: {PaymentAmount:F2} TRY\nKalan Borç: {RemainingDebt:F2} TRY\nHekim Ciro Payı: {DentistCommission:F2} TRY",
+                    "Başarılı",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+                
+                PaymentAmount = 0;
+                CalculatePaymentInfo();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Ödeme işlenirken hata: {ex.Message}", "Hata",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
     }
-
-    public class TreatmentPlan
+    
+    public class TreatmentPlanItem : ObservableObject
     {
-        [Newtonsoft.Json.JsonProperty("id")]
-        public int Id { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("title")]
-        public string Title { get; set; } = string.Empty;
-
-        [Newtonsoft.Json.JsonProperty("total_estimated_cost")]
-        public decimal TotalEstimatedCost { get; set; }
+        private int _id;
+        private string _patientName = string.Empty;
+        private string _dentistName = string.Empty;
+        private int _proceduresCount;
+        private decimal _totalCost;
+        private bool _isSelected;
+        
+        public int Id
+        {
+            get => _id;
+            set => SetProperty(ref _id, value);
+        }
+        
+        public string PatientName
+        {
+            get => _patientName;
+            set => SetProperty(ref _patientName, value);
+        }
+        
+        public string DentistName
+        {
+            get => _dentistName;
+            set => SetProperty(ref _dentistName, value);
+        }
+        
+        public int ProceduresCount
+        {
+            get => _proceduresCount;
+            set => SetProperty(ref _proceduresCount, value);
+        }
+        
+        public decimal TotalCost
+        {
+            get => _totalCost;
+            set => SetProperty(ref _totalCost, value);
+        }
+        
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (SetProperty(ref _isSelected, value))
+                {
+                    // Notify parent view model to refresh total
+                    ParentViewModel?.RefreshSelectedPlansTotal();
+                }
+            }
+        }
+        
+        public ObservableCollection<ProcedureItem> Procedures { get; } = new();
+        
+        public PaymentsViewModel? ParentViewModel { get; set; }
     }
 }

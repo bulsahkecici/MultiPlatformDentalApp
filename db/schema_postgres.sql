@@ -91,7 +91,6 @@ CREATE TABLE IF NOT EXISTS patients (
   phone VARCHAR(50),
   address TEXT,
   city VARCHAR(100),
-  postal_code VARCHAR(20),
   country VARCHAR(100),
   
   -- Medical information
@@ -317,3 +316,99 @@ CREATE TABLE IF NOT EXISTS treatment_plan_items (
 
 CREATE INDEX IF NOT EXISTS idx_treatment_plan_items_plan_id ON treatment_plan_items (treatment_plan_id);
 CREATE INDEX IF NOT EXISTS idx_treatment_plan_items_tooth ON treatment_plan_items (tooth_number);
+
+-- Discount reasons table (indirim nedenleri)
+CREATE TABLE IF NOT EXISTS discount_reasons (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(200) NOT NULL UNIQUE,
+  description TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_discount_reasons_active ON discount_reasons (is_active);
+
+-- Patient discount reasons link (many-to-many)
+CREATE TABLE IF NOT EXISTS patient_discount_reasons (
+  patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  discount_reason_id INTEGER NOT NULL REFERENCES discount_reasons(id) ON DELETE CASCADE,
+  PRIMARY KEY (patient_id, discount_reason_id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_patient_discount_reasons_patient ON patient_discount_reasons (patient_id);
+CREATE INDEX IF NOT EXISTS idx_patient_discount_reasons_reason ON patient_discount_reasons (discount_reason_id);
+
+-- Payments table (ödeme kayıtları)
+CREATE TABLE IF NOT EXISTS payments (
+  id SERIAL PRIMARY KEY,
+  patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  treatment_plan_id INTEGER REFERENCES treatment_plans(id) ON DELETE SET NULL,
+  amount DECIMAL(10, 2) NOT NULL,
+  payment_method VARCHAR(50) NOT NULL, -- 'card', 'cash'
+  dentist_commission DECIMAL(10, 2), -- Hekimin ciro payı
+  dentist_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  notes TEXT,
+  
+  -- Timestamps
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_payments_patient_id ON payments (patient_id);
+CREATE INDEX IF NOT EXISTS idx_payments_treatment_plan_id ON payments (treatment_plan_id);
+CREATE INDEX IF NOT EXISTS idx_payments_dentist_id ON payments (dentist_id);
+CREATE INDEX IF NOT EXISTS idx_payments_created_at ON payments (created_at);
+
+-- Patient debts table (hasta borçları)
+CREATE TABLE IF NOT EXISTS patient_debts (
+  id SERIAL PRIMARY KEY,
+  patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  total_debt DECIMAL(10, 2) NOT NULL DEFAULT 0,
+  paid_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
+  remaining_debt DECIMAL(10, 2) NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(patient_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_patient_debts_patient_id ON patient_debts (patient_id);
+
+-- Users table'a doktor/sekreter bilgileri için alanlar ekle
+ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name VARCHAR(100);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name VARCHAR(100);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS tc_no VARCHAR(11);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS iban VARCHAR(34);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS salary DECIMAL(10, 2);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS university VARCHAR(200);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS diploma_date DATE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS diploma_no VARCHAR(100);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS specializations TEXT; -- Comma-separated uzmanlık alanları
+
+CREATE INDEX IF NOT EXISTS idx_users_name ON users (last_name, first_name);
+
+-- Treatment plans status güncellemesi (pending approval için)
+ALTER TABLE treatment_plans ALTER COLUMN status SET DEFAULT 'pending';
+-- Status değerleri: pending, approved, active, completed, cancelled
+
+-- Migration: Remove postal_code column if it exists (for existing databases)
+DO $$ 
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'patients' AND column_name = 'postal_code'
+    ) THEN
+        ALTER TABLE patients DROP COLUMN postal_code;
+    END IF;
+END $$;
+
+-- Seed discount reasons
+INSERT INTO discount_reasons (name, description) VALUES
+  ('SGK Anlaşması', 'SGK ile yapılan anlaşma kapsamında indirim'),
+  ('Özel Sigorta', 'Özel sigorta şirketi anlaşması'),
+  ('Öğrenci İndirimi', 'Öğrencilere özel indirim'),
+  ('Yaşlı İndirimi', '65 yaş üstü hastalara indirim'),
+  ('Toplu İşlem', 'Birden fazla işlem için toplu indirim')
+ON CONFLICT (name) DO NOTHING;

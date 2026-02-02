@@ -129,6 +129,7 @@ namespace DentalApp.Desktop.ViewModels
         }
 
         public ObservableCollection<Patient> Patients { get; } = new();
+        public ObservableCollection<DentistInfo> Dentists { get; } = new();
         public ObservableCollection<StatusItem> StatusOptions { get; } = new();
         public ObservableCollection<string> AppointmentTypeOptions { get; } = new();
         public ObservableCollection<string> TimeOptions { get; } = new();
@@ -204,13 +205,45 @@ namespace DentalApp.Desktop.ViewModels
                 }
             }
 
-            _ = LoadPatientsAsync(patientService);
+            try
+            {
+                _ = LoadPatientsAsync(patientService);
+                _ = LoadDentistsAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"AppointmentFormViewModel Constructor Error: {ex}");
+                // Don't show message box in constructor, just log
+            }
+        }
+        
+        private async Task LoadDentistsAsync()
+        {
+            try
+            {
+                // TODO: Load from /api/users?role=dentist when API is ready
+                // For now, use placeholder data - using same class from AppointmentsViewModel
+                Dentists.Clear();
+                Dentists.Add(new DentistInfo { Id = 1, Name = "Dr. Ahmet Yılmaz", Email = "ahmet@example.com" });
+                Dentists.Add(new DentistInfo { Id = 2, Name = "Dr. Ayşe Demir", Email = "ayse@example.com" });
+                Dentists.Add(new DentistInfo { Id = 3, Name = "Dr. Mehmet Kaya", Email = "mehmet@example.com" });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading dentists: {ex}");
+            }
         }
 
         private async Task LoadPatientsAsync(PatientService patientService)
         {
             try
             {
+                if (patientService == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("LoadPatientsAsync: patientService is null");
+                    return;
+                }
+                
                 var (patients, _) = await patientService.GetPatientsAsync(page: 1, limit: 1000);
                 Patients.Clear();
                 foreach (var p in patients)
@@ -220,7 +253,9 @@ namespace DentalApp.Desktop.ViewModels
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Hastalar yüklenirken hata: {ex.Message}", "Hata", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                System.Diagnostics.Debug.WriteLine($"Error loading patients: {ex}");
+                // Don't show message box in async method, just log
+                // The error will be visible when user tries to select a patient
             }
         }
 
