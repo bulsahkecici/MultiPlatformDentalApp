@@ -24,6 +24,8 @@ const patientsRouter = require('./routes/patients');
 const appointmentsRouter = require('./routes/appointments');
 const treatmentsRouter = require('./routes/treatments');
 const notificationsRouter = require('./routes/notifications');
+const dentistRouter = require('./routes/dentist');
+const paymentsRouter = require('./routes/payments');
 
 const app = express();
 const server = http.createServer(app);
@@ -72,6 +74,8 @@ app.use('/', patientsRouter);
 app.use('/', appointmentsRouter);
 app.use('/', treatmentsRouter);
 app.use('/', notificationsRouter);
+app.use('/', dentistRouter);
+app.use('/', paymentsRouter);
 
 // 404 and error handlers
 app.use(notFoundHandler);

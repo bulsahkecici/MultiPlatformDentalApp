@@ -1,0 +1,151 @@
+<Window x:Class="DentalApp.Desktop.Views.PatientFormDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:helpers="clr-namespace:DentalApp.Desktop.Helpers"
+        Title="Hasta Formu" Height="700" Width="600"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <helpers:BooleanToTextConverter x:Key="BooleanToTextConverter" TrueText="Hasta Düzenle" FalseText="Hasta Ekle"/>
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="{Binding IsEditMode, Converter={StaticResource BooleanToTextConverter}}" 
+                   Style="{StaticResource MaterialDesignHeadline5TextBlock}" 
+                   Margin="0,0,0,20"/>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBox Text="{Binding Patient.FirstName, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Ad *" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Patient.LastName, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Soyad *" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,10"/>
+
+                <DatePicker SelectedDate="{Binding Patient.DateOfBirth}" 
+                           materialDesign:HintAssist.Hint="Doğum Tarihi"
+                           Language="tr-TR"
+                           Margin="0,0,0,10"/>
+
+                <ComboBox SelectedValue="{Binding Patient.Gender}"
+                         SelectedValuePath="Content"
+                         materialDesign:HintAssist.Hint="Cinsiyet"
+                         Margin="0,0,0,10">
+                    <ComboBoxItem Content="Erkek"/>
+                    <ComboBoxItem Content="Kadın"/>
+                    <ComboBoxItem Content="Diğer"/>
+                </ComboBox>
+
+                <TextBox Text="{Binding Patient.Email, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="E-posta" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Patient.Phone, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Telefon" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Patient.Address, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Adres" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Patient.City, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Şehir" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Patient.PostalCode, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Posta Kodu" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Patient.Country, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Ülke" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Patient.BloodType, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Kan Grubu" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Patient.Allergies, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Alerjiler" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         MinHeight="60"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Patient.MedicalConditions, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Tıbbi Durumlar" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         MinHeight="60"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Patient.CurrentMedications, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Mevcut İlaçlar" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         MinHeight="60"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Patient.EmergencyContactName, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Acil Durum İletişim Adı" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Patient.EmergencyContactPhone, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Acil Durum İletişim Telefonu" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Patient.InsuranceProvider, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Sigorta Sağlayıcısı" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Patient.InsurancePolicyNumber, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Sigorta Poliçe Numarası" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Patient.Notes, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Notlar" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         MinHeight="80"
+                         Margin="0,0,0,10"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="İPTAL" 
+                    Command="{Binding CancelCommand}" 
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Margin="0,0,10,0"
+                    Width="100"/>
+            <Button Content="KAYDET" 
+                    Command="{Binding SaveCommand}" 
+                    materialDesign:ButtonProgressAssist.IsIndeterminate="{Binding IsBusy}"
+                    materialDesign:ButtonProgressAssist.IsIndicatorVisible="{Binding IsBusy}"
+                    Width="100"/>
+        </StackPanel>
+    </Grid>
+</Window>

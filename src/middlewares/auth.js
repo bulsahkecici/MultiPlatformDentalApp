@@ -64,4 +64,49 @@ function requireSelfOrAdmin(req, res, next) {
   return next();
 }
 
-module.exports = { requireAuth, requireRole, requireSelf, requireSelfOrAdmin };
+/**
+ * Require any of the specified roles
+ */
+function requireAnyRole(...roles) {
+  return (req, res, next) => {
+    if (!req.user || !req.user.roles || !Array.isArray(req.user.roles)) {
+      return next(new AppError('Forbidden', 403));
+    }
+    const hasRole = roles.some(role => req.user.roles.includes(role));
+    if (!hasRole) {
+      return next(new AppError('Forbidden', 403));
+    }
+    return next();
+  };
+}
+
+/**
+ * Check if user has permission to view prices
+ * Only admin and secretary can see prices
+ */
+function canViewPrices(req) {
+  if (!req.user || !req.user.roles || !Array.isArray(req.user.roles)) {
+    return false;
+  }
+  return req.user.roles.includes('admin') || req.user.roles.includes('secretary');
+}
+
+/**
+ * Check if user is dentist (can only see own appointments)
+ */
+function isDentist(req) {
+  if (!req.user || !req.user.roles || !Array.isArray(req.user.roles)) {
+    return false;
+  }
+  return req.user.roles.includes('dentist');
+}
+
+module.exports = { 
+  requireAuth, 
+  requireRole, 
+  requireSelf, 
+  requireSelfOrAdmin,
+  requireAnyRole,
+  canViewPrices,
+  isDentist
+};

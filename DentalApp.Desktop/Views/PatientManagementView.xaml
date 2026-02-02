@@ -6,35 +6,58 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d" 
              d:DesignHeight="600" d:DesignWidth="1000">
-    <Grid Margin="20">
+    <Grid Margin="20" Background="Transparent">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Patient Management" Style="{StaticResource MaterialDesignHeadline4TextBlock}" Margin="0,0,0,20"/>
+        <TextBlock Text="Hasta Yönetimi" 
+                   Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
+                   Foreground="{StaticResource BulkaDarkBlue}"
+                   FontWeight="Bold"
+                   Margin="0,0,0,20"/>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,20">
             <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" 
-                     materialDesign:HintAssist.Hint="Search Patients..." 
+                     materialDesign:HintAssist.Hint="Hasta ara..." 
                      Width="300" 
                      Style="{StaticResource MaterialDesignOutlinedTextBox}"
                      Margin="0,0,20,0"/>
             
             <Button materialDesign:ButtonAssist.CornerRadius="5" 
                     Command="{Binding RefreshCommand}" 
-                    Margin="0,0,10,0">
+                    Margin="0,0,10,0"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="Refresh" Margin="0,0,5,0"/>
-                    <TextBlock Text="REFRESH"/>
+                    <TextBlock Text="YENİLE"/>
                 </StackPanel>
             </Button>
 
-            <Button Command="{Binding AddPatientCommand}">
+            <Button Command="{Binding AddPatientCommand}"
+                    Margin="0,0,10,0">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="Plus" Margin="0,0,5,0"/>
-                    <TextBlock Text="ADD PATIENT"/>
+                    <TextBlock Text="HASTA EKLE"/>
+                </StackPanel>
+            </Button>
+
+            <Button Command="{Binding EditPatientCommand}"
+                    Margin="0,0,10,0">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Edit" Margin="0,0,5,0"/>
+                    <TextBlock Text="DÜZENLE"/>
+                </StackPanel>
+            </Button>
+
+            <Button Command="{Binding DeletePatientCommand}"
+                    Style="{StaticResource MaterialDesignOutlinedButton}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Delete" Margin="0,0,5,0"/>
+                    <TextBlock Text="SİL"/>
                 </StackPanel>
             </Button>
         </StackPanel>
@@ -47,14 +70,29 @@
                       IsReadOnly="True"
                       Style="{StaticResource MaterialDesignDataGrid}">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="First Name" Binding="{Binding FirstName}" Width="*"/>
-                    <DataGridTextColumn Header="Last Name" Binding="{Binding LastName}" Width="*"/>
-                    <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="*"/>
-                    <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="*"/>
-                    <DataGridTextColumn Header="Created At" Binding="{Binding CreatedAt, StringFormat=d}" Width="Auto"/>
+                    <DataGridTextColumn Header="Ad" Binding="{Binding FirstName}" Width="*"/>
+                    <DataGridTextColumn Header="Soyad" Binding="{Binding LastName}" Width="*"/>
+                    <DataGridTextColumn Header="E-posta" Binding="{Binding Email}" Width="*"/>
+                    <DataGridTextColumn Header="Telefon" Binding="{Binding Phone}" Width="*"/>
+                    <DataGridTextColumn Header="Şehir" Binding="{Binding City}" Width="*"/>
+                    <DataGridTextColumn Header="Oluşturulma" Binding="{Binding CreatedAt, StringFormat=d}" Width="Auto"/>
                 </DataGrid.Columns>
             </DataGrid>
         </materialDesign:Card>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+            <Button Command="{Binding PreviousPageCommand}" 
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Margin="0,0,10,0">
+                <materialDesign:PackIcon Kind="ChevronLeft"/>
+            </Button>
+            <TextBlock Text="{Binding PageInfo}" VerticalAlignment="Center" Margin="10,0"/>
+            <Button Command="{Binding NextPageCommand}" 
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Margin="10,0,0,0">
+                <materialDesign:PackIcon Kind="ChevronRight"/>
+            </Button>
+        </StackPanel>
 
         <ProgressBar Grid.Row="2" Style="{StaticResource MaterialDesignCircularProgressBar}" 
                      IsIndeterminate="True" 

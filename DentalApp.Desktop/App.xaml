@@ -2,14 +2,43 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:DentalApp.Desktop"
+             xmlns:helpers="clr-namespace:DentalApp.Desktop.Helpers"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="DeepPurple" SecondaryColor="Lime" />
+                <!-- BULKA DENTAL Logo Renkleri: Açık Mavi (Primary), Koyu Mavi (Secondary), Gümüş (Accent) -->
+                <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="Blue" SecondaryColor="Cyan" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            
+            <!-- BULKA DENTAL Özel Renk Paleti -->
+            <SolidColorBrush x:Key="BulkaLightBlue" Color="#B3D9FF"/>
+            <SolidColorBrush x:Key="BulkaMediumBlue" Color="#3B82F6"/>
+            <SolidColorBrush x:Key="BulkaDarkBlue" Color="#1E3A8A"/>
+            <SolidColorBrush x:Key="BulkaSilver" Color="#C0C0C0"/>
+            <SolidColorBrush x:Key="BulkaLightGreen" Color="#90EE90"/>
+            <SolidColorBrush x:Key="BulkaGradientStart" Color="#E6F2FF"/>
+            <SolidColorBrush x:Key="BulkaGradientEnd" Color="#FFFFFF"/>
+            
+            <!-- Gradient Brush -->
+            <LinearGradientBrush x:Key="BulkaGradientBrush" StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#E6F2FF" Offset="0"/>
+                <GradientStop Color="#FFFFFF" Offset="0.5"/>
+                <GradientStop Color="#E6F2FF" Offset="1"/>
+            </LinearGradientBrush>
+            
+            <!-- Global Converters -->
+            <helpers:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+            <helpers:StatusToTurkishConverter x:Key="StatusToTurkishConverter"/>
+            <helpers:NullToBooleanConverter x:Key="NullToBooleanConverter"/>
+            <helpers:ToothNumberEqualityConverter x:Key="ToothNumberEqualityConverter"/>
+            
+            <!-- Global DatePicker Style for Turkish -->
+            <Style TargetType="DatePicker">
+                <Setter Property="Language" Value="tr-TR"/>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

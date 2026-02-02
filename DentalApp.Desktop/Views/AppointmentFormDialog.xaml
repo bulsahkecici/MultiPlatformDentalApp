@@ -1,0 +1,83 @@
+<Window x:Class="DentalApp.Desktop.Views.AppointmentFormDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:helpers="clr-namespace:DentalApp.Desktop.Helpers"
+        Title="Randevu Formu" Height="600" Width="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <helpers:BooleanToTextConverter x:Key="BooleanToTextConverter" TrueText="Randevu Düzenle" FalseText="Randevu Ekle"/>
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="{Binding IsEditMode, Converter={StaticResource BooleanToTextConverter}}" 
+                   Style="{StaticResource MaterialDesignHeadline5TextBlock}" 
+                   Margin="0,0,0,20"/>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <ComboBox ItemsSource="{Binding Patients}"
+                         SelectedValuePath="Id"
+                         SelectedValue="{Binding Appointment.PatientId, Mode=TwoWay}"
+                         DisplayMemberPath="FullName"
+                         materialDesign:HintAssist.Hint="Hasta *"
+                         Margin="0,0,0,10"/>
+
+                <DatePicker SelectedDate="{Binding Appointment.AppointmentDate}" 
+                           materialDesign:HintAssist.Hint="Randevu Tarihi *"
+                           Language="tr-TR"
+                           Margin="0,0,0,10"/>
+
+                <ComboBox ItemsSource="{Binding TimeOptions}"
+                         SelectedItem="{Binding StartTimeString, Mode=TwoWay}"
+                         materialDesign:HintAssist.Hint="Başlangıç Saati *"
+                         Margin="0,0,0,10"/>
+
+                <ComboBox ItemsSource="{Binding TimeOptions}"
+                         SelectedItem="{Binding EndTimeString, Mode=TwoWay}"
+                         materialDesign:HintAssist.Hint="Bitiş Saati *"
+                         Margin="0,0,0,10"/>
+
+                <ComboBox ItemsSource="{Binding AppointmentTypeOptions}"
+                         SelectedItem="{Binding Appointment.AppointmentType, Mode=TwoWay}"
+                         materialDesign:HintAssist.Hint="Randevu Türü"
+                         IsEditable="True"
+                         Margin="0,0,0,10"/>
+
+                <ComboBox ItemsSource="{Binding StatusOptions}"
+                         SelectedValuePath="Value"
+                         DisplayMemberPath="Text"
+                         SelectedValue="{Binding Appointment.Status}"
+                         materialDesign:HintAssist.Hint="Durum"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Appointment.Notes, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Notlar" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         MinHeight="80"
+                         Margin="0,0,0,10"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="İPTAL" 
+                    Command="{Binding CancelCommand}" 
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Margin="0,0,10,0"
+                    Width="100"/>
+            <Button Content="KAYDET" 
+                    Command="{Binding SaveCommand}" 
+                    materialDesign:ButtonProgressAssist.IsIndeterminate="{Binding IsBusy}"
+                    materialDesign:ButtonProgressAssist.IsIndicatorVisible="{Binding IsBusy}"
+                    Width="100"/>
+        </StackPanel>
+    </Grid>
+</Window>

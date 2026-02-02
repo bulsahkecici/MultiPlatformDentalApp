@@ -3,6 +3,7 @@ const {
     login,
     refreshToken,
     logout,
+    getMe,
     requestPasswordReset,
     resetPassword,
     verifyEmail,
@@ -21,6 +22,7 @@ const router = express.Router();
 router.post('/api/auth/login', authLimiter, login);
 router.post('/api/auth/refresh', authLimiter, refreshToken);
 router.post('/api/auth/logout', requireAuth, logout);
+router.get('/api/auth/me', requireAuth, getMe);
 
 // Password reset
 router.post('/api/auth/request-reset', passwordResetLimiter, requestPasswordReset);
