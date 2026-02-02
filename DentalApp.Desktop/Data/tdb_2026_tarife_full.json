@@ -1,0 +1,2412 @@
+{
+  "source": {
+    "title": "TDB 2026 Ağız Diş Sağlığı Muayene ve Tedavi Ücret Tarifesi",
+    "year": 2026,
+    "vat_rate_default": 0.1,
+    "prices": "KDV Hariç ve KDV Dahil (%10)",
+    "file": "2026_Yili_Rehber_Tarife_Kitapcigi.pdf"
+  },
+  "categories": [
+    {
+      "name": "Teşhis ve Tedavi Planlaması",
+      "notes": [],
+      "items": [
+        {
+          "code": "1-1",
+          "name": "Dişhekimi Muayenesi",
+          "price_excl_vat": 1500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1650.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-2",
+          "name": "Uzman Dişhekimi Muayenesi",
+          "price_excl_vat": 1850.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2035.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-3",
+          "name": "Kontrol Hekim Muayenesi",
+          "price_excl_vat": 1300.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1430.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-4",
+          "name": "Konsültasyon",
+          "price_excl_vat": 1009.09,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1110.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-5",
+          "name": "Uzman Dişhekimi Konsültasyonu",
+          "price_excl_vat": 1313.64,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1445.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-6",
+          "name": "Hipnoz (Seans Başına)",
+          "price_excl_vat": 3049.77,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3355.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-7",
+          "name": "Akupunktur Uygulama (Seans Başına)",
+          "price_excl_vat": 2500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2750.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-8",
+          "name": "Teşhis ve Tedavi Planlaması",
+          "price_excl_vat": 1395.45,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1535.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-9",
+          "name": "Oral Hijyen Eğitimi",
+          "price_excl_vat": 1068.18,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1175.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-10",
+          "name": "Tükürük Akış Hızı ve Tamponlama Kapasitesi Tayini",
+          "price_excl_vat": 1518.18,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1670.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-11",
+          "name": "Tükürükte Mikrobiyolojik Analiz",
+          "price_excl_vat": 2550.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2805.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-12",
+          "name": "Gnatoloji, T.M.E. Kas Muayenesi (Oklüzyon Kontrolü)",
+          "price_excl_vat": 4800.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 5280.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-13",
+          "name": "Vitalite Kontrolu (Diş Başına)",
+          "price_excl_vat": 213.64,
+          "vat_rate": 0.1,
+          "price_incl_vat": 235.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-14",
+          "name": "Diş Röntgen Filmi (Periapikal)",
+          "price_excl_vat": 754.55,
+          "vat_rate": 0.1,
+          "price_incl_vat": 830.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-15",
+          "name": "Oklüzal Film",
+          "price_excl_vat": 786.36,
+          "vat_rate": 0.1,
+          "price_incl_vat": 865.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-16",
+          "name": "Bite - Wing Radyografi",
+          "price_excl_vat": 754.55,
+          "vat_rate": 0.1,
+          "price_incl_vat": 830.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-17",
+          "name": "Ekstra Oral Röntgen Filmi",
+          "price_excl_vat": 868.18,
+          "vat_rate": 0.1,
+          "price_incl_vat": 955.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-18",
+          "name": "Panaromik Film",
+          "price_excl_vat": 1854.55,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2040.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-19",
+          "name": "Lateral Sefalometrik Film",
+          "price_excl_vat": 1863.64,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2050.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-20",
+          "name": "Antero-Posterior Sefalometrik Film",
+          "price_excl_vat": 1845.45,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2030.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-21",
+          "name": "İntra Oral Dijital Radyografi (RVG veya Fosfor Plak)",
+          "price_excl_vat": 900.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 990.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-22",
+          "name": "El Bilek Filmi",
+          "price_excl_vat": 1845.45,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2030.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-23",
+          "name": "Siyalografi",
+          "price_excl_vat": 2100.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2310.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-24",
+          "name": "Tomografi (Bölgesel)",
+          "price_excl_vat": 2500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2750.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-25",
+          "name": "Tomografi (Tek Çene)",
+          "price_excl_vat": 4000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 4400.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-26",
+          "name": "Tomografi (İki Çene Çene)",
+          "price_excl_vat": 5400.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 5940.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-27",
+          "name": "Eklem Tomografisi (Çift Taraflı)",
+          "price_excl_vat": 6054.55,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6660.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-28",
+          "name": "Bilgisayarlı Büyük T.M.E. Fonksiyon Testi",
+          "price_excl_vat": 12000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 13200.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-29",
+          "name": "Bilgisayarlı Kas Tonus Analizi",
+          "price_excl_vat": 5450.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 5995.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-30",
+          "name": "T.M.E. Filmi ve Tetkiki",
+          "price_excl_vat": 2427.27,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2670.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-31",
+          "name": "Lokal Anestezi (Enjeksiyon - İnfiltratif)",
+          "price_excl_vat": 336.36,
+          "vat_rate": 0.1,
+          "price_incl_vat": 370.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-32",
+          "name": "Lokal Anestezi (Rejyonal)",
+          "price_excl_vat": 336.36,
+          "vat_rate": 0.1,
+          "price_incl_vat": 370.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-33",
+          "name": "Raporlama",
+          "price_excl_vat": 1818.18,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2000.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "1-34",
+          "name": "Ağız İçi Dijital Tarama",
+          "price_excl_vat": 2500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2750.0,
+          "currency": "TRY"
+        }
+      ]
+    },
+    {
+      "name": "Tedavi ve Endodonti",
+      "notes": [
+        "* Kıymetli metal ücreti hariç."
+      ],
+      "items": [
+        {
+          "code": "2-1",
+          "name": "Amalgam Dolgu (Bir Yüzlü)",
+          "price_excl_vat": 2586.36,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2845.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-2",
+          "name": "Amalgam Dolgu (İki Yüzlü)",
+          "price_excl_vat": 3459.09,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3805.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-3",
+          "name": "Amalgam Dolgu (Üç Yüzlü)",
+          "price_excl_vat": 4404.55,
+          "vat_rate": 0.1,
+          "price_incl_vat": 4845.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-4",
+          "name": "Kompozit Dolgu (Bir Yüzlü)",
+          "price_excl_vat": 3068.18,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3375.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-5",
+          "name": "Kompozit Dolgu (İki Yüzlü)",
+          "price_excl_vat": 3850.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 4235.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-6",
+          "name": "Kompozit Dolgu (Üç Yüzlü)",
+          "price_excl_vat": 4818.18,
+          "vat_rate": 0.1,
+          "price_incl_vat": 5300.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-7",
+          "name": "Direkt Kompozit Laminate Restorasyonu",
+          "price_excl_vat": 8450.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 9295.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-8",
+          "name": "Black V Kole Dolgusu (Kompozit)",
+          "price_excl_vat": 2472.73,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2720.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-9",
+          "name": "Cam İonomer Dolgu",
+          "price_excl_vat": 2431.82,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2675.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-10",
+          "name": "Black V Kole Dolgusu (Cam İonomer)",
+          "price_excl_vat": 1922.73,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2115.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-11",
+          "name": "İnley Dolgu * (Bir Yüzlü)",
+          "price_excl_vat": 5713.64,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6285.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-12",
+          "name": "İnley Dolgu * (İki Yüzlü)",
+          "price_excl_vat": 5900.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6490.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-13",
+          "name": "İnley Dolgu * (Üç Yüzlü)",
+          "price_excl_vat": 6154.55,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6770.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-14",
+          "name": "Kompozit İnley Dolgu (Bir Yüzlü)",
+          "price_excl_vat": 5500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6050.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-15",
+          "name": "Kompozit İnley Dolgu (İki Yüzlü)",
+          "price_excl_vat": 5500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6050.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-16",
+          "name": "Kompozit İnley Dolgu (Üç Yüzlü)",
+          "price_excl_vat": 5500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6050.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-17",
+          "name": "Seramik İnley Dolgu (Bir Yüzlü)",
+          "price_excl_vat": 14200.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 15620.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-18",
+          "name": "Seramik İnley Dolgu (İki Yüzlü)",
+          "price_excl_vat": 14200.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 15620.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-19",
+          "name": "Seramik İnley Dolgu (Üç Yüzlü)",
+          "price_excl_vat": 14200.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 15620.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-20",
+          "name": "Onley *",
+          "price_excl_vat": 7072.73,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7780.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-21",
+          "name": "Onley * (Seramik)",
+          "price_excl_vat": 14200.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 15620.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-22",
+          "name": "Pinley *",
+          "price_excl_vat": 7150.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7865.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-23",
+          "name": "Dolgu (Restorasyon) Tamiri",
+          "price_excl_vat": 2654.55,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2920.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-24",
+          "name": "Dolgu Sökümü (Tek Diş)",
+          "price_excl_vat": 1345.45,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1480.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-25",
+          "name": "Kuafaj (Dolgu Hariç)",
+          "price_excl_vat": 400.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 440.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-26",
+          "name": "Ekstirpasyon (Her Kanal İçin)",
+          "price_excl_vat": 1827.27,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2010.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-27",
+          "name": "Kanal Tedavisi - Tek Kanal (Dolgu Hariç)",
+          "price_excl_vat": 4190.91,
+          "vat_rate": 0.1,
+          "price_incl_vat": 4610.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-28",
+          "name": "Kanal Tedavisi - İki Kanal (Dolgu Hariç)",
+          "price_excl_vat": 6563.64,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7220.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-29",
+          "name": "Kanal Tedavisi - Üç Kanal (Dolgu Hariç)",
+          "price_excl_vat": 9409.09,
+          "vat_rate": 0.1,
+          "price_incl_vat": 10350.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-30",
+          "name": "Kanal Tedavisi - İlave Her Kanal İçin",
+          "price_excl_vat": 2272.73,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2500.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-31",
+          "name": "Periapikal Lezyonlu Dişte Kanal Tedavisi - Tek Kanal (Dolgu Hariç)",
+          "price_excl_vat": 4595.45,
+          "vat_rate": 0.1,
+          "price_incl_vat": 5055.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-32",
+          "name": "Periapikal Lezyonlu Dişte Kanal Tedavisi - İki Kanal (Dolgu Hariç)",
+          "price_excl_vat": 7000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7700.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-33",
+          "name": "Periapikal Lezyonlu Dişte Kanal Tedavisi - Üç Kanal (Dolgu Hariç)",
+          "price_excl_vat": 9981.82,
+          "vat_rate": 0.1,
+          "price_incl_vat": 10980.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-34",
+          "name": "Kanal Dolgusu Sökümü (Her Kanal İçin)",
+          "price_excl_vat": 1581.82,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1740.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-35",
+          "name": "Kanal Dolgusu Tekrarı (Retreatment - Her Kanal İçin - Dolgu Hariç)",
+          "price_excl_vat": 4100.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 4510.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-36",
+          "name": "Kanal Pansumanı (Seans Başı)",
+          "price_excl_vat": 1095.45,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1205.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-37",
+          "name": "Kanal İçi Hazır Post Uygulaması (Metal) (Dolgu Ücreti Hariç)",
+          "price_excl_vat": 2795.45,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3075.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-38",
+          "name": "Kanal İçi Fiber Post Uygulaması (Dolgu Ücreti Hariç)",
+          "price_excl_vat": 4500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 4950.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-39",
+          "name": "Kanaldan Kırılmış Materyal Çıkartılması",
+          "price_excl_vat": 6250.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6875.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-40",
+          "name": "Kanalda Perforasyon Tamiri (MTA vb.)",
+          "price_excl_vat": 2981.82,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3280.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-41",
+          "name": "Dentin Pini Uygulaması (Her Pin Başına)",
+          "price_excl_vat": 504.55,
+          "vat_rate": 0.1,
+          "price_incl_vat": 555.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-42",
+          "name": "Endokron",
+          "price_excl_vat": 12500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 13750.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-43",
+          "name": "Hassasiyet Tedavisi (Tek Diş)",
+          "price_excl_vat": 1109.09,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1220.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-44",
+          "name": "Hassasiyet Tedavisi (Tam Çene)",
+          "price_excl_vat": 3200.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3520.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-45",
+          "name": "Diş Ağartma (Beyazlatma Vital Tek Diş En Çok 4 Adet) (Malzeme Ücreti Hariç)",
+          "price_excl_vat": 1950.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2145.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-46",
+          "name": "Diş Ağartma (Beyazlatma - Devital Tek Diş ) (Seans Başına - Dolgu Hariç)",
+          "price_excl_vat": 2250.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2475.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-47",
+          "name": "Diş Ağartma (Beyazlatma - Tek Çene) (Malzeme Ücreti Hariç)",
+          "price_excl_vat": 10850.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 11935.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "2-48",
+          "name": "Rubber-Dam Uygulaması",
+          "price_excl_vat": 1050.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1155.0,
+          "currency": "TRY"
+        }
+      ]
+    },
+    {
+      "name": "Pedodonti",
+      "notes": [
+        "(Bu bölümde yer verilmeyen tedaviler için tedavi ve endodonti bölümüne başvurulur.)",
+        "* Kıymetli metal ücreti hariç."
+      ],
+      "items": [
+        {
+          "code": "3-1",
+          "name": "Aşındırma ile Sürme Rehberliği (Seans Başına)",
+          "price_excl_vat": 1490.91,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1640.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-2",
+          "name": "Fissür Örtülmesi (Sealant - Tek Diş)",
+          "price_excl_vat": 1313.64,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1445.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-3",
+          "name": "Yüzeysel Flor Uygulaması (Yarım Çene)",
+          "price_excl_vat": 1250.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1375.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-4",
+          "name": "Kompomer Dolgu",
+          "price_excl_vat": 3800.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 4180.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-5",
+          "name": "Rezin İnfilitrasyonu Tedavisi",
+          "price_excl_vat": 6500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7150.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-6",
+          "name": "Amputasyon (Dolgu-Kron Üst Yapı-Biyomateryal Hariç)",
+          "price_excl_vat": 3500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3850.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-7",
+          "name": "Süt Dişi Kanal Tedavisi",
+          "price_excl_vat": 6150.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6765.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-8",
+          "name": "Açık Apeksli Dişte Kanal Tedavisi (Her Kanal İçin - Dolgu Hariç) (Pansuman Ücretleri Hariç)",
+          "price_excl_vat": 11618.18,
+          "vat_rate": 0.1,
+          "price_incl_vat": 12780.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-9",
+          "name": "Açık Apeksli Dişte Apikal Bariyer (Her Kanal İçin - Dolgu ve Pansuman Ücretleri Hariç)",
+          "price_excl_vat": 5300.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 5830.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-10",
+          "name": "Yer Tutucu (Sabit)",
+          "price_excl_vat": 6800.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7480.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-11",
+          "name": "Yer Tutucu (Hareketli)",
+          "price_excl_vat": 9100.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 10010.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-12",
+          "name": "Prefabrike Kron *",
+          "price_excl_vat": 3463.64,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3810.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-13",
+          "name": "Strip Kron",
+          "price_excl_vat": 3250.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3575.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-14",
+          "name": "Travma Splinti",
+          "price_excl_vat": 7450.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 8195.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-15",
+          "name": "Çocuk Protezi",
+          "price_excl_vat": 8500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 9350.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-16",
+          "name": "Çocuk Protezi (Akrilik - Bölümlü - Tek Çene)",
+          "price_excl_vat": 13681.82,
+          "vat_rate": 0.1,
+          "price_incl_vat": 15050.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-17",
+          "name": "Çocuk Protezi (Akrilik - Tam - Tek Çene)",
+          "price_excl_vat": 15450.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 16995.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "3-18",
+          "name": "Avülsiyon Tedavisi",
+          "price_excl_vat": 17000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 18700.0,
+          "currency": "TRY"
+        }
+      ]
+    },
+    {
+      "name": "Protez",
+      "notes": [
+        "* Kıymetli metal ücreti hariç. ** Kıymetli metal ve zirkonyum ücreti hariç."
+      ],
+      "items": [
+        {
+          "code": "4-1",
+          "name": "Tam Protez (Akrilik - Tek Çene)",
+          "price_excl_vat": 29000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 31900.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-2",
+          "name": "Bölümlü Protez (Akrilik - Tek Çene)",
+          "price_excl_vat": 27900.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 30690.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-3",
+          "name": "Tam Protez (Döküm Metal ile Güçlendirilmiş - Tek Çene)",
+          "price_excl_vat": 36000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 39600.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-4",
+          "name": "Bölümlü Protez (Döküm Metal ile Güçlendirilmiş - Tek Çene)",
+          "price_excl_vat": 35000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 38500.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-5",
+          "name": "Hassas Tutuculu Protezler (Hassas Tutucu Ücreti Hariç - Tek Çene)",
+          "price_excl_vat": 36500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 40150.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-6",
+          "name": "İmplant Destekli Hareketli Protezler (Hassas Tutucu Ücreti Hariç - Tek Çene)",
+          "price_excl_vat": 37000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 40700.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-7",
+          "name": "Geçici (İmmediat) Protez (Akrilik - Tek Çene)",
+          "price_excl_vat": 20259.09,
+          "vat_rate": 0.1,
+          "price_incl_vat": 22285.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-8",
+          "name": "Besleme (Tek Çene)",
+          "price_excl_vat": 10877.27,
+          "vat_rate": 0.1,
+          "price_incl_vat": 11965.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-9",
+          "name": "Kaide Yenileme (Rebazaj - Tek Çene)",
+          "price_excl_vat": 11300.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 12430.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-10",
+          "name": "Proteze Yumuşak Akrilik Uygulaması (Geçici Tek Çene)",
+          "price_excl_vat": 7336.36,
+          "vat_rate": 0.1,
+          "price_incl_vat": 8070.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-11",
+          "name": "Proteze Yumuşak Akrilik Uygulaması (Daimi Tek Çene)",
+          "price_excl_vat": 11463.64,
+          "vat_rate": 0.1,
+          "price_incl_vat": 12610.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-12",
+          "name": "Tamir (Akrilik Protezler, Kırık veya Çatlak)",
+          "price_excl_vat": 3459.09,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3805.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-13",
+          "name": "Kroşe İlavesi",
+          "price_excl_vat": 3900.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 4290.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-14",
+          "name": "Metal İskelet Tamiri",
+          "price_excl_vat": 3800.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 4180.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-15",
+          "name": "Diş İlavesi (Tek Diş)",
+          "price_excl_vat": 3800.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 4180.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-16",
+          "name": "Roach Köprü",
+          "price_excl_vat": 6950.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7645.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-17",
+          "name": "Gece Plağı (Yumuşak)",
+          "price_excl_vat": 5350.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 5885.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-18",
+          "name": "Gece Plağı (Sert Oklüzal Splintleme)",
+          "price_excl_vat": 18400.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 20240.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-19",
+          "name": "Pinley ve Çeşitleri *",
+          "price_excl_vat": 7945.45,
+          "vat_rate": 0.1,
+          "price_incl_vat": 8740.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-20",
+          "name": "Tek Parça Döküm Kuron",
+          "price_excl_vat": 7031.82,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7735.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-21",
+          "name": "Veneer Kuron (Akrilik)",
+          "price_excl_vat": 10200.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 11220.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-22",
+          "name": "Veneer Kuron ** (Seramik)",
+          "price_excl_vat": 11000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 12100.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-23",
+          "name": "İmplant Üstü Veneer Kuron (Seramik) (Abutment Ücreti Hariç)",
+          "price_excl_vat": 12436.36,
+          "vat_rate": 0.1,
+          "price_incl_vat": 13680.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-24",
+          "name": "Laminate Veneer Kompozit",
+          "price_excl_vat": 8450.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 9295.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-25",
+          "name": "Laminate Veneer (Akrilik)",
+          "price_excl_vat": 9804.55,
+          "vat_rate": 0.1,
+          "price_incl_vat": 10785.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-26",
+          "name": "Laminate Veneer (Seramik)",
+          "price_excl_vat": 24000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 26400.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-27",
+          "name": "Jaket Kuron (Akrilik)",
+          "price_excl_vat": 6800.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7480.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-28",
+          "name": "Jaket Kuron (Kompozit)",
+          "price_excl_vat": 6550.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7205.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-29",
+          "name": "Tam Seramik Kuron (Metal Desteksiz)",
+          "price_excl_vat": 19500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 21450.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-30",
+          "name": "Teleskop Kuron* (Koping)",
+          "price_excl_vat": 8995.45,
+          "vat_rate": 0.1,
+          "price_incl_vat": 9895.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-31",
+          "name": "Kuronlarda Freze Tekniği Farkı",
+          "price_excl_vat": 1450.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1595.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-32",
+          "name": "Döküm Post Core (Pivo) (Üst Yapı Hariç)",
+          "price_excl_vat": 6236.36,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6860.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-33",
+          "name": "Adeziv Köprü (Maryland vb. gibi)",
+          "price_excl_vat": 10500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 11550.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-34",
+          "name": "Geçici Kuron (Tek Diş İçin)",
+          "price_excl_vat": 2040.91,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2245.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-35",
+          "name": "Kuron Sökümü (Tek Sabit Üye İçin)",
+          "price_excl_vat": 1704.55,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1875.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-36",
+          "name": "Düşmüş Kuron ve Köprü Simantasyonu (Her Sabit Üye İçin)",
+          "price_excl_vat": 1113.64,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1225.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-37",
+          "name": "Kuron Köprü Tamiri * (Her Üye İçin)",
+          "price_excl_vat": 4550.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 5005.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-38",
+          "name": "Diş Üstü Protezi (Overdenture - Tek Çene) (**)",
+          "price_excl_vat": 23686.36,
+          "vat_rate": 0.1,
+          "price_incl_vat": 26055.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-39",
+          "name": "Damak Yarığı Protezi (Velum Uzantılı Aparey) (**)",
+          "price_excl_vat": 23804.55,
+          "vat_rate": 0.1,
+          "price_incl_vat": 26185.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-40",
+          "name": "Yeni Doğanda Preoperatif Aparey (Vida Ücreti Ayrıca Alınır) (**)",
+          "price_excl_vat": 20027.27,
+          "vat_rate": 0.1,
+          "price_incl_vat": 22030.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-41",
+          "name": "Geçici Obturatörler (**)",
+          "price_excl_vat": 17486.36,
+          "vat_rate": 0.1,
+          "price_incl_vat": 19235.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-42",
+          "name": "Basit Çene Defektlerinde Protetik Tedavi (**)",
+          "price_excl_vat": 32009.09,
+          "vat_rate": 0.1,
+          "price_incl_vat": 35210.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-43",
+          "name": "Komplike Çene Defektlerinde Protetik Tedavi (**)",
+          "price_excl_vat": 38431.82,
+          "vat_rate": 0.1,
+          "price_incl_vat": 42275.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-44",
+          "name": "Yüz Protezleri (Yumuşak Akrilik İle)",
+          "price_excl_vat": 62500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 68750.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-45",
+          "name": "Göz Protezi (Oküler)",
+          "price_excl_vat": 66086.36,
+          "vat_rate": 0.1,
+          "price_incl_vat": 72695.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-46",
+          "name": "Oklüzal Aşındırmalar",
+          "price_excl_vat": 6200.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6820.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-47",
+          "name": "Oklüzyon Düzeltilmesi",
+          "price_excl_vat": 9227.27,
+          "vat_rate": 0.1,
+          "price_incl_vat": 10150.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-48",
+          "name": "T.M.E. Stabilizasyon Splinti",
+          "price_excl_vat": 18000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 19800.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-49",
+          "name": "İmplant Rehberi (Yarım Çene)",
+          "price_excl_vat": 8850.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 9735.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-50",
+          "name": "İmplant Rehberi (Tam Çene)",
+          "price_excl_vat": 13000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 14300.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "4-51",
+          "name": "Zirkonyum Kron",
+          "price_excl_vat": 12500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 13750.0,
+          "currency": "TRY"
+        }
+      ]
+    },
+    {
+      "name": "Ağız-Diş ve Çene Cerrahisi",
+      "notes": [],
+      "items": [
+        {
+          "code": "5-1",
+          "name": "Diş Çekimi",
+          "price_excl_vat": 2250.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2475.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-2",
+          "name": "Komplikasyonlu Diş Çekimi",
+          "price_excl_vat": 4500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 4950.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-3",
+          "name": "Gömülü Diş Operasyonu",
+          "price_excl_vat": 7250.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7975.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-4",
+          "name": "Gömülü Diş Operasyonu (Kemik Retansiyonlu)",
+          "price_excl_vat": 10650.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 11715.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-5",
+          "name": "Tek Kökte Kök Ucu Rezeksiyonu (Kanal Tedavisi ve Dolgu Hariç)",
+          "price_excl_vat": 9500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 10450.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-6",
+          "name": "İki Kökte Kök Ucu Rezeksiyonu (Kanal Tedavisi ve Dolgu Hariç)",
+          "price_excl_vat": 11750.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 12925.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-7",
+          "name": "Üç Kökte Kök Ucu Rezeksiyonu (Kanal Tedavisi ve Dolgu Hariç)",
+          "price_excl_vat": 13750.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 15125.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-8",
+          "name": "Alveolit Cerrahi Tedavisi",
+          "price_excl_vat": 6777.27,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7455.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-9",
+          "name": "Kanama Müdahalesi (Basit)",
+          "price_excl_vat": 2327.27,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2560.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-10",
+          "name": "Kanama Müdahalesi (Dikişli)",
+          "price_excl_vat": 4322.73,
+          "vat_rate": 0.1,
+          "price_incl_vat": 4755.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-11",
+          "name": "Alveol Plastiği (Yarım Çene)",
+          "price_excl_vat": 9450.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 10395.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-12",
+          "name": "Alveol Düzeltilmesi (Yarım Çene)",
+          "price_excl_vat": 9450.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 10395.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-13",
+          "name": "Kist Operasyonu (Küçük)",
+          "price_excl_vat": 10050.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 11055.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-14",
+          "name": "Kist Operasyonu (1 Cm Büyük)",
+          "price_excl_vat": 15000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 16500.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-15",
+          "name": "Epulis Operasyonu",
+          "price_excl_vat": 6500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7150.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-16",
+          "name": "Osteomyelitis veya Osteitis Operasyonu (Tek Çene Basit)",
+          "price_excl_vat": 17500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 19250.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-17",
+          "name": "Çene Lüksasyonu",
+          "price_excl_vat": 3450.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3795.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-18",
+          "name": "Vestibüloplasti (Yarım Çene)",
+          "price_excl_vat": 19000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 20900.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-19",
+          "name": "Sinüs Plastiği",
+          "price_excl_vat": 11500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 12650.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-20",
+          "name": "Sert Doku Greftleme (Greft Ücreti Hariç)",
+          "price_excl_vat": 14500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 15950.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-21",
+          "name": "Yumuşak Doku Greftleme (Greft Ücreti Hariç)",
+          "price_excl_vat": 12000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 13200.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-22",
+          "name": "Sinüs Lifting (Biomateryal Ücreti Hariç)",
+          "price_excl_vat": 13150.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 14465.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-23",
+          "name": "Biyopsi",
+          "price_excl_vat": 5800.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6380.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-24",
+          "name": "Fibrom Operasyonu",
+          "price_excl_vat": 6040.91,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6645.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-25",
+          "name": "Apse Drenajı ve Tedavisi (Extraoral)",
+          "price_excl_vat": 10150.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 11165.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-26",
+          "name": "Apse Drenajı ve Tedavisi (İntraoral)",
+          "price_excl_vat": 7990.91,
+          "vat_rate": 0.1,
+          "price_incl_vat": 8790.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-27",
+          "name": "Kapişon İzalesi - İmplant Üstü Açılması",
+          "price_excl_vat": 3309.09,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3640.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-28",
+          "name": "Stomatit Tedavisi,",
+          "price_excl_vat": 2177.27,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2395.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-29",
+          "name": "Fizik Tedavi (İnfraruj Seansı)",
+          "price_excl_vat": 1913.64,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2105.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-30",
+          "name": "Çene Kırığı (Basit)",
+          "price_excl_vat": 20500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 22550.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-31",
+          "name": "Çene Kırığı (Komplike - Materyal Ücreti Hariç)",
+          "price_excl_vat": 58000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 63800.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-32",
+          "name": "Reimplantasyon",
+          "price_excl_vat": 10500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 11550.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-33",
+          "name": "Ototransplantasyon",
+          "price_excl_vat": 15500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 17050.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-34",
+          "name": "Kemik İçi İmplant (Tek Silindirik İmplant Ücreti Hariç)",
+          "price_excl_vat": 20400.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 22440.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-35",
+          "name": "Torus Operasyonu (Yarım Çene)",
+          "price_excl_vat": 9800.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 10780.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-36",
+          "name": "Odontogenik Tümör Operasyonu (Küçük)",
+          "price_excl_vat": 18500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 20350.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-37",
+          "name": "Odontogenik Tümör Operasyonu (Büyük)",
+          "price_excl_vat": 24500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 26950.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-38",
+          "name": "Nevralji Tedavisi (Alkol Enjeksiyonu)",
+          "price_excl_vat": 3500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3850.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-39",
+          "name": "Nevralji Tedavisi Cerrahi (Nöroktomi vb.)",
+          "price_excl_vat": 9500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 10450.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-40",
+          "name": "Tükürük Bezi Kanalından Taş Çıkarma (Basit)",
+          "price_excl_vat": 7250.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7975.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-41",
+          "name": "Tükürük Bezi Kanalından Taş Çıkarma (Komplike)",
+          "price_excl_vat": 11500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 12650.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-42",
+          "name": "Ortodontik Tedavi Amaçlı Gömük Dişlerin Üzerinin Açılması",
+          "price_excl_vat": 9500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 10450.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-43",
+          "name": "T.M.E. Mekonoterapi",
+          "price_excl_vat": 3250.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3575.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-44",
+          "name": "T.M.E. İçi Enjeksiyon (Tek Taraflı)",
+          "price_excl_vat": 6500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7150.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-45",
+          "name": "Artrosentez (Tek Taraflı)",
+          "price_excl_vat": 4468.18,
+          "vat_rate": 0.1,
+          "price_incl_vat": 4915.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-46",
+          "name": "Açık Eklem Cerrahisi (Tek Taraflı)",
+          "price_excl_vat": 75000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 82500.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-47",
+          "name": "Genioplasti",
+          "price_excl_vat": 75000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 82500.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-48",
+          "name": "Segmental Osteotomi",
+          "price_excl_vat": 80000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 88000.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-49",
+          "name": "Osteotomi (Tek Çene)",
+          "price_excl_vat": 84000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 92400.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-50",
+          "name": "Dişhekimliğinde Botulinum Toksin Uygulaması",
+          "price_excl_vat": 10500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 11550.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-51",
+          "name": "İmplant Çıkartılması",
+          "price_excl_vat": 9500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 10450.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-52",
+          "name": "Ankraj Amaçlı Plak Yerleştirme (Malzeme Ücreti Hariç)",
+          "price_excl_vat": 10200.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 11220.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-53",
+          "name": "Ankraj Amaçlı Plak Çıkarma",
+          "price_excl_vat": 6000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6600.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-54",
+          "name": "Zigoma İmplant (İmplant Ücreti Hariç)",
+          "price_excl_vat": 45000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 49500.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "5-55",
+          "name": "Koronektomi",
+          "price_excl_vat": 9500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 10450.0,
+          "currency": "TRY"
+        }
+      ]
+    },
+    {
+      "name": "Periodontoloji",
+      "notes": [],
+      "items": [
+        {
+          "code": "6-1",
+          "name": "Detartraj (Diş Taşı Temizliği - Tek Çene)",
+          "price_excl_vat": 3000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3300.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-2",
+          "name": "Subgingival Küretaj (Tek Diş)",
+          "price_excl_vat": 1700.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1870.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-3",
+          "name": "Subgingival İlaç Uygulaması",
+          "price_excl_vat": 300.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 330.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-4",
+          "name": "Gingivoplasti (Tek Diş)",
+          "price_excl_vat": 2850.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3135.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-5",
+          "name": "Gingivektomi (Tek Diş)",
+          "price_excl_vat": 2950.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3245.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-6",
+          "name": "Flap Operasyonu (Subgingival Küretaj Dahil - Tek Diş)",
+          "price_excl_vat": 4750.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 5225.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-7",
+          "name": "Tunnel Operasyonu (Tek Diş)",
+          "price_excl_vat": 4040.91,
+          "vat_rate": 0.1,
+          "price_incl_vat": 4445.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-8",
+          "name": "Hemiseksiyon (Kök Amputasyonu - Kanal Tedavisi Hariç)",
+          "price_excl_vat": 3495.45,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3845.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-9",
+          "name": "Serbest Diş Eti Grefti (Tek Diş)",
+          "price_excl_vat": 11950.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 13145.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-10",
+          "name": "Saplı Yumuşak Doku Grefti (Koronale Kaydırma, Yana Kaydırma,Tek Diş)",
+          "price_excl_vat": 10450.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 11495.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-11",
+          "name": "Periodontal Splint (Daimi)",
+          "price_excl_vat": 5790.91,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6370.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-12",
+          "name": "Periodontal Splint (Geçici)",
+          "price_excl_vat": 7336.36,
+          "vat_rate": 0.1,
+          "price_incl_vat": 8070.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-13",
+          "name": "Periodontal Şine (Splint - Geçici - Yarım Çene)",
+          "price_excl_vat": 3354.55,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3690.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-14",
+          "name": "Biyomateryal Uygulaması (Tek Diş - Flap Op. ve Biomateryal Ücreti Hariç)",
+          "price_excl_vat": 1250.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1375.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-15",
+          "name": "Membran Uygulaması (Tek Diş - Flap Op. ve Membran Ücreti Hariç)",
+          "price_excl_vat": 1236.36,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1360.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-16",
+          "name": "Vestibül Plak (Diş Eti Protezi - Çene Başına)",
+          "price_excl_vat": 8200.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 9020.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-17",
+          "name": "Subepitelyal Bağ Dokusu Grefti",
+          "price_excl_vat": 13500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 14850.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-18",
+          "name": "Frenektomi - Frenetomi",
+          "price_excl_vat": 7000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7700.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-19",
+          "name": "Peri-İmplantitis (Cerrahi) (Biomaterial ve Membran Ücreti Hariç) (Tek İmp.)",
+          "price_excl_vat": 6250.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6875.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-20",
+          "name": "Peri-İmplantitis (Cerrahi Olmayan) (Tek İmp.)",
+          "price_excl_vat": 2693.86,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2965.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-21",
+          "name": "Papil Oluşturma (Cerrahi) (Tek Papil)",
+          "price_excl_vat": 2645.45,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2910.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-22",
+          "name": "Papil Oluşturma (Cerrahi Olmayan) (Tek Papil)",
+          "price_excl_vat": 2622.73,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2885.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "6-23",
+          "name": "Fiberotomi",
+          "price_excl_vat": 2500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2750.0,
+          "currency": "TRY"
+        }
+      ]
+    },
+    {
+      "name": "Ortodonti",
+      "notes": [],
+      "items": [
+        {
+          "code": "7-1",
+          "name": "Lateral Sefalometrik Film Analizi",
+          "price_excl_vat": 1522.73,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1675.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-2",
+          "name": "Antero Posterior Sefalometrik Film Analizi (Frontal Film Analizi)",
+          "price_excl_vat": 1700.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1870.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-3",
+          "name": "Kemik Yaşı Tayini",
+          "price_excl_vat": 586.36,
+          "vat_rate": 0.1,
+          "price_incl_vat": 645.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-4",
+          "name": "Ortodontik Fotoğraf",
+          "price_excl_vat": 900.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 990.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-5",
+          "name": "Ortodontik Fotoğraf Tetkiki",
+          "price_excl_vat": 550.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 605.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-6",
+          "name": "Ortodontik Model Yapımı",
+          "price_excl_vat": 1100.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1210.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-7",
+          "name": "Ortodontik Model Analizi",
+          "price_excl_vat": 1345.45,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1480.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-8",
+          "name": "Ara Dönem Sefalometrik Film Analizi",
+          "price_excl_vat": 900.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 990.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-9",
+          "name": "Ara Dönem Model Yapımı",
+          "price_excl_vat": 1704.55,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1875.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-10",
+          "name": "Angle Sınıf I Anomalilerinin Ortodontik Tedavisi",
+          "price_excl_vat": 37190.91,
+          "vat_rate": 0.1,
+          "price_incl_vat": 40910.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-11",
+          "name": "Angle Sınıf II Anomalilerinin Ortodontik Tedavisi",
+          "price_excl_vat": 46722.73,
+          "vat_rate": 0.1,
+          "price_incl_vat": 51395.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-12",
+          "name": "Angle Sınıf III Anomalilerinin Ortodontik Tedavisi",
+          "price_excl_vat": 56977.27,
+          "vat_rate": 0.1,
+          "price_incl_vat": 62675.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-13",
+          "name": "Sabit Kapanış Yükseltici Tatbiki (Kısa Süreli)",
+          "price_excl_vat": 3100.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3410.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-14",
+          "name": "Lingual Teknikle Angle Sınıf I Anomalilerinin Ortodontik Tedavisi",
+          "price_excl_vat": 38150.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 41965.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-15",
+          "name": "Lingual Teknikle Angle Sınıf II Anomalilerinin Ortodontik Tedavisi",
+          "price_excl_vat": 44000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 48400.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-16",
+          "name": "Lingual Teknikle Angle Sınıf III Anomalilerinin Ortodontik Tedavisi",
+          "price_excl_vat": 52000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 57200.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-17",
+          "name": "Açık Kapanışın Ortodontik Tedavisi",
+          "price_excl_vat": 55481.82,
+          "vat_rate": 0.1,
+          "price_incl_vat": 61030.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-18",
+          "name": "Önleyici Ortodontik Tedavi",
+          "price_excl_vat": 23750.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 26125.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-19",
+          "name": "Kısa Süreli Ortodontik Tedavi",
+          "price_excl_vat": 21172.73,
+          "vat_rate": 0.1,
+          "price_incl_vat": 23290.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-20",
+          "name": "Pekiştirme Tedavisi",
+          "price_excl_vat": 8450.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 9295.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-21",
+          "name": "Pekiştirme Aygıtı (Hawley Aygıtı vb.)",
+          "price_excl_vat": 6150.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6765.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-22",
+          "name": "Sabit Pekiştirme Aygıtı (Lingual Retainer)",
+          "price_excl_vat": 8750.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 9625.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-23",
+          "name": "Dudak Yastıkçığı (Lip Bumper)",
+          "price_excl_vat": 9750.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 10725.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-24",
+          "name": "Tek Çeneyi İlgilendiren Aparey Yapımı (Vida Hariç)",
+          "price_excl_vat": 6850.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7535.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-25",
+          "name": "Çift Çeneyi İlgilendiren Aparey Yapımı (Frankel Aygıtları - Aktivatör - Bionatör)",
+          "price_excl_vat": 11150.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 12265.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-26",
+          "name": "Vida Uygulaması (Tek Vida)",
+          "price_excl_vat": 1786.36,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1965.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-27",
+          "name": "Sabit Fonksiyonel Aygıt Uygulaması (Jasper - Jumper - Herbest Aygıtı)",
+          "price_excl_vat": 19000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 20900.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-28",
+          "name": "Kayıp Apareyin Yeniden Yapımı (Tek Çene)",
+          "price_excl_vat": 5850.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6435.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-29",
+          "name": "Aparey Tamiri",
+          "price_excl_vat": 2750.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3025.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-30",
+          "name": "Ağız Dışı Aparey Tatbiki (Headgear - Chincap)",
+          "price_excl_vat": 6250.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6875.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-31",
+          "name": "Reverse Headgear",
+          "price_excl_vat": 17850.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 19635.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-32",
+          "name": "Düz Ark Teli Tatbiki (Tek Çene NİTİ Telleri)",
+          "price_excl_vat": 2050.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2255.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-33",
+          "name": "Büküm İçeren Tel Tatbiki (Tek Çene)",
+          "price_excl_vat": 2250.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2475.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-34",
+          "name": "Segmental Ark veya Tork Arkı Tatbiki",
+          "price_excl_vat": 1900.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2090.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-35",
+          "name": "Bant Tatbiki (Tek Diş)",
+          "price_excl_vat": 2050.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2255.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-36",
+          "name": "Braket Tatbiki (Tek Diş)",
+          "price_excl_vat": 1750.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1925.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-37",
+          "name": "Lingual Braket Tatbiki (Tek Diş)",
+          "price_excl_vat": 1750.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1925.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-38",
+          "name": "Düşen Bant Tatbiki (Tek Diş)",
+          "price_excl_vat": 2050.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2255.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-39",
+          "name": "Düşen Braket Tatbiki (Tek Diş)",
+          "price_excl_vat": 1750.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 1925.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-40",
+          "name": "Bant veya Braket Çıkarılması (Tek Diş)",
+          "price_excl_vat": 713.64,
+          "vat_rate": 0.1,
+          "price_incl_vat": 785.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-41",
+          "name": "Lingual Ataçman Tatbiki",
+          "price_excl_vat": 1900.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 2090.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-42",
+          "name": "Lingual Ark",
+          "price_excl_vat": 6750.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7425.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-43",
+          "name": "Nance Apareyi",
+          "price_excl_vat": 10250.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 11275.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-44",
+          "name": "Hızlı Maksiller Genişletme Apareyi",
+          "price_excl_vat": 12500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 13750.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-45",
+          "name": "Preoperatif Dudak Damak Yarığı (Ortodontik Tedavi)",
+          "price_excl_vat": 30500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 33550.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-46",
+          "name": "Postoperatif Dudak Damak Yarığı (Ortodontik Tedavi)",
+          "price_excl_vat": 12750.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 14025.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-47",
+          "name": "T.M.E. Splint Yapımı",
+          "price_excl_vat": 12450.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 13695.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-48",
+          "name": "Model Set-Up",
+          "price_excl_vat": 5850.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 6435.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-49",
+          "name": "Positioner Yapımı",
+          "price_excl_vat": 13750.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 15125.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-50",
+          "name": "Sefalometrik Cerrahi Planı",
+          "price_excl_vat": 3050.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3355.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-51",
+          "name": "Ortodontik Modellerin Face - Bow ile Artikülatöre Taşınması",
+          "price_excl_vat": 6500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 7150.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-52",
+          "name": "Model Cerrahisi",
+          "price_excl_vat": 3700.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 4070.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-53",
+          "name": "Oklüzal Cerrahi Splint (Tek Çene)",
+          "price_excl_vat": 11045.45,
+          "vat_rate": 0.1,
+          "price_incl_vat": 12150.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-54",
+          "name": "Ortodontik Ameliyat Arkı (Tek Çene)",
+          "price_excl_vat": 19163.64,
+          "vat_rate": 0.1,
+          "price_incl_vat": 21080.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-55",
+          "name": "Sürme Rehberliği",
+          "price_excl_vat": 16150.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 17765.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-56",
+          "name": "Ağız İçi Distalizasyon Apareyi (Pendex vb.)",
+          "price_excl_vat": 14450.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 15895.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-57",
+          "name": "Gömülü Dişin Diş Dizisinde Yerine Yerleştirilmesi (Tek Diş)",
+          "price_excl_vat": 19150.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 21065.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-58",
+          "name": "Reserve Curve'li Niti Ark Tatbiki",
+          "price_excl_vat": 3250.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 3575.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-59",
+          "name": "Ortognatik Cerrahi Ortodontik Tedavisi",
+          "price_excl_vat": 63163.64,
+          "vat_rate": 0.1,
+          "price_incl_vat": 69480.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-60",
+          "name": "Mini Vida Uygulaması",
+          "price_excl_vat": 4500.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 4950.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-61",
+          "name": "İnterproksimal Aşındırma (Tek Diş) 1.150,00 1.265,00 06530 Çukurambar, Çankaya/ANKARA Telefon: 0 312 435 93 94 Faks: 0 312 430",
+          "price_excl_vat": 29.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 59.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-62",
+          "name": "Şeffaf Plaklar ile Ortodontik Tedavi (Hafif) (Plak Ücreti Hariç)",
+          "price_excl_vat": 49000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 53900.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-63",
+          "name": "Şeffaf Plaklar ile Ortodontik Tedavi (Orta) (Plak Ücreti Hariç)",
+          "price_excl_vat": 63000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 69300.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-64",
+          "name": "Şeffaf Plaklar ile Ortodontik Tedavi (Ağır) (Plak Ücreti Hariç)",
+          "price_excl_vat": 87000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 95700.0,
+          "currency": "TRY"
+        },
+        {
+          "code": "7-65",
+          "name": "Ağız İçi Koruyucu Aparey",
+          "price_excl_vat": 10000.0,
+          "vat_rate": 0.1,
+          "price_incl_vat": 11000.0,
+          "currency": "TRY"
+        }
+      ]
+    }
+  ]
+}

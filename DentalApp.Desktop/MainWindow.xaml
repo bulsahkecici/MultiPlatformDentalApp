@@ -6,8 +6,9 @@
         xmlns:vm="clr-namespace:DentalApp.Desktop.ViewModels"
         xmlns:v="clr-namespace:DentalApp.Desktop.Views"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:helpers="clr-namespace:DentalApp.Desktop.Helpers"
         mc:Ignorable="d"
-        Title="Dental Management System" Height="700" Width="1100"
+        Title="BULKA DENTAL - Yönetim Sistemi" Height="700" Width="1100"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
         TextElement.FontSize="14"
@@ -17,35 +18,262 @@
         FontFamily="{materialDesign:MaterialDesignFont}">
     
     <Window.Resources>
+        <helpers:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+        
         <DataTemplate DataType="{x:Type vm:LoginViewModel}">
             <v:LoginView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+            <v:DashboardView/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:PatientsViewModel}">
             <v:PatientManagementView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AppointmentsViewModel}">
+            <v:AppointmentsView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:TreatmentsViewModel}">
+            <v:TreatmentsView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:DentistEarningsViewModel}">
+            <v:DentistEarningsView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PaymentsViewModel}">
+            <v:PaymentsView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AdminManagementViewModel}">
+            <v:AdminManagementView/>
+        </DataTemplate>
     </Window.Resources>
 
-    <Grid>
+    <Grid Background="{StaticResource BulkaGradientBrush}">
         <materialDesign:DialogHost Identifier="RootDialog">
             <materialDesign:DrawerHost IsLeftDrawerOpen="{Binding ElementName=MenuToggleButton, Path=IsChecked}">
                 <materialDesign:DrawerHost.LeftDrawerContent>
-                    <StackPanel Width="200">
-                        <ToggleButton Style="{StaticResource MaterialDesignFlatButton}"
-                                    IsChecked="{Binding ElementName=MenuToggleButton, Path=IsChecked, Mode=TwoWay}"
-                                    Margin="10" HorizontalAlignment="Right">
-                            <materialDesign:PackIcon Kind="MenuOpen" />
-                        </ToggleButton>
+                    <StackPanel Width="250" Background="{StaticResource BulkaGradientBrush}">
+                        <Border Background="{StaticResource BulkaMediumBlue}" Padding="15">
+                            <StackPanel>
+                                <ToggleButton Style="{StaticResource MaterialDesignFlatButton}"
+                                            IsChecked="{Binding ElementName=MenuToggleButton, Path=IsChecked, Mode=TwoWay}"
+                                            Foreground="White"
+                                            HorizontalAlignment="Right"
+                                            Margin="0,0,0,10">
+                                    <materialDesign:PackIcon Kind="MenuOpen" />
+                                </ToggleButton>
+                                
+                                <!-- Logo -->
+                                <Image Source="/Assets/bulka dental logo.png" 
+                                       Width="80" 
+                                       Height="80"
+                                       HorizontalAlignment="Center" 
+                                       Margin="0,0,0,10"
+                                       Stretch="Uniform"/>
+                                
+                                <TextBlock Text="{Binding CurrentUser.Email, StringFormat='Hoş geldiniz, {0}'}" 
+                                         Margin="10,0" 
+                                         Foreground="White"
+                                         FontWeight="SemiBold"
+                                         TextAlignment="Center"
+                                         TextWrapping="Wrap"
+                                         Visibility="{Binding IsAuthenticated, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </Border>
                         
-                        <!-- Menu items could go here -->
-                        <Button Content="LOGOUT" Command="{Binding LogoutCommand}" Margin="10" Style="{StaticResource MaterialDesignFlatButton}"/>
+                        <Separator Margin="10,5" Visibility="{Binding IsAuthenticated, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        
+                        <Button Command="{Binding NavigateToDashboardCommand}" 
+                                Margin="10,5" 
+                                HorizontalContentAlignment="Left"
+                                Visibility="{Binding IsAuthenticated, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                    <Setter Property="Foreground" Value="{StaticResource BulkaDarkBlue}"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource BulkaLightBlue}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ViewDashboard" Margin="0,0,10,0" Foreground="{StaticResource BulkaMediumBlue}"/>
+                                <TextBlock Text="Kontrol Paneli" Foreground="{StaticResource BulkaDarkBlue}"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Command="{Binding NavigateToPatientsCommand}" 
+                                Margin="10,5" 
+                                HorizontalContentAlignment="Left"
+                                Visibility="{Binding IsAuthenticated, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                    <Setter Property="Foreground" Value="{StaticResource BulkaDarkBlue}"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource BulkaLightBlue}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Account" Margin="0,0,10,0" Foreground="{StaticResource BulkaMediumBlue}"/>
+                                <TextBlock Text="Hastalar" Foreground="{StaticResource BulkaDarkBlue}"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Command="{Binding NavigateToAppointmentsCommand}" 
+                                Margin="10,5" 
+                                HorizontalContentAlignment="Left"
+                                Visibility="{Binding IsAuthenticated, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                    <Setter Property="Foreground" Value="{StaticResource BulkaDarkBlue}"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource BulkaLightBlue}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Calendar" Margin="0,0,10,0" Foreground="{StaticResource BulkaMediumBlue}"/>
+                                <TextBlock Text="Randevular" Foreground="{StaticResource BulkaDarkBlue}"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Command="{Binding NavigateToTreatmentsCommand}" 
+                                Margin="10,5" 
+                                HorizontalContentAlignment="Left"
+                                Visibility="{Binding IsAuthenticated, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                    <Setter Property="Foreground" Value="{StaticResource BulkaDarkBlue}"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource BulkaLightBlue}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="MedicalBag" Margin="0,0,10,0" Foreground="{StaticResource BulkaMediumBlue}"/>
+                                <TextBlock Text="Tedaviler" Foreground="{StaticResource BulkaDarkBlue}"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <!-- Diş Hekimi Kazanç (Sadece Diş Hekimi) -->
+                        <Button Command="{Binding NavigateToDentistEarningsCommand}" 
+                                Margin="10,5" 
+                                HorizontalContentAlignment="Left"
+                                Visibility="{Binding IsDentist, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                    <Setter Property="Foreground" Value="{StaticResource BulkaDarkBlue}"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource BulkaLightBlue}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CurrencyUsd" Margin="0,0,10,0" Foreground="{StaticResource BulkaMediumBlue}"/>
+                                <TextBlock Text="Kazançlarım" Foreground="{StaticResource BulkaDarkBlue}"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Ödeme/İndirim (Sekreter ve Admin) -->
+                        <Button Command="{Binding NavigateToPaymentsCommand}" 
+                                Margin="10,5" 
+                                HorizontalContentAlignment="Left"
+                                Visibility="{Binding CanViewPrices, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                    <Setter Property="Foreground" Value="{StaticResource BulkaDarkBlue}"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource BulkaLightBlue}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Cash" Margin="0,0,10,0" Foreground="{StaticResource BulkaMediumBlue}"/>
+                                <TextBlock Text="Ödeme/İndirim" Foreground="{StaticResource BulkaDarkBlue}"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Yönetim (Sadece Admin) -->
+                        <Button Command="{Binding NavigateToAdminManagementCommand}" 
+                                Margin="10,5" 
+                                HorizontalContentAlignment="Left"
+                                Visibility="{Binding IsAdmin, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                    <Setter Property="Foreground" Value="{StaticResource BulkaDarkBlue}"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource BulkaLightBlue}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Settings" Margin="0,0,10,0" Foreground="{StaticResource BulkaMediumBlue}"/>
+                                <TextBlock Text="Yönetim" Foreground="{StaticResource BulkaDarkBlue}"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Separator Margin="10,10" Visibility="{Binding IsAuthenticated, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        
+                        <Button Command="{Binding LogoutCommand}" 
+                                Margin="10,5" 
+                                HorizontalContentAlignment="Left"
+                                Visibility="{Binding IsAuthenticated, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                    <Setter Property="Foreground" Value="#DC2626"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#FEE2E2"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Logout" Margin="0,0,10,0" Foreground="#DC2626"/>
+                                <TextBlock Text="Çıkış Yap" Foreground="#DC2626"/>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
                 </materialDesign:DrawerHost.LeftDrawerContent>
                 
                 <DockPanel>
-                    <materialDesign:ColorZone Padding="16" materialDesign:ColorZoneAssist.Mode="PrimaryMid" DockPanel.Dock="Top">
+                    <materialDesign:ColorZone Padding="16" materialDesign:ColorZoneAssist.Mode="PrimaryMid" DockPanel.Dock="Top"
+                                             Background="{StaticResource BulkaMediumBlue}">
                         <DockPanel>
-                            <ToggleButton x:Name="MenuToggleButton" Style="{StaticResource MaterialDesignHamburgerToggleButton}"/>
-                            <TextBlock VerticalAlignment="Center" Margin="16 0 0 0" FontSize="20" Text="Dental Desktop"/>
+                            <ToggleButton x:Name="MenuToggleButton" 
+                                        Style="{StaticResource MaterialDesignHamburgerToggleButton}"
+                                        Foreground="White"
+                                        Visibility="{Binding IsAuthenticated, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            
+                            <!-- Logo ve Başlık -->
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                                <Image Source="/Assets/bulka dental logo.png" 
+                                       Width="40" 
+                                       Height="40"
+                                       Margin="0,0,12,0"
+                                       Stretch="Uniform"/>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock FontSize="18" FontWeight="Bold" Foreground="White">
+                                        <Run Text="BULKA" Foreground="White"/>
+                                        <Run Text=" DENTAL" Foreground="{StaticResource BulkaLightBlue}"/>
+                                    </TextBlock>
+                                    <TextBlock FontSize="12" Foreground="{StaticResource BulkaLightBlue}" Margin="0,-2,0,0">
+                                        Yönetim Sistemi
+                                    </TextBlock>
+                                </StackPanel>
+                            </StackPanel>
                         </DockPanel>
                     </materialDesign:ColorZone>
 
@@ -55,3 +283,4 @@
         </materialDesign:DialogHost>
     </Grid>
 </Window>
+

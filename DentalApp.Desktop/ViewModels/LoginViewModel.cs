@@ -51,7 +51,7 @@ namespace DentalApp.Desktop.ViewModels
         {
             if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
             {
-                ErrorMessage = "Email and password are required.";
+                ErrorMessage = "E-posta ve şifre gereklidir.";
                 return;
             }
 
@@ -67,7 +67,7 @@ namespace DentalApp.Desktop.ViewModels
                 }
                 else
                 {
-                    ErrorMessage = "Invalid credentials.";
+                    ErrorMessage = "Geçersiz kullanıcı adı veya şifre.";
                 }
             }
             catch (Exception ex)

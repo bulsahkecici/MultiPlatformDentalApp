@@ -489,9 +489,44 @@ async function resendVerification(req, res, next) {
   }
 }
 
+/**
+ * Get current user profile (me)
+ * Requires authentication
+ */
+async function getMe(req, res, next) {
+  try {
+    const userId = req.user.sub;
+    const result = await query(
+      'SELECT id, email, roles, email_verified, created_at, last_login_at FROM users WHERE id = $1',
+      [userId],
+    );
+
+    if (result.rows.length === 0) {
+      return next(new AppError('User not found', 404));
+    }
+
+    const user = result.rows[0];
+    const roles = parseRolesCsv(user.roles);
+
+    return res.status(200).json({
+      user: {
+        id: user.id,
+        email: user.email,
+        roles,
+        emailVerified: user.email_verified,
+        createdAt: user.created_at,
+        lastLoginAt: user.last_login_at,
+      },
+    });
+  } catch (err) {
+    return next(new AppError('Failed to get user profile', 500));
+  }
+}
+
 module.exports = {
   login,
   refreshToken,
+  getMe,
   logout,
   requestPasswordReset,
   resetPassword,

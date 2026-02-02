@@ -2,6 +2,8 @@ const { query } = require('../db');
 const { AppError } = require('../utils/errorResponder');
 const { logDataEvent, AuditEventType } = require('../utils/auditLogger');
 const { getClientIp } = require('../middlewares/accountLockout');
+const { isDentist, canViewPrices } = require('../middlewares/auth');
+const logger = require('../utils/logger');
 
 /**
  * Create new treatment record
@@ -95,18 +97,22 @@ async function getTreatments(req, res, next) {
         } = req.query;
 
         const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
-        const conditions = ['deleted_at IS NULL'];
+        const conditions = []; // treatments table doesn't have deleted_at
         const params = [];
         let paramIndex = 1;
+
+        // Diş hekimi sadece kendi tedavilerini görebilir
+        if (isDentist(req)) {
+            conditions.push(`dentist_id = $${paramIndex++}`);
+            params.push(req.user.sub);
+        } else if (dentistId) {
+            conditions.push(`dentist_id = $${paramIndex++}`);
+            params.push(parseInt(dentistId, 10));
+        }
 
         if (patientId) {
             conditions.push(`patient_id = $${paramIndex++}`);
             params.push(parseInt(patientId, 10));
-        }
-
-        if (dentistId) {
-            conditions.push(`dentist_id = $${paramIndex++}`);
-            params.push(parseInt(dentistId, 10));
         }
 
         if (startDate) {
@@ -119,7 +125,7 @@ async function getTreatments(req, res, next) {
             params.push(endDate);
         }
 
-        const whereClause = conditions.join(' AND ');
+        const whereClause = conditions.length > 0 ? conditions.join(' AND ') : '1=1';
 
         // Get total count
         const countResult = await query(
@@ -129,10 +135,18 @@ async function getTreatments(req, res, next) {
         const total = parseInt(countResult.rows[0].count, 10);
 
         // Get treatments with patient and dentist info
+        // Fiyat görme kontrolü: Diş hekimi fiyat göremez
+        const canViewPrice = canViewPrices(req);
+        const costField = canViewPrice ? 't.cost' : 'NULL as cost';
+        
         params.push(parseInt(limit, 10), offset);
         const result = await query(
             `SELECT 
-        t.*,
+        t.id, t.patient_id, t.appointment_id, t.dentist_id,
+        t.treatment_date, t.treatment_type, t.tooth_number,
+        t.description, t.diagnosis, t.procedure_notes,
+        ${costField},
+        t.currency, t.status, t.created_at, t.updated_at,
         p.first_name as patient_first_name,
         p.last_name as patient_last_name,
         u.email as dentist_email
@@ -155,6 +169,7 @@ async function getTreatments(req, res, next) {
             },
         });
     } catch (err) {
+        logger.error({ err }, 'Failed to fetch treatments');
         return next(new AppError('Failed to fetch treatments', 500));
     }
 }
@@ -166,21 +181,34 @@ async function getTreatmentById(req, res, next) {
     try {
         const treatmentId = parseInt(req.params.id, 10);
 
+        // Fiyat görme kontrolü
+        const canViewPrice = canViewPrices(req);
+        const costField = canViewPrice ? 't.cost' : 'NULL as cost';
+
         const result = await query(
             `SELECT 
-        t.*,
+        t.id, t.patient_id, t.appointment_id, t.dentist_id,
+        t.treatment_date, t.treatment_type, t.tooth_number,
+        t.description, t.diagnosis, t.procedure_notes,
+        ${costField},
+        t.currency, t.status, t.created_at, t.updated_at,
         p.first_name as patient_first_name,
         p.last_name as patient_last_name,
         u.email as dentist_email
        FROM treatments t
        LEFT JOIN patients p ON t.patient_id = p.id
        LEFT JOIN users u ON t.dentist_id = u.id
-       WHERE t.id = $1 AND t.deleted_at IS NULL`,
+       WHERE t.id = $1`,
             [treatmentId],
         );
 
         if (result.rows.length === 0) {
             return next(new AppError('Treatment not found', 404));
+        }
+
+        // Diş hekimi sadece kendi tedavilerini görebilir
+        if (isDentist(req) && result.rows[0].dentist_id !== req.user.sub) {
+            return next(new AppError('Forbidden', 403));
         }
 
         return res.status(200).json({ treatment: result.rows[0] });

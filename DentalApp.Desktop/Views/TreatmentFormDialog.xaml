@@ -1,0 +1,214 @@
+<Window x:Class="DentalApp.Desktop.Views.TreatmentFormDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:helpers="clr-namespace:DentalApp.Desktop.Helpers"
+        Title="Tedavi Formu" Height="800" Width="900"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <helpers:BooleanToTextConverter x:Key="BooleanToTextConverter" TrueText="Tedavi Düzenle" FalseText="Tedavi Ekle"/>
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="{Binding IsEditMode, Converter={StaticResource BooleanToTextConverter}}" 
+                   Style="{StaticResource MaterialDesignHeadline5TextBlock}" 
+                   Margin="0,0,0,20"/>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Sol Panel: Form Alanları -->
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <ComboBox ItemsSource="{Binding Patients}"
+                             SelectedItem="{Binding SelectedPatient}"
+                             DisplayMemberPath="FullName"
+                             materialDesign:HintAssist.Hint="Hasta *"
+                             IsEditable="False"
+                             IsTextSearchEnabled="True"
+                             Margin="0,0,0,10"/>
+
+                    <DatePicker SelectedDate="{Binding Treatment.TreatmentDate}" 
+                               materialDesign:HintAssist.Hint="Tedavi Tarihi *"
+                               Language="tr-TR"
+                               Margin="0,0,0,10"/>
+
+                    <TextBox Text="{Binding Treatment.TreatmentType, UpdateSourceTrigger=PropertyChanged}" 
+                             materialDesign:HintAssist.Hint="Tedavi Türü *" 
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                             Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding SelectedToothNumber, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Diş Numarası" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,10"
+                         IsReadOnly="True"/>
+
+                <!-- Diş Şeması -->
+                <TextBlock Text="Diş Şeması" 
+                           Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                           Margin="0,10,0,5"/>
+                <Grid Height="300" Margin="0,0,0,10">
+                    <!-- Arka plan resmi -->
+                    <Image Source="pack://application:,,,/Assets/mouth_chart.png" 
+                           Stretch="Uniform"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+                    
+                    <!-- Hotspot'lar için Canvas -->
+                    <Canvas>
+                        <ItemsControl ItemsSource="{Binding ToothHotspots}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Command="{Binding DataContext.SelectToothCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding ToothNumber}"
+                                            Width="{Binding Width}" 
+                                            Height="{Binding Height}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Padding="0"
+                                            Cursor="Hand"
+                                            ToolTip="{Binding ToothNumber, StringFormat='Diş {0}'}">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Value="True">
+                                                        <DataTrigger.Binding>
+                                                            <MultiBinding Converter="{StaticResource ToothNumberEqualityConverter}">
+                                                                <Binding Path="DataContext.SelectedToothNumber" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                                <Binding Path="ToothNumber"/>
+                                                            </MultiBinding>
+                                                        </DataTrigger.Binding>
+                                                        <Setter Property="Background" Value="#40FF6B6B"/>
+                                                        <Setter Property="BorderBrush" Value="#FFFF6B6B"/>
+                                                        <Setter Property="BorderThickness" Value="2"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                            <ItemsControl.ItemContainerStyle>
+                                <Style TargetType="ContentPresenter">
+                                    <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                    <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                </Style>
+                            </ItemsControl.ItemContainerStyle>
+                        </ItemsControl>
+                    </Canvas>
+                </Grid>
+
+                <TextBox Text="{Binding Treatment.Description, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Açıklama" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         MinHeight="60"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Treatment.Diagnosis, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Tanı" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         MinHeight="60"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Treatment.ProcedureNotes, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Prosedür Notları" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         MinHeight="60"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding CostString, UpdateSourceTrigger=PropertyChanged}" 
+                         materialDesign:HintAssist.Hint="Maliyet" 
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Visibility="{Binding CanViewPrices, Converter={StaticResource BooleanToVisibilityConverter}}"
+                         Margin="0,0,0,10"/>
+
+                    <ComboBox ItemsSource="{Binding StatusOptions}"
+                             SelectedValuePath="Value"
+                             DisplayMemberPath="Text"
+                             SelectedValue="{Binding Treatment.Status}"
+                             materialDesign:HintAssist.Hint="Durum"
+                             Margin="0,0,0,10"/>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Sağ Panel: TDB Tarife Seçimi -->
+            <materialDesign:Card Grid.Column="2" Padding="15">
+                <StackPanel>
+                    <TextBlock Text="İşlem Seçimi" 
+                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                               Margin="0,0,0,15"/>
+
+                    <ComboBox ItemsSource="{Binding Categories}"
+                             SelectedItem="{Binding SelectedCategory}"
+                             DisplayMemberPath="Name"
+                             materialDesign:HintAssist.Hint="Kategori Seçin"
+                             Margin="0,0,0,10"/>
+
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="Ara (kalem adı veya kod)"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                             IsEnabled="{Binding SelectedCategory, Converter={StaticResource NullToBooleanConverter}}"
+                             Margin="0,0,0,10"/>
+
+                    <TextBlock Text="Kalemler" 
+                               Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
+                               Margin="0,0,0,5"/>
+
+                    <ListView ItemsSource="{Binding TariffItemsView}"
+                             SelectedItem="{Binding SelectedTariffItem}"
+                             MaxHeight="400"
+                             Margin="0,0,0,10">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Kod" Width="80" DisplayMemberBinding="{Binding Code}"/>
+                                <GridViewColumn Header="Kalem Adı" Width="300" DisplayMemberBinding="{Binding Name}"/>
+                                <GridViewColumn Header="Fiyat (KDV Dahil)" Width="120" DisplayMemberBinding="{Binding PriceInclVat, StringFormat='{}{0:F2} TRY'}"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+
+                    <Button Content="Seçili Kalemi Ekle"
+                           Command="{Binding AddTariffItemCommand}"
+                           Style="{StaticResource MaterialDesignRaisedButton}"
+                           Margin="0,5,0,0"/>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="İPTAL" 
+                    Command="{Binding CancelCommand}" 
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Margin="0,0,10,0"
+                    Width="100"/>
+            <Button Content="KAYDET" 
+                    Command="{Binding SaveCommand}" 
+                    materialDesign:ButtonProgressAssist.IsIndeterminate="{Binding IsBusy}"
+                    materialDesign:ButtonProgressAssist.IsIndicatorVisible="{Binding IsBusy}"
+                    Width="100"/>
+        </StackPanel>
+    </Grid>
+</Window>

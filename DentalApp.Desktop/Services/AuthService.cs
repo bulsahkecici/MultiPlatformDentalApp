@@ -45,5 +45,25 @@ namespace DentalApp.Desktop.Services
             CurrentUser = null;
             _apiService.ClearTokens();
         }
+
+        public async Task<bool> CheckSessionAsync()
+        {
+            try
+            {
+                var response = await _apiService.GetAsync<UserResponse>("/auth/me");
+                if (response != null && response.User != null)
+                {
+                    CurrentUser = response.User;
+                    return true;
+                }
+                return false;
+            }
+            catch
+            {
+                CurrentUser = null;
+                _apiService.ClearTokens();
+                return false;
+            }
+        }
     }
 }

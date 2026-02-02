@@ -2,12 +2,16 @@ const { query } = require('../db');
 const { AppError } = require('../utils/errorResponder');
 const { logDataEvent, AuditEventType } = require('../utils/auditLogger');
 const { getClientIp } = require('../middlewares/accountLockout');
+const { isDentist } = require('../middlewares/auth');
+const logger = require('../utils/logger');
 
 /**
  * Create new appointment
  */
 async function createAppointment(req, res, next) {
     try {
+        logger.info({ body: req.body, user: req.user }, 'Creating appointment');
+        
         const {
             patientId,
             dentistId,
@@ -15,11 +19,13 @@ async function createAppointment(req, res, next) {
             startTime,
             endTime,
             appointmentType,
+            status,
             notes,
         } = req.body || {};
 
         // Validate required fields
         if (!patientId || !appointmentDate || !startTime || !endTime) {
+            logger.warn({ body: req.body }, 'Missing required fields for appointment');
             return next(
                 new AppError(
                     'Patient ID, appointment date, start time, and end time are required',
@@ -38,8 +44,7 @@ async function createAppointment(req, res, next) {
          (start_time <= $3 AND end_time > $3) OR
          (start_time < $4 AND end_time >= $4) OR
          (start_time >= $3 AND end_time <= $4)
-       )
-       AND deleted_at IS NULL`,
+       )`,
             [dentistId || req.user.sub, appointmentDate, startTime, endTime],
         );
 
@@ -49,25 +54,71 @@ async function createAppointment(req, res, next) {
             );
         }
 
+        // Validate time format
+        if (typeof startTime !== 'string' || !/^\d{2}:\d{2}:\d{2}$/.test(startTime)) {
+            logger.warn({ startTime, type: typeof startTime }, 'Invalid start time format');
+            return next(new AppError(`Invalid start time format. Expected HH:mm:ss, got: ${startTime} (type: ${typeof startTime})`, 400));
+        }
+        if (typeof endTime !== 'string' || !/^\d{2}:\d{2}:\d{2}$/.test(endTime)) {
+            logger.warn({ endTime, type: typeof endTime }, 'Invalid end time format');
+            return next(new AppError(`Invalid end time format. Expected HH:mm:ss, got: ${endTime} (type: ${typeof endTime})`, 400));
+        }
+
+        // Validate date format
+        if (typeof appointmentDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(appointmentDate)) {
+            return next(new AppError('Invalid appointment date format. Expected YYYY-MM-DD', 400));
+        }
+
         // Create appointment
-        const result = await query(
-            `INSERT INTO appointments (
-        patient_id, dentist_id, appointment_date, start_time, end_time,
-        appointment_type, notes, status, created_by, updated_by, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'scheduled', $8, $9, NOW(), NOW())
-      RETURNING *`,
-            [
-                patientId,
-                dentistId || req.user.sub,
-                appointmentDate,
-                startTime,
-                endTime,
-                appointmentType || null,
-                notes || null,
-                req.user.sub,
-                req.user.sub,
-            ],
-        );
+        let result;
+        const insertParams = [
+            patientId,
+            dentistId || req.user.sub,
+            appointmentDate,
+            startTime,
+            endTime,
+            appointmentType || null,
+            notes || null,
+            status || 'scheduled',
+            req.user.sub,
+            req.user.sub,
+        ];
+        
+        logger.info({ params: insertParams }, 'Inserting appointment into database');
+        
+        try {
+            result = await query(
+                `INSERT INTO appointments (
+            patient_id, dentist_id, appointment_date, start_time, end_time,
+            appointment_type, notes, status, created_by, updated_by, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+          RETURNING *`,
+                insertParams,
+            );
+        } catch (dbError) {
+            logger.error({ 
+                dbError: {
+                    code: dbError.code,
+                    message: dbError.message,
+                    detail: dbError.detail,
+                    constraint: dbError.constraint
+                },
+                params: insertParams
+            }, 'Database error while creating appointment');
+            
+            // Handle database-specific errors
+            if (dbError.code === '23503') { // Foreign key violation
+                return next(new AppError(`Invalid patient ID or dentist ID: ${dbError.detail || dbError.message}`, 400));
+            }
+            if (dbError.code === '23505') { // Unique violation
+                return next(new AppError(`Appointment conflict detected: ${dbError.detail || dbError.message}`, 409));
+            }
+            if (dbError.code === '22007') { // Invalid datetime format
+                return next(new AppError(`Invalid date or time format: ${dbError.detail || dbError.message}`, 400));
+            }
+            // Re-throw to be caught by outer catch
+            throw dbError;
+        }
 
         const appointment = result.rows[0];
 
@@ -86,7 +137,34 @@ async function createAppointment(req, res, next) {
 
         return res.status(201).json({ appointment });
     } catch (err) {
-        return next(new AppError('Failed to create appointment', 500));
+        logger.error({ 
+            err: {
+                message: err.message,
+                code: err.code,
+                detail: err.detail,
+                constraint: err.constraint
+            },
+            body: req.body, 
+            stack: err.stack 
+        }, 'Failed to create appointment');
+        
+        // In development, show more details
+        const isDevelopment = process.env.NODE_ENV !== 'production';
+        const errorMessage = isDevelopment 
+            ? `Failed to create appointment: ${err.message}` 
+            : 'Failed to create appointment';
+        
+        const errorDetails = isDevelopment ? {
+            originalError: err.message,
+            code: err.code,
+            detail: err.detail,
+            constraint: err.constraint,
+            stack: err.stack
+        } : {
+            originalError: err.message
+        };
+        
+        return next(new AppError(errorMessage, 500, errorDetails));
     }
 }
 
@@ -106,18 +184,22 @@ async function getAppointments(req, res, next) {
         } = req.query;
 
         const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
-        const conditions = ['deleted_at IS NULL'];
+        const conditions = []; // appointments table doesn't have deleted_at
         const params = [];
         let paramIndex = 1;
+
+        // Diş hekimi sadece kendi randevularını görebilir
+        if (isDentist(req)) {
+            conditions.push(`dentist_id = $${paramIndex++}`);
+            params.push(req.user.sub);
+        } else if (dentistId) {
+            conditions.push(`dentist_id = $${paramIndex++}`);
+            params.push(parseInt(dentistId, 10));
+        }
 
         if (patientId) {
             conditions.push(`patient_id = $${paramIndex++}`);
             params.push(parseInt(patientId, 10));
-        }
-
-        if (dentistId) {
-            conditions.push(`dentist_id = $${paramIndex++}`);
-            params.push(parseInt(dentistId, 10));
         }
 
         if (startDate) {
@@ -135,7 +217,7 @@ async function getAppointments(req, res, next) {
             params.push(status);
         }
 
-        const whereClause = conditions.join(' AND ');
+        const whereClause = conditions.length > 0 ? conditions.join(' AND ') : '1=1';
 
         // Get total count
         const countResult = await query(
@@ -171,6 +253,7 @@ async function getAppointments(req, res, next) {
             },
         });
     } catch (err) {
+        logger.error({ err }, 'Failed to fetch appointments');
         return next(new AppError('Failed to fetch appointments', 500));
     }
 }
@@ -193,7 +276,7 @@ async function getAppointmentById(req, res, next) {
        FROM appointments a
        LEFT JOIN patients p ON a.patient_id = p.id
        LEFT JOIN users u ON a.dentist_id = u.id
-       WHERE a.id = $1 AND a.deleted_at IS NULL`,
+       WHERE a.id = $1`,
             [appointmentId],
         );
 
@@ -276,7 +359,7 @@ async function updateAppointment(req, res, next) {
         const result = await query(
             `UPDATE appointments 
        SET ${setClauses.join(', ')}
-       WHERE id = $${paramIndex} AND deleted_at IS NULL
+       WHERE id = $${paramIndex}
        RETURNING *`,
             params,
         );
@@ -318,7 +401,7 @@ async function cancelAppointment(req, res, next) {
            cancellation_reason = $1,
            updated_by = $2,
            updated_at = NOW()
-       WHERE id = $3 AND deleted_at IS NULL
+       WHERE id = $3
        RETURNING *`,
             [cancellationReason || null, req.user.sub, appointmentId],
         );

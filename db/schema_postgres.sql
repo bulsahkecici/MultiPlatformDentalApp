@@ -5,6 +5,9 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   roles TEXT NOT NULL DEFAULT '',
   
+  -- Diş hekimi için kazanç oranı (0-100 arası yüzde)
+  commission_rate DECIMAL(5, 2) DEFAULT NULL, -- NULL ise kazanç hesaplanmaz
+  
   -- Email verification
   email_verified BOOLEAN NOT NULL DEFAULT false,
   email_verification_token TEXT,
@@ -249,3 +252,68 @@ CREATE INDEX IF NOT EXISTS idx_invoices_patient_id ON invoices (patient_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_invoice_number ON invoices (invoice_number);
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices (status);
 CREATE INDEX IF NOT EXISTS idx_invoices_invoice_date ON invoices (invoice_date);
+
+-- Discounts table (indirimler)
+CREATE TABLE IF NOT EXISTS discounts (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(200) NOT NULL,
+  description TEXT,
+  discount_type VARCHAR(50) NOT NULL, -- 'percentage' or 'fixed'
+  discount_value DECIMAL(10, 2) NOT NULL,
+  min_amount DECIMAL(10, 2) DEFAULT NULL, -- Minimum tutar
+  max_discount DECIMAL(10, 2) DEFAULT NULL, -- Maksimum indirim tutarı
+  start_date DATE,
+  end_date DATE,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  
+  -- Timestamps
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_discounts_active ON discounts (is_active, start_date, end_date);
+
+-- Institution agreements table (kurum anlaşmaları)
+CREATE TABLE IF NOT EXISTS institution_agreements (
+  id SERIAL PRIMARY KEY,
+  institution_name VARCHAR(200) NOT NULL,
+  contact_person VARCHAR(200),
+  contact_phone VARCHAR(50),
+  contact_email VARCHAR(320),
+  discount_percentage DECIMAL(5, 2) NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  notes TEXT,
+  
+  -- Timestamps
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_institution_agreements_active ON institution_agreements (is_active);
+
+-- Patient institution link (hastanın hangi kuruma bağlı olduğu)
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS institution_agreement_id INTEGER REFERENCES institution_agreements(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_patients_institution ON patients (institution_agreement_id);
+
+-- Treatment plan items (tedavi planındaki kalemler - 32 diş şeması için)
+CREATE TABLE IF NOT EXISTS treatment_plan_items (
+  id SERIAL PRIMARY KEY,
+  treatment_plan_id INTEGER NOT NULL REFERENCES treatment_plans(id) ON DELETE CASCADE,
+  tooth_number VARCHAR(20) NOT NULL, -- 1-32 arası diş numarası
+  treatment_type VARCHAR(200) NOT NULL,
+  cost DECIMAL(10, 2) NOT NULL,
+  currency VARCHAR(10) DEFAULT 'TRY',
+  status VARCHAR(50) NOT NULL DEFAULT 'planned', -- planned, in_progress, completed, cancelled
+  notes TEXT,
+  
+  -- Timestamps
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_treatment_plan_items_plan_id ON treatment_plan_items (treatment_plan_id);
+CREATE INDEX IF NOT EXISTS idx_treatment_plan_items_tooth ON treatment_plan_items (tooth_number);

@@ -6,33 +6,109 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
-        <materialDesign:Card Width="400" Padding="40" UniformCornerRadius="10" VerticalAlignment="Center" HorizontalAlignment="Center">
+    <Grid Background="{StaticResource BulkaGradientBrush}">
+        <materialDesign:Card Width="500" Padding="50" UniformCornerRadius="10" VerticalAlignment="Center" HorizontalAlignment="Center"
+                             Background="White">
             <StackPanel>
-                <TextBlock Text="Dental App Login" Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
-                           HorizontalAlignment="Center" Margin="0,0,0,30"/>
+                <!-- Logo -->
+                <Image Source="/Assets/bulka dental logo.png" 
+                       Width="200" 
+                       Height="200"
+                       HorizontalAlignment="Center" 
+                       Margin="0,0,0,30"
+                       Stretch="Uniform"/>
+                
+                <TextBlock Text="BULKA DENTAL" 
+                           Style="{StaticResource MaterialDesignHeadline5TextBlock}" 
+                           HorizontalAlignment="Center" 
+                           Margin="0,0,0,10"
+                           Foreground="{StaticResource BulkaDarkBlue}"
+                           FontWeight="Bold"/>
+                <TextBlock Text="Yönetim Sistemi Giriş" 
+                           Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                           HorizontalAlignment="Center" 
+                           Margin="0,0,0,40"
+                           Foreground="{StaticResource BulkaMediumBlue}"/>
                 
                 <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" 
-                         materialDesign:HintAssist.Hint="Email" 
+                         materialDesign:HintAssist.Hint="E-posta" 
                          Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                         Margin="0,0,0,20"/>
+                         FontSize="16"
+                         Height="50"
+                         Margin="0,0,0,25"/>
                 
-                <PasswordBox x:Name="PasswordBox" 
-                             materialDesign:HintAssist.Hint="Password" 
-                             Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
-                             Margin="0,0,0,10">
-                    <!-- PasswordBinding helper would be better, but for simplicity let's use a workaround or code-behind -->
-                </PasswordBox>
+                <Grid Margin="0,0,0,15" Height="50">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <PasswordBox x:Name="PasswordBox" 
+                                 Grid.Column="0"
+                                 materialDesign:HintAssist.Hint="Şifre" 
+                                 Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                 FontSize="16"
+                                 Height="50"
+                                 PasswordChanged="PasswordBox_PasswordChanged"/>
+                    <TextBox x:Name="PasswordTextBox"
+                             Grid.Column="0"
+                             materialDesign:HintAssist.Hint="Şifre"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                             FontSize="16"
+                             Height="50"
+                             Visibility="Collapsed"
+                             TextChanged="PasswordTextBox_TextChanged"/>
+                    <Button x:Name="TogglePasswordButton"
+                            Grid.Column="1"
+                            Style="{StaticResource MaterialDesignIconButton}"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Margin="0,0,10,0"
+                            Width="40"
+                            Height="40"
+                            Click="TogglePasswordButton_Click"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Cursor="Hand">
+                        <materialDesign:PackIcon x:Name="PasswordIcon" 
+                                                Kind="Eye" 
+                                                Width="20" 
+                                                Height="20"/>
+                    </Button>
+                </Grid>
 
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" Margin="0,5,0,10" />
+                <TextBlock Text="{Binding ErrorMessage}" 
+                           Foreground="Red" 
+                           Margin="0,5,0,15"
+                           TextWrapping="Wrap"
+                           HorizontalAlignment="Center"
+                           TextAlignment="Center"
+                           MaxWidth="450"/>
                 
-                <Button Content="LOGIN" 
+                <Button Content="GİRİŞ YAP" 
                         Command="{Binding LoginCommand}" 
                         IsDefault="True"
-                        Margin="0,20,0,0"
-                        Height="45"
+                        Margin="0,25,0,0"
+                        Height="50"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Padding="20,0"
+                        Background="{StaticResource BulkaMediumBlue}"
+                        Foreground="White"
+                        BorderThickness="0"
                         materialDesign:ButtonProgressAssist.IsIndeterminate="{Binding IsBusy}"
-                        materialDesign:ButtonProgressAssist.IsIndicatorVisible="{Binding IsBusy}"/>
+                        materialDesign:ButtonProgressAssist.IsIndicatorVisible="{Binding IsBusy}">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+                            <Setter Property="Background" Value="{StaticResource BulkaMediumBlue}"/>
+                            <Setter Property="Foreground" Value="White"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource BulkaDarkBlue}"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
             </StackPanel>
         </materialDesign:Card>
     </Grid>
