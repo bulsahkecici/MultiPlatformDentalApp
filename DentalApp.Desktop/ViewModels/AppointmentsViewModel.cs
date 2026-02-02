@@ -72,7 +72,7 @@ namespace DentalApp.Desktop.ViewModels
         public ICommand NextPageCommand { get; }
 
         public event Action<Appointment>? EditAppointmentRequested;
-        public event Action? AddAppointmentRequested;
+        public event Action<Appointment?>? AddAppointmentRequested;
 
         public ICommand SlotClickCommand { get; }
         public ICommand SMSCommand { get; }
@@ -83,7 +83,7 @@ namespace DentalApp.Desktop.ViewModels
             _patientService = patientService;
             _apiService = apiService ?? new ApiService();
             RefreshCommand = new RelayCommand(async _ => await LoadAppointmentsAsync(), _ => !IsBusy);
-            AddAppointmentCommand = new RelayCommand(_ => AddAppointmentRequested?.Invoke());
+            AddAppointmentCommand = new RelayCommand(_ => AddAppointmentRequested?.Invoke(null));
             EditAppointmentCommand = new RelayCommand(_ =>
             {
                 if (SelectedAppointment != null)
@@ -146,7 +146,7 @@ namespace DentalApp.Desktop.ViewModels
             }
         }
         
-        private async Task RefreshSlotsAsync()
+        private Task RefreshSlotsAsync()
         {
             AppointmentSlots.Clear();
             
@@ -180,20 +180,24 @@ namespace DentalApp.Desktop.ViewModels
                         slot.Status = SlotStatus.Available;
                     }
                     
+                    OnPropertyChanged(nameof(slot.Status));
+                    OnPropertyChanged(nameof(slot.PatientName));
+                    
                     AppointmentSlots.Add(slot);
                 }
             }
+            return Task.CompletedTask;
         }
         
-        private async Task HandleSlotClickAsync(AppointmentSlot? slot)
+        private Task HandleSlotClickAsync(AppointmentSlot? slot)
         {
             try
             {
-                if (slot == null) return;
+                if (slot == null) return Task.CompletedTask;
                 
                 if (slot.Status == SlotStatus.Unavailable)
                 {
-                    return; // Kırmızı slotlara tıklanamaz
+                    return Task.CompletedTask; // Kırmızı slotlara tıklanamaz
                 }
                 
                 if (slot.Status == SlotStatus.Occupied && slot.Appointment != null)
@@ -212,7 +216,7 @@ namespace DentalApp.Desktop.ViewModels
                         EndTime = slot.Time.Add(TimeSpan.FromMinutes(30)),
                         DentistId = slot.DentistId
                     };
-                    AddAppointmentRequested?.Invoke();
+                    AddAppointmentRequested?.Invoke(newAppointment);
                 }
             }
             catch (Exception ex)
@@ -221,11 +225,12 @@ namespace DentalApp.Desktop.ViewModels
                 System.Windows.MessageBox.Show($"Randevu slot'una tıklanırken hata: {ex.Message}\n\nDetay: {ex.InnerException?.Message ?? "Detay yok"}", "Hata",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
+            return Task.CompletedTask;
         }
         
-        private async Task SendSMSAsync(Appointment? appointment)
+        private Task SendSMSAsync(Appointment? appointment)
         {
-            if (appointment == null) return;
+            if (appointment == null) return Task.CompletedTask;
             
             // Placeholder - SMS ayarları sonra eklenecek
             MessageBox.Show(
@@ -233,6 +238,7 @@ namespace DentalApp.Desktop.ViewModels
                 "Yakında",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
+            return Task.CompletedTask;
         }
 
         public async Task LoadAppointmentsAsync()

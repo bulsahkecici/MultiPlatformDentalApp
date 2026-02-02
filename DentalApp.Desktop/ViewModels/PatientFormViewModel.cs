@@ -17,6 +17,11 @@ namespace DentalApp.Desktop.ViewModels
         // İndirim Anlaşmaları
         private ObservableCollection<InstitutionAgreement> _institutionAgreements = new();
         private InstitutionAgreement? _selectedInstitutionAgreement;
+        
+        // İller, Ülkeler, Kan Grupları
+        private ObservableCollection<string> _cities = new();
+        private ObservableCollection<string> _countries = new();
+        private ObservableCollection<string> _bloodTypes = new();
 
         public Patient Patient
         {
@@ -75,6 +80,24 @@ namespace DentalApp.Desktop.ViewModels
             get => _selectedInstitutionAgreement;
             set => SetProperty(ref _selectedInstitutionAgreement, value);
         }
+        
+        public ObservableCollection<string> Cities
+        {
+            get => _cities;
+            set => SetProperty(ref _cities, value);
+        }
+        
+        public ObservableCollection<string> Countries
+        {
+            get => _countries;
+            set => SetProperty(ref _countries, value);
+        }
+        
+        public ObservableCollection<string> BloodTypes
+        {
+            get => _bloodTypes;
+            set => SetProperty(ref _bloodTypes, value);
+        }
 
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
@@ -100,7 +123,60 @@ namespace DentalApp.Desktop.ViewModels
                 LoadDefaultAgreements();
             }
             
+            // İller, Ülkeler, Kan Grupları yükle
+            LoadCities();
+            LoadCountries();
+            LoadBloodTypes();
+            
             // DateOfBirth değiştiğinde yaşı güncelle - Patient ObservableObject değil, bu yüzden Patient property'si değiştiğinde kontrol edeceğiz
+        }
+        
+        private void LoadCities()
+        {
+            Cities.Clear();
+            var turkishCities = new[]
+            {
+                "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Amasya", "Ankara", "Antalya", "Artvin",
+                "Aydın", "Balıkesir", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur", "Bursa",
+                "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Edirne", "Elazığ", "Erzincan",
+                "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkari", "Hatay", "Isparta",
+                "İçel (Mersin)", "İstanbul", "İzmir", "Kars", "Kastamonu", "Kayseri", "Kırklareli", "Kırşehir",
+                "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Kahramanmaraş", "Mardin", "Muğla",
+                "Muş", "Nevşehir", "Niğde", "Ordu", "Rize", "Sakarya", "Samsun", "Siirt",
+                "Sinop", "Sivas", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Şanlıurfa", "Uşak",
+                "Van", "Yozgat", "Zonguldak", "Aksaray", "Bayburt", "Karaman", "Kırıkkale", "Batman",
+                "Şırnak", "Bartın", "Ardahan", "Iğdır", "Yalova", "Karabük", "Kilis", "Osmaniye", "Düzce"
+            };
+            foreach (var city in turkishCities)
+            {
+                Cities.Add(city);
+            }
+        }
+        
+        private void LoadCountries()
+        {
+            Countries.Clear();
+            var countries = new[]
+            {
+                "Almanya", "Amerika Birleşik Devletleri", "Avustralya", "Avusturya", "Azerbaycan",
+                "Belçika", "Birleşik Arap Emirlikleri", "Birleşik Krallık", "Bulgaristan", "Danimarka",
+                "Fransa", "Hollanda", "İspanya", "İsveç", "İsviçre", "İtalya", "Kanada", "Katar",
+                "Kuveyt", "Norveç", "Romanya", "Rusya", "Suudi Arabistan", "Ukrayna", "Yunanistan", "Diğer"
+            };
+            foreach (var country in countries)
+            {
+                Countries.Add(country);
+            }
+        }
+        
+        private void LoadBloodTypes()
+        {
+            BloodTypes.Clear();
+            var bloodTypes = new[] { "A+", "A-", "B+", "B-", "AB+", "AB-", "0+", "0-" };
+            foreach (var bloodType in bloodTypes)
+            {
+                BloodTypes.Add(bloodType);
+            }
         }
         
         private void LoadDefaultAgreements()

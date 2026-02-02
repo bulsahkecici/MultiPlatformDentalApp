@@ -144,12 +144,13 @@ namespace DentalApp.Desktop.ViewModels
             _appointmentService = appointmentService;
             _appointment = appointment ?? new Appointment 
             { 
+                Id = 0, // Ensure ID is 0 for new appointments
                 AppointmentDate = DateTime.Today,
                 StartTime = new TimeSpan(9, 0, 0),
                 EndTime = new TimeSpan(10, 0, 0),
                 Status = "scheduled"
             };
-            _isEditMode = appointment != null;
+            _isEditMode = appointment != null && appointment.Id > 0;
             
             // Safely format TimeSpan to string (TimeSpan doesn't support "HH" format, use "hh" or manual formatting)
             try
@@ -217,7 +218,7 @@ namespace DentalApp.Desktop.ViewModels
             }
         }
         
-        private async Task LoadDentistsAsync()
+        private Task LoadDentistsAsync()
         {
             try
             {
@@ -232,6 +233,7 @@ namespace DentalApp.Desktop.ViewModels
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading dentists: {ex}");
             }
+            return Task.CompletedTask;
         }
 
         private async Task LoadPatientsAsync(PatientService patientService)
@@ -312,12 +314,15 @@ namespace DentalApp.Desktop.ViewModels
                 System.Diagnostics.Debug.WriteLine($"  AppointmentType: {Appointment.AppointmentType}");
                 
                 Appointment? savedAppointment;
-                if (IsEditMode)
+                // Check both IsEditMode and Appointment.Id to ensure we don't try to update a new appointment
+                if (IsEditMode && Appointment.Id > 0)
                 {
                     savedAppointment = await _appointmentService.UpdateAppointmentAsync(Appointment);
                 }
                 else
                 {
+                    // Ensure ID is 0 for new appointments
+                    Appointment.Id = 0;
                     savedAppointment = await _appointmentService.CreateAppointmentAsync(Appointment);
                 }
 

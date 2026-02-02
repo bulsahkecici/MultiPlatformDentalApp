@@ -85,7 +85,7 @@ namespace DentalApp.Desktop.ViewModels
             RefreshCommand = new RelayCommand(async _ => await LoadEarningsAsync(), _ => !IsBusy);
         }
 
-        public async Task LoadEarningsAsync()
+        public Task LoadEarningsAsync()
         {
             IsBusy = true;
             try
@@ -112,6 +112,7 @@ namespace DentalApp.Desktop.ViewModels
             {
                 IsBusy = false;
             }
+            return Task.CompletedTask;
         }
     }
 

@@ -201,17 +201,21 @@
                                 </Button.Style>
                                 <StackPanel>
                                     <TextBlock Text="{Binding TimeString}" 
-                                             FontSize="10"
-                                             HorizontalAlignment="Center"/>
-                                    <TextBlock Text="{Binding PatientName}" 
                                              FontSize="9"
+                                             HorizontalAlignment="Center"
+                                             Margin="0,0,0,2"/>
+                                    <TextBlock Text="{Binding PatientName}" 
+                                             FontSize="8"
+                                             FontWeight="Bold"
                                              TextWrapping="Wrap"
-                                             HorizontalAlignment="Center">
+                                             HorizontalAlignment="Center"
+                                             TextTrimming="CharacterEllipsis"
+                                             MaxWidth="100">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding PatientName, Converter={StaticResource NullToBooleanConverter}}" Value="True">
+                                                    <DataTrigger Binding="{Binding Status}" Value="Occupied">
                                                         <Setter Property="Visibility" Value="Visible"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>

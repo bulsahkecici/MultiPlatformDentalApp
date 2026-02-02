@@ -38,7 +38,8 @@
             </Button>
 
             <Button Command="{Binding AddPatientCommand}"
-                    Margin="0,0,10,0">
+                    Margin="0,0,10,0"
+                    Visibility="{Binding CanEdit, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="Plus" Margin="0,0,5,0"/>
                     <TextBlock Text="HASTA EKLE"/>
@@ -46,7 +47,8 @@
             </Button>
 
             <Button Command="{Binding EditPatientCommand}"
-                    Margin="0,0,10,0">
+                    Margin="0,0,10,0"
+                    Visibility="{Binding CanEdit, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="Edit" Margin="0,0,5,0"/>
                     <TextBlock Text="DÜZENLE"/>
@@ -54,7 +56,8 @@
             </Button>
 
             <Button Command="{Binding DeletePatientCommand}"
-                    Style="{StaticResource MaterialDesignOutlinedButton}">
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Visibility="{Binding CanEdit, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="Delete" Margin="0,0,5,0"/>
                     <TextBlock Text="SİL"/>
@@ -62,23 +65,135 @@
             </Button>
         </StackPanel>
 
-        <materialDesign:Card Grid.Row="2" VerticalAlignment="Stretch">
-            <DataGrid ItemsSource="{Binding Patients}" 
-                      SelectedItem="{Binding SelectedPatient}"
-                      AutoGenerateColumns="False" 
-                      CanUserAddRows="False"
-                      IsReadOnly="True"
-                      Style="{StaticResource MaterialDesignDataGrid}">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Ad" Binding="{Binding FirstName}" Width="*"/>
-                    <DataGridTextColumn Header="Soyad" Binding="{Binding LastName}" Width="*"/>
-                    <DataGridTextColumn Header="E-posta" Binding="{Binding Email}" Width="*"/>
-                    <DataGridTextColumn Header="Telefon" Binding="{Binding Phone}" Width="*"/>
-                    <DataGridTextColumn Header="Şehir" Binding="{Binding City}" Width="*"/>
-                    <DataGridTextColumn Header="Oluşturulma" Binding="{Binding CreatedAt, StringFormat=d}" Width="Auto"/>
-                </DataGrid.Columns>
-            </DataGrid>
-        </materialDesign:Card>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="400"/>
+            </Grid.ColumnDefinitions>
+            
+            <materialDesign:Card Grid.Column="0" VerticalAlignment="Stretch">
+                <DataGrid ItemsSource="{Binding Patients}" 
+                          SelectedItem="{Binding SelectedPatient}"
+                          AutoGenerateColumns="False" 
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow"
+                          Style="{StaticResource MaterialDesignDataGrid}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Ad" Binding="{Binding FirstName}" Width="*"/>
+                        <DataGridTextColumn Header="Soyad" Binding="{Binding LastName}" Width="*"/>
+                        <DataGridTextColumn Header="E-posta" Binding="{Binding Email}" Width="*"/>
+                        <DataGridTextColumn Header="Telefon" Binding="{Binding Phone}" Width="*"/>
+                        <DataGridTextColumn Header="Şehir" Binding="{Binding City}" Width="*"/>
+                        <DataGridTextColumn Header="Oluşturulma" Binding="{Binding CreatedAt, StringFormat=d}" Width="Auto"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </materialDesign:Card>
+            
+            <materialDesign:Card Grid.Column="2" Padding="15" Background="White">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Hasta Detayları" 
+                                 Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                 Foreground="{StaticResource BulkaDarkBlue}"
+                                 FontWeight="Bold"
+                                 Margin="0,0,0,15"
+                                 Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}"/>
+                        
+                        <TextBlock Text="Hasta seçin" 
+                                 Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                 Foreground="Gray"
+                                 Margin="0,20,0,0"
+                                 Visibility="{Binding SelectedPatient, Converter={StaticResource InverseBooleanConverter}}"/>
+                        
+                        <!-- Hasta Bilgileri -->
+                        <Expander Header="Hasta Bilgileri" 
+                                IsExpanded="True"
+                                Margin="0,0,0,10"
+                                Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}">
+                            <StackPanel Margin="10,10,0,10">
+                                <TextBlock Margin="0,5,0,5">
+                                    <Run Text="Ad Soyad: " FontWeight="Bold"/>
+                                    <Run Text="{Binding SelectedPatient.FullName}"/>
+                                </TextBlock>
+                                <TextBlock Margin="0,5,0,5">
+                                    <Run Text="E-posta: " FontWeight="Bold"/>
+                                    <Run Text="{Binding SelectedPatient.Email}"/>
+                                </TextBlock>
+                                <TextBlock Margin="0,5,0,5">
+                                    <Run Text="Telefon: " FontWeight="Bold"/>
+                                    <Run Text="{Binding SelectedPatient.Phone}"/>
+                                </TextBlock>
+                                <TextBlock Margin="0,5,0,5">
+                                    <Run Text="Adres: " FontWeight="Bold"/>
+                                    <Run Text="{Binding SelectedPatient.Address}"/>
+                                </TextBlock>
+                                <TextBlock Margin="0,5,0,5">
+                                    <Run Text="Şehir: " FontWeight="Bold"/>
+                                    <Run Text="{Binding SelectedPatient.City}"/>
+                                </TextBlock>
+                                <TextBlock Margin="0,5,0,5">
+                                    <Run Text="Ülke: " FontWeight="Bold"/>
+                                    <Run Text="{Binding SelectedPatient.Country}"/>
+                                </TextBlock>
+                                <TextBlock Margin="0,5,0,5">
+                                    <Run Text="Doğum Tarihi: " FontWeight="Bold"/>
+                                    <Run Text="{Binding SelectedPatient.DateOfBirth, StringFormat='{}{0:dd.MM.yyyy}'}"/>
+                                </TextBlock>
+                                <TextBlock Margin="0,5,0,5">
+                                    <Run Text="Cinsiyet: " FontWeight="Bold"/>
+                                    <Run Text="{Binding SelectedPatient.Gender}"/>
+                                </TextBlock>
+                                <TextBlock Margin="0,5,0,5">
+                                    <Run Text="Kan Grubu: " FontWeight="Bold"/>
+                                    <Run Text="{Binding SelectedPatient.BloodType}"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Expander>
+                        
+                        <!-- Geçmiş Randevular -->
+                        <Expander Header="Geçmiş Randevular" 
+                                IsExpanded="True"
+                                Margin="0,0,0,10"
+                                Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}">
+                            <DataGrid ItemsSource="{Binding PatientAppointments}"
+                                    AutoGenerateColumns="False"
+                                    CanUserAddRows="False"
+                                    IsReadOnly="True"
+                                    MaxHeight="200"
+                                    Margin="10,10,0,10">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Tarih" Binding="{Binding AppointmentDate, StringFormat='{}{0:dd.MM.yyyy}'}" Width="*"/>
+                                    <DataGridTextColumn Header="Saat" Binding="{Binding StartTime, StringFormat='{}{0:hh\\:mm}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Durum" Binding="{Binding Status}" Width="Auto"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Expander>
+                        
+                        <!-- Yapılan Tedaviler -->
+                        <Expander Header="Yapılan Tedaviler" 
+                                IsExpanded="True"
+                                Margin="0,0,0,10"
+                                Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}">
+                            <DataGrid ItemsSource="{Binding PatientTreatments}"
+                                    AutoGenerateColumns="False"
+                                    CanUserAddRows="False"
+                                    IsReadOnly="True"
+                                    MaxHeight="200"
+                                    Margin="10,10,0,10">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Tarih" Binding="{Binding TreatmentDate, StringFormat='{}{0:dd.MM.yyyy}'}" Width="*"/>
+                                    <DataGridTextColumn Header="Tedavi Türü" Binding="{Binding TreatmentType}" Width="*"/>
+                                    <DataGridTextColumn Header="Durum" Binding="{Binding Status}" Width="Auto"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Expander>
+                    </StackPanel>
+                </ScrollViewer>
+            </materialDesign:Card>
+        </Grid>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
             <Button Command="{Binding PreviousPageCommand}" 

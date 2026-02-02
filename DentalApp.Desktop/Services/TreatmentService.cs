@@ -89,5 +89,43 @@ namespace DentalApp.Desktop.Services
             var response = await _apiService.PutAsync<TreatmentResponse>($"/treatments/{treatment.Id}", request);
             return response?.Treatment;
         }
+
+        public async Task<bool> CreateTreatmentPlanAsync(int patientId, int? dentistId, string title, string? description, List<TreatmentPlanItem> items)
+        {
+            var request = new
+            {
+                patientId,
+                dentistId,
+                title,
+                description,
+                items = items.Select(item => new
+                {
+                    toothNumber = item.ToothNumber,
+                    treatmentType = item.TreatmentType,
+                    cost = item.Cost,
+                    currency = item.Currency ?? "TRY",
+                    notes = item.Notes
+                }).ToList()
+            };
+
+            try
+            {
+                var response = await _apiService.PostAsync<object>("/treatment-plans", request);
+                return response != null;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    public class TreatmentPlanItem
+    {
+        public int ToothNumber { get; set; }
+        public string TreatmentType { get; set; } = string.Empty;
+        public decimal? Cost { get; set; }
+        public string? Currency { get; set; }
+        public string? Notes { get; set; }
     }
 }
