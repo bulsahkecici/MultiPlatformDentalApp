@@ -41,26 +41,60 @@ namespace DentalApp.Desktop.Views
             }
         }
 
-        private void TreatmentItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private DateTime _lastClickTime = DateTime.MinValue;
+        private object? _lastClickedItem = null;
+
+        private void TreatmentItem_MouseDown(object sender, MouseButtonEventArgs e)
         {
             try
             {
                 if (sender is Border border && border.DataContext is Models.Treatment treatment)
                 {
-                    var viewModel = DataContext as ViewModels.TreatmentsViewModel;
-                    if (viewModel != null)
+                    var now = DateTime.Now;
+                    var timeSinceLastClick = (now - _lastClickTime).TotalMilliseconds;
+                    
+                    // Double-click kontrolü (500ms içinde aynı item'a tıklanmışsa)
+                    if (_lastClickedItem == treatment && timeSinceLastClick < 500)
                     {
-                        viewModel.SelectedTreatment = treatment;
-                        if (viewModel.EditTreatmentCommand.CanExecute(null))
+                        var viewModel = DataContext as ViewModels.TreatmentsViewModel;
+                        if (viewModel != null)
                         {
-                            viewModel.EditTreatmentCommand.Execute(null);
+                            viewModel.SelectedTreatment = treatment;
+                            if (viewModel.EditTreatmentCommand.CanExecute(null))
+                            {
+                                viewModel.EditTreatmentCommand.Execute(null);
+                            }
                         }
+                        _lastClickedItem = null;
+                        _lastClickTime = DateTime.MinValue;
+                    }
+                    else
+                    {
+                        _lastClickedItem = treatment;
+                        _lastClickTime = now;
                     }
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Tedavi açılırken hata: {ex.Message}", "Hata", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void TreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            try
+            {
+                var viewModel = DataContext as ViewModels.TreatmentsViewModel;
+                if (viewModel != null && e.NewValue is Models.Treatment treatment)
+                {
+                    viewModel.SelectedTreatment = treatment;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Seçim hatası: {ex.Message}", "Hata", 
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
