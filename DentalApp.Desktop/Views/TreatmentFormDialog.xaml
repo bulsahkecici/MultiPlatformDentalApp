@@ -43,10 +43,16 @@
                                Language="tr-TR"
                                Margin="0,0,0,10"/>
 
-                    <TextBox Text="{Binding Treatment.TreatmentType, UpdateSourceTrigger=PropertyChanged}" 
-                             materialDesign:HintAssist.Hint="Tedavi Türü *" 
-                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                             Margin="0,0,0,10"/>
+                    <TextBlock Text="Tedavi Türü (Kategori Seçimi)" 
+                             Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
+                             Margin="0,10,0,5"
+                             Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}"/>
+                    <TextBlock Text="{Binding Treatment.TreatmentType}" 
+                             Style="{StaticResource MaterialDesignBody1TextBlock}" 
+                             Foreground="{StaticResource BulkaDarkBlue}"
+                             FontWeight="Bold"
+                             Margin="0,0,0,10"
+                             Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}"/>
 
                 <TextBlock Text="Seçilen Dişler:" 
                          Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
@@ -60,62 +66,75 @@
                 <TextBlock Text="Diş Şeması" 
                            Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
                            Margin="0,10,0,5"/>
-                <Grid Height="300" Margin="0,0,0,10">
-                    <!-- Arka plan resmi -->
-                    <Image Source="pack://application:,,,/Assets/mouth_chart.png" 
-                           Stretch="Uniform"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"/>
-                    
-                    <!-- Hotspot'lar için Canvas -->
-                    <Canvas>
-                        <ItemsControl ItemsSource="{Binding ToothHotspots}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <Canvas/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Button Command="{Binding DataContext.SelectToothCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                            CommandParameter="{Binding ToothNumber}"
-                                            Width="{Binding Width}" 
-                                            Height="{Binding Height}"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            Padding="0"
-                                            Cursor="Hand"
-                                            ToolTip="{Binding ToothNumber, StringFormat='Diş {0}'}">
-                                        <Button.Style>
-                                            <Style TargetType="Button">
-                                                <Setter Property="Background" Value="Transparent"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Value="True">
-                                                        <DataTrigger.Binding>
-                                                            <MultiBinding Converter="{StaticResource ToothNumberEqualityConverter}">
-                                                                <Binding Path="DataContext.SelectedTeeth" RelativeSource="{RelativeSource AncestorType=Window}"/>
-                                                                <Binding Path="ToothNumber"/>
-                                                            </MultiBinding>
-                                                        </DataTrigger.Binding>
-                                                        <Setter Property="Background" Value="#40FF6B6B"/>
-                                                        <Setter Property="BorderBrush" Value="#FFFF6B6B"/>
-                                                        <Setter Property="BorderThickness" Value="2"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                            <ItemsControl.ItemContainerStyle>
-                                <Style TargetType="ContentPresenter">
-                                    <Setter Property="Canvas.Left" Value="{Binding X}"/>
-                                    <Setter Property="Canvas.Top" Value="{Binding Y}"/>
-                                </Style>
-                            </ItemsControl.ItemContainerStyle>
-                        </ItemsControl>
-                    </Canvas>
-                </Grid>
+                <Border BorderBrush="{StaticResource BulkaMediumBlue}" 
+                        BorderThickness="2" 
+                        CornerRadius="5"
+                        Padding="10"
+                        Margin="0,0,0,10">
+                    <Grid Height="350">
+                        <!-- Arka plan resmi -->
+                        <Image Source="pack://application:,,,/Assets/mouth_chart.png" 
+                               Stretch="Uniform"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                        
+                        <!-- Hotspot'lar için Canvas -->
+                        <Canvas>
+                            <ItemsControl ItemsSource="{Binding ToothHotspots}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding DataContext.SelectToothCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding ToothNumber}"
+                                                Width="{Binding Width}" 
+                                                Height="{Binding Height}"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Padding="0"
+                                                Cursor="Hand"
+                                                ToolTip="{Binding ToothNumber, StringFormat='Diş {0}'}">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                                    <Setter Property="BorderThickness" Value="0"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Value="True">
+                                                            <DataTrigger.Binding>
+                                                                <MultiBinding Converter="{StaticResource ToothNumberEqualityConverter}">
+                                                                    <Binding Path="DataContext.SelectedTeeth" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                                    <Binding Path="ToothNumber"/>
+                                                                </MultiBinding>
+                                                            </DataTrigger.Binding>
+                                                            <Setter Property="Background" Value="#40FF6B6B"/>
+                                                            <Setter Property="BorderBrush" Value="#FFFF6B6B"/>
+                                                            <Setter Property="BorderThickness" Value="3"/>
+                                                        </DataTrigger>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#20FF6B6B"/>
+                                                            <Setter Property="BorderBrush" Value="#FFFF6B6B"/>
+                                                            <Setter Property="BorderThickness" Value="2"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                        <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                            </ItemsControl>
+                        </Canvas>
+                    </Grid>
+                </Border>
 
                 <TextBox Text="{Binding Treatment.Description, UpdateSourceTrigger=PropertyChanged}" 
                          materialDesign:HintAssist.Hint="Açıklama" 
@@ -165,10 +184,15 @@
                                Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
                                Margin="0,0,0,15"/>
 
+                    <TextBlock Text="Kategori Seçin" 
+                               Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
+                               Margin="0,0,0,5"
+                               Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}"/>
                     <ComboBox ItemsSource="{Binding Categories}"
                              SelectedItem="{Binding SelectedCategory}"
                              DisplayMemberPath="Name"
                              materialDesign:HintAssist.Hint="Kategori Seçin"
+                             IsEnabled="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}"
                              Margin="0,0,0,10"/>
 
                     <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
@@ -196,7 +220,6 @@
 
                     <Button Content="Seçili Kalemi Ekle"
                            Command="{Binding AddProcedureCommand}"
-                           CommandParameter="{Binding SelectedTariffItem}"
                            Style="{StaticResource MaterialDesignRaisedButton}"
                            Margin="0,5,0,0"/>
                     

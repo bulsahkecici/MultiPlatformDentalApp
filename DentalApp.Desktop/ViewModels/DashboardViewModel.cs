@@ -167,7 +167,7 @@ namespace DentalApp.Desktop.ViewModels
             }
         }
         
-        private async Task LoadPatronDashboardAsync()
+        private Task LoadPatronDashboardAsync()
         {
             // TODO: Load from backend when API is ready
             // For now, use placeholder data
@@ -182,6 +182,7 @@ namespace DentalApp.Desktop.ViewModels
             
             OnPropertyChanged(nameof(RemainingAmount));
             OnPropertyChanged(nameof(PaidPercentage));
+            return Task.CompletedTask;
         }
         
         private async Task LoadSecretaryDentistDashboardAsync()

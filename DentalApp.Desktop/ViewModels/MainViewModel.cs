@@ -120,7 +120,9 @@ namespace DentalApp.Desktop.ViewModels
 
         private void ShowPatients()
         {
-            var patientsVM = new PatientsViewModel(_patientService);
+            // Diş hekimi için sadece görüntüleme modu
+            var canEdit = !IsDentist;
+            var patientsVM = new PatientsViewModel(_patientService, _appointmentService, _treatmentService, canEdit);
             patientsVM.AddPatientRequested += () => ShowPatientForm(null);
             patientsVM.EditPatientRequested += (patient) => ShowPatientForm(patient);
             _ = patientsVM.LoadPatientsAsync();
@@ -130,7 +132,7 @@ namespace DentalApp.Desktop.ViewModels
         private void ShowAppointments()
         {
             var appointmentsVM = new AppointmentsViewModel(_appointmentService, _patientService, _apiService);
-            appointmentsVM.AddAppointmentRequested += () => ShowAppointmentForm(null);
+            appointmentsVM.AddAppointmentRequested += (appointment) => ShowAppointmentForm(appointment);
             appointmentsVM.EditAppointmentRequested += (appointment) => ShowAppointmentForm(appointment);
             _ = appointmentsVM.LoadAppointmentsAsync();
             _ = appointmentsVM.LoadPatientsAsync();

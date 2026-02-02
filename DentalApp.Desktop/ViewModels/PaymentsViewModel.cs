@@ -4,6 +4,7 @@ using DentalApp.Desktop.Services;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace DentalApp.Desktop.ViewModels
 {
@@ -82,6 +83,8 @@ namespace DentalApp.Desktop.ViewModels
         // Ödeme Alma
         public ObservableCollection<Patient> Patients { get; } = new();
         public ObservableCollection<string> PaymentMethods { get; } = new();
+        public ObservableCollection<ProcedureItem> PatientTreatmentPlans { get; } = new();
+        public ProcedureItem? SelectedPatientTreatmentPlan { get; set; }
         
         public Patient? SelectedPaymentPatient
         {
@@ -90,9 +93,30 @@ namespace DentalApp.Desktop.ViewModels
             {
                 if (SetProperty(ref _selectedPaymentPatient, value))
                 {
+                    _ = LoadPatientTreatmentPlansAsync();
                     CalculatePaymentInfo();
                 }
             }
+        }
+        
+        private Task LoadPatientTreatmentPlansAsync()
+        {
+            if (SelectedPaymentPatient == null)
+            {
+                PatientTreatmentPlans.Clear();
+                return Task.CompletedTask;
+            }
+            
+            try
+            {
+                // TODO: Load from API - get pending treatment plans for this patient
+                PatientTreatmentPlans.Clear();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Hasta tedavi planları yüklenirken hata: {ex.Message}");
+            }
+            return Task.CompletedTask;
         }
         
         public string SelectedPaymentMethod
@@ -142,7 +166,7 @@ namespace DentalApp.Desktop.ViewModels
             PaymentMethods.Add("Nakit");
             
             _ = LoadDataAsync();
-            LoadAgreements(); // Placeholder data
+            _ = LoadAgreementsAsync();
             _ = LoadCategoriesAsync();
         }
         
@@ -193,12 +217,40 @@ namespace DentalApp.Desktop.ViewModels
             }
         }
         
-        private void LoadAgreements()
+        private async Task LoadAgreementsAsync()
         {
-            // TODO: Load from backend when API is ready
-            InstitutionAgreements.Clear();
-            InstitutionAgreements.Add(new InstitutionAgreement { Id = 1, Name = "SGK", DiscountPercentage = 20m });
-            InstitutionAgreements.Add(new InstitutionAgreement { Id = 2, Name = "Özel Sigorta A", DiscountPercentage = 15m });
+            try
+            {
+                var response = await _apiService.GetAsync<dynamic>("/institution-agreements");
+                if (response != null)
+                {
+                    var json = JsonConvert.SerializeObject(response);
+                    var agreementsData = JsonConvert.DeserializeObject<dynamic>(json);
+                    
+                    InstitutionAgreements.Clear();
+                    if (agreementsData?.agreements != null)
+                    {
+                        foreach (var agreement in agreementsData.agreements)
+                        {
+                            var instAgreement = new InstitutionAgreement
+                            {
+                                Id = (int)(agreement.id ?? 0),
+                                Name = agreement.institution_name?.ToString() ?? "",
+                                DiscountPercentage = agreement.discount_percentage != null ? (decimal)agreement.discount_percentage : 0m
+                            };
+                            InstitutionAgreements.Add(instAgreement);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Kurum anlaşmaları yüklenirken hata: {ex.Message}");
+                // Fallback to placeholder data
+                InstitutionAgreements.Clear();
+                InstitutionAgreements.Add(new InstitutionAgreement { Id = 1, Name = "SGK", DiscountPercentage = 20m });
+                InstitutionAgreements.Add(new InstitutionAgreement { Id = 2, Name = "Özel Sigorta A", DiscountPercentage = 15m });
+            }
         }
         
         private async Task AddAgreementAsync()
@@ -239,6 +291,8 @@ namespace DentalApp.Desktop.ViewModels
                 OnPropertyChanged(nameof(NewAgreementName));
                 OnPropertyChanged(nameof(NewAgreementDiscount));
                 
+                await Task.CompletedTask; // Placeholder for future API call
+                
                 System.Windows.MessageBox.Show("İndirim anlaşması başarıyla eklendi.", "Başarılı",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
             }
@@ -253,12 +307,13 @@ namespace DentalApp.Desktop.ViewModels
             }
         }
         
-        private async Task EditAgreementAsync(InstitutionAgreement? agreement)
+        private Task EditAgreementAsync(InstitutionAgreement? agreement)
         {
-            if (agreement == null) return;
+            if (agreement == null) return Task.CompletedTask;
             // TODO: Edit agreement dialog
             System.Windows.MessageBox.Show("Düzenleme özelliği yakında eklenecek.", "Bilgi",
                 System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            return Task.CompletedTask;
         }
         
         private async Task LoadPendingPlansAsync()
@@ -267,6 +322,8 @@ namespace DentalApp.Desktop.ViewModels
             try
             {
                 // TODO: Load from backend when API is ready
+                await Task.CompletedTask; // Placeholder for future API call
+                
                 // Placeholder data
                 PendingTreatmentPlans.Clear();
                 var plan1 = new TreatmentPlanItem
@@ -325,6 +382,8 @@ namespace DentalApp.Desktop.ViewModels
             try
             {
                 // TODO: Approve plans via API
+                await Task.CompletedTask; // Placeholder for future API call
+                
                 var total = selectedPlans.Sum(p => p.TotalCost);
                 
                 System.Windows.MessageBox.Show(
@@ -382,6 +441,8 @@ namespace DentalApp.Desktop.ViewModels
             try
             {
                 // TODO: Process payment via API
+                await Task.CompletedTask; // Placeholder for future API call
+                
                 var request = new
                 {
                     patientId = SelectedPaymentPatient.Id,

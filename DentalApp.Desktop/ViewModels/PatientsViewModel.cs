@@ -4,20 +4,26 @@ using DentalApp.Desktop.Services;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
+using System.Linq;
 
 namespace DentalApp.Desktop.ViewModels
 {
     public class PatientsViewModel : ObservableObject
     {
         private readonly PatientService _patientService;
+        private readonly AppointmentService? _appointmentService;
+        private readonly TreatmentService? _treatmentService;
         private bool _isBusy;
         private string _searchQuery = string.Empty;
         private Patient? _selectedPatient;
         private int _currentPage = 1;
         private int _totalPages = 1;
         private PaginationInfo? _pagination;
+        private bool _canEdit;
 
         public ObservableCollection<Patient> Patients { get; } = new();
+        public ObservableCollection<Appointment> PatientAppointments { get; } = new();
+        public ObservableCollection<Treatment> PatientTreatments { get; } = new();
 
         public bool IsBusy
         {
@@ -41,7 +47,27 @@ namespace DentalApp.Desktop.ViewModels
         public Patient? SelectedPatient
         {
             get => _selectedPatient;
-            set => SetProperty(ref _selectedPatient, value);
+            set
+            {
+                if (SetProperty(ref _selectedPatient, value))
+                {
+                    if (value != null)
+                    {
+                        _ = LoadPatientDetailsAsync();
+                    }
+                    else
+                    {
+                        PatientAppointments.Clear();
+                        PatientTreatments.Clear();
+                    }
+                }
+            }
+        }
+        
+        public bool CanEdit
+        {
+            get => _canEdit;
+            set => SetProperty(ref _canEdit, value);
         }
 
         public int CurrentPage
@@ -68,17 +94,20 @@ namespace DentalApp.Desktop.ViewModels
         public event Action<Patient>? EditPatientRequested;
         public event Action? AddPatientRequested;
 
-        public PatientsViewModel(PatientService patientService)
+        public PatientsViewModel(PatientService patientService, AppointmentService? appointmentService = null, TreatmentService? treatmentService = null, bool canEdit = true)
         {
             _patientService = patientService;
+            _appointmentService = appointmentService;
+            _treatmentService = treatmentService;
+            _canEdit = canEdit;
             RefreshCommand = new RelayCommand(async _ => await LoadPatientsAsync(), _ => !IsBusy);
-            AddPatientCommand = new RelayCommand(_ => AddPatientRequested?.Invoke());
+            AddPatientCommand = new RelayCommand(_ => AddPatientRequested?.Invoke(), _ => CanEdit);
             EditPatientCommand = new RelayCommand(_ => 
             {
                 if (SelectedPatient != null)
                     EditPatientRequested?.Invoke(SelectedPatient);
-            }, _ => SelectedPatient != null);
-            DeletePatientCommand = new RelayCommand(async _ => await DeleteSelectedPatientAsync(), _ => SelectedPatient != null && !IsBusy);
+            }, _ => SelectedPatient != null && CanEdit);
+            DeletePatientCommand = new RelayCommand(async _ => await DeleteSelectedPatientAsync(), _ => SelectedPatient != null && !IsBusy && CanEdit);
             PreviousPageCommand = new RelayCommand(async _ => 
             {
                 if (CurrentPage > 1)
@@ -154,6 +183,47 @@ namespace DentalApp.Desktop.ViewModels
                 {
                     IsBusy = false;
                 }
+            }
+        }
+        
+        private async Task LoadPatientDetailsAsync()
+        {
+            if (SelectedPatient == null || _appointmentService == null || _treatmentService == null)
+            {
+                PatientAppointments.Clear();
+                PatientTreatments.Clear();
+                return;
+            }
+            
+            try
+            {
+                // Load appointments
+                var (appointments, _) = await _appointmentService.GetAppointmentsAsync(
+                    page: 1,
+                    limit: 1000,
+                    patientId: SelectedPatient.Id);
+                
+                PatientAppointments.Clear();
+                foreach (var apt in appointments.OrderByDescending(a => a.AppointmentDate))
+                {
+                    PatientAppointments.Add(apt);
+                }
+                
+                // Load treatments
+                var (treatments, _) = await _treatmentService.GetTreatmentsAsync(
+                    page: 1,
+                    limit: 1000,
+                    patientId: SelectedPatient.Id);
+                
+                PatientTreatments.Clear();
+                foreach (var treatment in treatments.OrderByDescending(t => t.TreatmentDate))
+                {
+                    PatientTreatments.Add(treatment);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Hasta detayları yüklenirken hata: {ex.Message}");
             }
         }
     }

@@ -67,14 +67,16 @@
                          Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                          Margin="0,0,0,10"/>
 
-                <TextBox Text="{Binding Patient.City, UpdateSourceTrigger=PropertyChanged}" 
-                         materialDesign:HintAssist.Hint="Şehir" 
-                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                <ComboBox ItemsSource="{Binding Cities}"
+                         SelectedItem="{Binding Patient.City, UpdateSourceTrigger=PropertyChanged}"
+                         materialDesign:HintAssist.Hint="Şehir"
+                         IsEditable="False"
                          Margin="0,0,0,10"/>
 
-                <TextBox Text="{Binding Patient.Country, UpdateSourceTrigger=PropertyChanged}" 
-                         materialDesign:HintAssist.Hint="Ülke" 
-                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                <ComboBox ItemsSource="{Binding Countries}"
+                         SelectedItem="{Binding Patient.Country, UpdateSourceTrigger=PropertyChanged}"
+                         materialDesign:HintAssist.Hint="Ülke"
+                         IsEditable="False"
                          Margin="0,0,0,10"/>
                 
                 <!-- İndirim Anlaşması -->
@@ -87,16 +89,17 @@
                             <TextBlock>
                                 <Run Text="{Binding Name}"/>
                                 <Run Text=" (" Foreground="Gray"/>
-                                <Run Text="{Binding AverageDiscountPercentage, StringFormat='{}{0:F1}%'}" Foreground="Gray"/>
+                                <Run Text="{Binding AverageDiscountPercentage, StringFormat='{}{0:F1}%', Mode=OneWay}" Foreground="Gray"/>
                                 <Run Text=")" Foreground="Gray"/>
                             </TextBlock>
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
 
-                <TextBox Text="{Binding Patient.BloodType, UpdateSourceTrigger=PropertyChanged}" 
-                         materialDesign:HintAssist.Hint="Kan Grubu" 
-                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                <ComboBox ItemsSource="{Binding BloodTypes}"
+                         SelectedItem="{Binding Patient.BloodType, UpdateSourceTrigger=PropertyChanged}"
+                         materialDesign:HintAssist.Hint="Kan Grubu"
+                         IsEditable="False"
                          Margin="0,0,0,10"/>
 
                 <TextBox Text="{Binding Patient.Allergies, UpdateSourceTrigger=PropertyChanged}" 
