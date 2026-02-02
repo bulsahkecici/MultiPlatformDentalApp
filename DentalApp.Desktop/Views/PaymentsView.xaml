@@ -18,94 +18,314 @@
                    FontWeight="Bold"
                    Margin="0,0,0,20"/>
 
-        <materialDesign:Card Grid.Row="1" Padding="20" Background="White">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="20"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Sol Panel: Hasta ve Tedavi Planı Seçimi -->
-                <StackPanel Grid.Column="0">
-                    <TextBlock Text="Hasta Seçimi" 
-                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
-                               Foreground="{StaticResource BulkaDarkBlue}"
-                               Margin="0,0,0,10"/>
-
-                    <ComboBox ItemsSource="{Binding Patients}"
-                             SelectedItem="{Binding SelectedPatient}"
-                             DisplayMemberPath="FullName"
-                             materialDesign:HintAssist.Hint="Hasta Seçin"
-                             Margin="0,0,0,20"/>
-
-                    <TextBlock Text="Tedavi Planı" 
-                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
-                               Foreground="{StaticResource BulkaDarkBlue}"
-                               Margin="0,0,0,10"/>
-
-                    <ComboBox ItemsSource="{Binding TreatmentPlans}"
-                             SelectedItem="{Binding SelectedTreatmentPlan}"
-                             DisplayMemberPath="Title"
-                             materialDesign:HintAssist.Hint="Tedavi Planı Seçin"
-                             Margin="0,0,0,20"/>
-
-                    <TextBlock Text="İndirim Uygula" 
-                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
-                               Foreground="{StaticResource BulkaDarkBlue}"
-                               Margin="0,20,0,10"/>
-
-                    <TextBox Text="{Binding DiscountAmount, UpdateSourceTrigger=PropertyChanged}" 
-                             materialDesign:HintAssist.Hint="İndirim Tutarı (TRY)" 
-                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                             Margin="0,0,0,10"/>
-
-                    <TextBox Text="{Binding DiscountPercentage, UpdateSourceTrigger=PropertyChanged}" 
-                             materialDesign:HintAssist.Hint="İndirim Yüzdesi (%)" 
-                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                             Margin="0,0,0,20"/>
-
-                    <Button Content="İndirim Uygula" 
-                           Command="{Binding ApplyDiscountCommand}"
-                           Style="{StaticResource MaterialDesignRaisedButton}"
-                           Background="{StaticResource BulkaMediumBlue}"
-                           Foreground="White"
-                           Margin="0,0,0,10"/>
-
-                    <Button Content="Ödeme İşle" 
-                           Command="{Binding ProcessPaymentCommand}"
-                           Style="{StaticResource MaterialDesignRaisedButton}"
-                           Background="{StaticResource BulkaMediumBlue}"
-                           Foreground="White"/>
-                </StackPanel>
-
-                <!-- Sağ Panel: Bilgiler -->
-                <StackPanel Grid.Column="2">
-                    <TextBlock Text="Bilgiler" 
-                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
-                               Foreground="{StaticResource BulkaDarkBlue}"
-                               Margin="0,0,0,20"/>
-
-                    <materialDesign:Card Padding="15" Background="{StaticResource BulkaLightBlue}">
+        <TabControl Grid.Row="1" Style="{StaticResource MaterialDesignFilledTabControl}">
+            <!-- 1. İndirim Anlaşmaları -->
+            <TabItem Header="İndirim Anlaşmaları">
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <materialDesign:Card Grid.Row="0" Padding="20" Margin="0,0,0,20" Background="White">
                         <StackPanel>
-                            <TextBlock Text="Seçili Tedavi Planı:" 
-                                       Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                       Margin="0,0,0,5"/>
-                            <TextBlock Text="{Binding SelectedTreatmentPlan.Title}" 
-                                       Style="{StaticResource MaterialDesignBody1TextBlock}"
-                                       FontWeight="Bold"
-                                       Margin="0,0,0,15"/>
-
-                            <TextBlock Text="Toplam Tutar:" 
-                                       Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                       Margin="0,0,0,5"/>
-                            <TextBlock Text="{Binding SelectedTreatmentPlan.TotalEstimatedCost, StringFormat='{}{0:F2} TRY'}" 
-                                       Style="{StaticResource MaterialDesignBody1TextBlock}"
-                                       FontWeight="Bold"/>
+                            <TextBlock Text="Yeni İndirim Anlaşması" 
+                                     Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                     Foreground="{StaticResource BulkaDarkBlue}"
+                                     FontWeight="Bold"
+                                     Margin="0,0,0,15"/>
+                            
+                            <TextBox Text="{Binding NewAgreementName, UpdateSourceTrigger=PropertyChanged}" 
+                                   materialDesign:HintAssist.Hint="Kurum Adı *" 
+                                   Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                   Margin="0,0,0,15"/>
+                            
+                            <TextBlock Text="Kategori Bazlı İndirim Oranları" 
+                                     Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
+                                     Foreground="{StaticResource BulkaDarkBlue}"
+                                     Margin="0,0,0,10"/>
+                            
+                            <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding CategoryDiscounts}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,0,0,10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="150"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding CategoryName}" 
+                                                         VerticalAlignment="Center"
+                                                         Margin="0,0,10,0"/>
+                                                <TextBox Grid.Column="1"
+                                                       Text="{Binding DiscountPercentage, UpdateSourceTrigger=PropertyChanged, StringFormat='{}{0:F1}'}" 
+                                                       materialDesign:HintAssist.Hint="İndirim %" 
+                                                       Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                            
+                            <Button Content="Kaydet" 
+                                  Command="{Binding AddAgreementCommand}"
+                                  Style="{StaticResource MaterialDesignRaisedButton}"
+                                  Background="{StaticResource BulkaMediumBlue}"
+                                  Foreground="White"
+                                  HorizontalAlignment="Right"
+                                  Width="120"
+                                  Margin="0,15,0,0"/>
                         </StackPanel>
                     </materialDesign:Card>
-                </StackPanel>
-            </Grid>
-        </materialDesign:Card>
+                    
+                    <materialDesign:Card Grid.Row="1" Padding="20" Background="White">
+                        <StackPanel>
+                            <TextBlock Text="Mevcut İndirim Anlaşmaları" 
+                                     Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                     Foreground="{StaticResource BulkaDarkBlue}"
+                                     FontWeight="Bold"
+                                     Margin="0,0,0,15"/>
+                            
+                            <DataGrid ItemsSource="{Binding InstitutionAgreements}" 
+                                    AutoGenerateColumns="False"
+                                    CanUserAddRows="False"
+                                    IsReadOnly="True"
+                                    Style="{StaticResource MaterialDesignDataGrid}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Kurum Adı" Binding="{Binding Name}" Width="*"/>
+                                    <DataGridTextColumn Header="Ortalama İndirim" Binding="{Binding AverageDiscountPercentage, StringFormat='{}{0:F1}%'}" Width="*"/>
+                                    <DataGridTemplateColumn Header="İşlemler" Width="Auto">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="Düzenle" 
+                                                      Command="{Binding DataContext.EditAgreementCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      CommandParameter="{Binding}"
+                                                      Style="{StaticResource MaterialDesignFlatButton}"
+                                                      Margin="5,0"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </materialDesign:Card>
+                </Grid>
+            </TabItem>
+            
+            <!-- 2. Tedavi Planı Onaylama -->
+            <TabItem Header="Tedavi Planı Onaylama">
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <materialDesign:Card Grid.Row="0" Padding="20" Margin="0,0,0,20" Background="White">
+                        <StackPanel>
+                            <TextBlock Text="Onay Bekleyen Tedavi Planları" 
+                                     Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                     Foreground="{StaticResource BulkaDarkBlue}"
+                                     FontWeight="Bold"
+                                     Margin="0,0,0,15"/>
+                            
+                            <Button Content="Planları Yükle" 
+                                  Command="{Binding LoadPendingPlansCommand}"
+                                  Style="{StaticResource MaterialDesignRaisedButton}"
+                                  Background="{StaticResource BulkaMediumBlue}"
+                                  Foreground="White"
+                                  HorizontalAlignment="Right"
+                                  Width="150"/>
+                        </StackPanel>
+                    </materialDesign:Card>
+                    
+                    <materialDesign:Card Grid.Row="1" Padding="20" Background="White">
+                        <DataGrid ItemsSource="{Binding PendingTreatmentPlans}" 
+                                SelectedItem="{Binding SelectedPlan}"
+                                AutoGenerateColumns="False"
+                                CanUserAddRows="False"
+                                Style="{StaticResource MaterialDesignDataGrid}"
+                                MinHeight="300"
+                                RowDetailsVisibilityMode="VisibleWhenSelected">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="Seç" Width="Auto">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                    Checked="CheckBox_Checked"
+                                                    Unchecked="CheckBox_Unchecked"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Hasta" Binding="{Binding PatientName}" Width="*"/>
+                                <DataGridTextColumn Header="Diş Hekimi" Binding="{Binding DentistName}" Width="*"/>
+                                <DataGridTextColumn Header="İşlemler" Binding="{Binding ProceduresCount, StringFormat='{}{0} işlem'}" Width="Auto"/>
+                                <DataGridTextColumn Header="Toplam Maliyet" 
+                                                 Binding="{Binding TotalCost, StringFormat='{}{0:F2} TRY'}" 
+                                                 Width="*"
+                                                 Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            </DataGrid.Columns>
+                            <DataGrid.RowDetailsTemplate>
+                                <DataTemplate>
+                                    <materialDesign:Card Margin="20,10" Padding="15" Background="{StaticResource BulkaLightBlue}">
+                                        <StackPanel>
+                                            <TextBlock Text="İşlem Detayları" 
+                                                     Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
+                                                     Foreground="{StaticResource BulkaDarkBlue}"
+                                                     FontWeight="Bold"
+                                                     Margin="0,0,0,10"/>
+                                            <DataGrid ItemsSource="{Binding Procedures}" 
+                                                    AutoGenerateColumns="False"
+                                                    CanUserAddRows="False"
+                                                    IsReadOnly="True"
+                                                    HeadersVisibility="Column"
+                                                    Style="{StaticResource MaterialDesignDataGrid}">
+                                                <DataGrid.Columns>
+                                                    <DataGridTextColumn Header="Kod" Binding="{Binding Code}" Width="Auto"/>
+                                                    <DataGridTextColumn Header="İşlem Adı" Binding="{Binding Name}" Width="*"/>
+                                                    <DataGridTextColumn Header="Kategori" Binding="{Binding Category}" Width="Auto"/>
+                                                    <DataGridTextColumn Header="Fiyat" 
+                                                                     Binding="{Binding Price, StringFormat='{}{0:F2} TRY'}" 
+                                                                     Width="Auto"
+                                                                     Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                </DataGrid.Columns>
+                                            </DataGrid>
+                                        </StackPanel>
+                                    </materialDesign:Card>
+                                </DataTemplate>
+                            </DataGrid.RowDetailsTemplate>
+                        </DataGrid>
+                    </materialDesign:Card>
+                    
+                    <materialDesign:Card Grid.Row="2" Padding="20" Margin="0,20,0,0" Background="{StaticResource BulkaLightBlue}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Seçilen Planların Toplam Maliyeti:" 
+                                         Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                         FontWeight="Bold"/>
+                                <TextBlock Text="{Binding SelectedPlansTotal, StringFormat='{}{0:F2} TRY'}" 
+                                         Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                                         Foreground="{StaticResource BulkaDarkBlue}"
+                                         FontWeight="Bold"
+                                         Margin="0,5,0,0"/>
+                            </StackPanel>
+                            
+                            <Button Grid.Column="1"
+                                  Content="Onayla" 
+                                  Command="{Binding ApprovePlansCommand}"
+                                  Style="{StaticResource MaterialDesignRaisedButton}"
+                                  Background="{StaticResource BulkaMediumBlue}"
+                                  Foreground="White"
+                                  Width="150"
+                                  Height="40"/>
+                        </Grid>
+                    </materialDesign:Card>
+                </Grid>
+            </TabItem>
+            
+            <!-- 3. Ödeme Alma -->
+            <TabItem Header="Ödeme Alma">
+                <Grid Margin="20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Sol Panel: Ödeme Formu -->
+                    <materialDesign:Card Grid.Column="0" Padding="20" Background="White">
+                        <StackPanel>
+                            <TextBlock Text="Ödeme İşlemi" 
+                                     Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                     Foreground="{StaticResource BulkaDarkBlue}"
+                                     FontWeight="Bold"
+                                     Margin="0,0,0,20"/>
+                            
+                            <ComboBox ItemsSource="{Binding Patients}"
+                                    SelectedItem="{Binding SelectedPaymentPatient}"
+                                    DisplayMemberPath="FullName"
+                                    materialDesign:HintAssist.Hint="Hasta Seçin *"
+                                    Margin="0,0,0,15"/>
+                            
+                            <TextBlock Text="Toplam Maliyet:" 
+                                     Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                     Margin="0,0,0,5"/>
+                            <TextBlock Text="{Binding SelectedPaymentPatientTotal, StringFormat='{}{0:F2} TRY'}" 
+                                     Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                                     Foreground="{StaticResource BulkaDarkBlue}"
+                                     FontWeight="Bold"
+                                     Margin="0,0,0,20"/>
+                            
+                            <ComboBox ItemsSource="{Binding PaymentMethods}"
+                                    SelectedItem="{Binding SelectedPaymentMethod}"
+                                    materialDesign:HintAssist.Hint="Ödeme Şekli *"
+                                    Margin="0,0,0,15"/>
+                            
+                            <TextBox Text="{Binding PaymentAmount, UpdateSourceTrigger=PropertyChanged}" 
+                                   materialDesign:HintAssist.Hint="Alınan Miktar (TRY) *" 
+                                   Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                   Margin="0,0,0,15"/>
+                            
+                            <Button Content="Ödeme İşle" 
+                                  Command="{Binding ProcessPaymentCommand}"
+                                  Style="{StaticResource MaterialDesignRaisedButton}"
+                                  Background="{StaticResource BulkaMediumBlue}"
+                                  Foreground="White"
+                                  Width="150"
+                                  Height="40"/>
+                        </StackPanel>
+                    </materialDesign:Card>
+                    
+                    <!-- Sağ Panel: Bilgiler -->
+                    <materialDesign:Card Grid.Column="2" Padding="20" Background="White">
+                        <StackPanel>
+                            <TextBlock Text="Bilgiler" 
+                                     Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                     Foreground="{StaticResource BulkaDarkBlue}"
+                                     FontWeight="Bold"
+                                     Margin="0,0,0,20"/>
+                            
+                            <materialDesign:Card Padding="15" Background="{StaticResource BulkaLightBlue}" Margin="0,0,0,15">
+                                <StackPanel>
+                                    <TextBlock Text="Kalan Borç:" 
+                                             Style="{StaticResource MaterialDesignBody2TextBlock}"/>
+                                    <TextBlock Text="{Binding RemainingDebt, StringFormat='{}{0:F2} TRY'}" 
+                                             Style="{StaticResource MaterialDesignHeadline4TextBlock}"
+                                             Foreground="{StaticResource BulkaDarkBlue}"
+                                             FontWeight="Bold"
+                                             Margin="0,5,0,0"/>
+                                </StackPanel>
+                            </materialDesign:Card>
+                            
+                            <materialDesign:Card Padding="15" Background="{StaticResource BulkaLightBlue}">
+                                <StackPanel>
+                                    <TextBlock Text="Hekimin Ciro Payı:" 
+                                             Style="{StaticResource MaterialDesignBody2TextBlock}"/>
+                                    <TextBlock Text="{Binding DentistCommission, StringFormat='{}{0:F2} TRY'}" 
+                                             Style="{StaticResource MaterialDesignHeadline4TextBlock}"
+                                             Foreground="{StaticResource BulkaDarkBlue}"
+                                             FontWeight="Bold"
+                                             Margin="0,5,0,0"/>
+                                    <TextBlock Text="{Binding DentistCommissionPercentage, StringFormat='(Ciro Payı: {0:F2}%)'}" 
+                                             Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                             Foreground="{StaticResource BulkaMediumBlue}"
+                                             Margin="0,5,0,0"/>
+                                </StackPanel>
+                            </materialDesign:Card>
+                        </StackPanel>
+                    </materialDesign:Card>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <ProgressBar Grid.Row="1" Style="{StaticResource MaterialDesignCircularProgressBar}" 
+                     IsIndeterminate="True" 
+                     Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" Width="60" Height="60"/>
     </Grid>
 </UserControl>

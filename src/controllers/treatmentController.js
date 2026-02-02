@@ -291,9 +291,170 @@ async function updateTreatment(req, res, next) {
     }
 }
 
+/**
+ * Create treatment plan with multiple teeth and procedures
+ */
+async function createTreatmentPlan(req, res, next) {
+    try {
+        const {
+            patientId,
+            dentistId,
+            title,
+            description,
+            items, // Array of { toothNumber, treatmentType, cost, notes }
+        } = req.body || {};
+
+        if (!patientId || !title || !items || !Array.isArray(items) || items.length === 0) {
+            return next(new AppError('Patient ID, title, and items are required', 400));
+        }
+
+        // Create treatment plan
+        const planResult = await query(
+            `INSERT INTO treatment_plans (
+                patient_id, dentist_id, title, description, status,
+                created_by, updated_by, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, 'pending', $5, $5, NOW(), NOW())
+            RETURNING *`,
+            [
+                patientId,
+                dentistId || req.user.sub,
+                title,
+                description || null,
+                req.user.sub,
+            ],
+        );
+
+        const plan = planResult.rows[0];
+
+        // Create treatment plan items
+        const itemPromises = items.map((item) => {
+            return query(
+                `INSERT INTO treatment_plan_items (
+                    treatment_plan_id, tooth_number, treatment_type, cost, currency, notes, created_at, updated_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+                RETURNING *`,
+                [
+                    plan.id,
+                    item.toothNumber,
+                    item.treatmentType,
+                    item.cost || 0,
+                    item.currency || 'TRY',
+                    item.notes || null,
+                ],
+            );
+        });
+
+        await Promise.all(itemPromises);
+
+        // Get all items for response
+        const itemsResult = await query(
+            'SELECT * FROM treatment_plan_items WHERE treatment_plan_id = $1',
+            [plan.id],
+        );
+
+        const ipAddress = getClientIp(req);
+        const userAgent = req.headers['user-agent'] || '';
+
+        await logDataEvent({
+            eventType: AuditEventType.TREATMENT_CREATED,
+            userId: req.user.sub,
+            ipAddress,
+            userAgent,
+            resourceType: 'treatment_plan',
+            resourceId: plan.id,
+            changes: { patientId, title, itemCount: items.length },
+        });
+
+        return res.status(201).json({
+            plan: {
+                ...plan,
+                items: itemsResult.rows,
+            },
+        });
+    } catch (err) {
+        logger.error({ err }, 'Failed to create treatment plan');
+        return next(new AppError('Failed to create treatment plan', 500));
+    }
+}
+
+/**
+ * Get treatment plans
+ */
+async function getTreatmentPlans(req, res, next) {
+    try {
+        const { patientId, dentistId, status } = req.query;
+
+        const conditions = [];
+        const params = [];
+        let paramIndex = 1;
+
+        if (patientId) {
+            conditions.push(`tp.patient_id = $${paramIndex++}`);
+            params.push(parseInt(patientId, 10));
+        }
+
+        if (dentistId) {
+            conditions.push(`tp.dentist_id = $${paramIndex++}`);
+            params.push(parseInt(dentistId, 10));
+        } else if (isDentist(req)) {
+            conditions.push(`tp.dentist_id = $${paramIndex++}`);
+            params.push(req.user.sub);
+        }
+
+        if (status) {
+            conditions.push(`tp.status = $${paramIndex++}`);
+            params.push(status);
+        }
+
+        const whereClause = conditions.length > 0 ? conditions.join(' AND ') : '1=1';
+
+        const result = await query(
+            `SELECT tp.*, 
+                p.first_name || ' ' || p.last_name as patient_name,
+                u.email as dentist_email
+            FROM treatment_plans tp
+            LEFT JOIN patients p ON tp.patient_id = p.id
+            LEFT JOIN users u ON tp.dentist_id = u.id
+            WHERE ${whereClause}
+            ORDER BY tp.created_at DESC`,
+            params,
+        );
+
+        // Get items for each plan
+        const plans = await Promise.all(
+            result.rows.map(async (plan) => {
+                const itemsResult = await query(
+                    'SELECT * FROM treatment_plan_items WHERE treatment_plan_id = $1',
+                    [plan.id],
+                );
+                
+                // Hide cost if dentist
+                const canViewPrice = canViewPrices(req);
+                const items = itemsResult.rows.map(item => ({
+                    ...item,
+                    cost: canViewPrice ? item.cost : null,
+                }));
+                
+                return {
+                    ...plan,
+                    total_estimated_cost: canViewPrice ? plan.total_estimated_cost : null,
+                    items,
+                };
+            }),
+        );
+
+        return res.status(200).json({ plans });
+    } catch (err) {
+        logger.error({ err }, 'Failed to fetch treatment plans');
+        return next(new AppError('Failed to fetch treatment plans', 500));
+    }
+}
+
 module.exports = {
     createTreatment,
     getTreatments,
     getTreatmentById,
     updateTreatment,
+    createTreatmentPlan,
+    getTreatmentPlans,
 };

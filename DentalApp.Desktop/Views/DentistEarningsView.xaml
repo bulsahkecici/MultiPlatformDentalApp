@@ -30,115 +30,100 @@
             </Button>
         </StackPanel>
 
-        <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,20">
-            <materialDesign:Card Margin="10" Padding="20" Background="White">
+        <!-- 3 Kart: Ciro, Ödenen Ciro Payı, Toplam Kazanç -->
+        <UniformGrid Grid.Row="1" Columns="3" Margin="0,0,0,20">
+            <materialDesign:Card Margin="10" Padding="30" Background="White">
                 <StackPanel>
                     <materialDesign:PackIcon Kind="CurrencyUsd" 
-                                           Width="48" 
-                                           Height="48" 
+                                           Width="56" 
+                                           Height="56" 
                                            HorizontalAlignment="Center" 
-                                           Margin="0,0,0,10"
+                                           Margin="0,0,0,15"
                                            Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="{Binding TotalRevenue, StringFormat='{}{0:F2} TRY'}" 
-                             Style="{StaticResource MaterialDesignHeadline2TextBlock}" 
+                    <TextBlock Text="{Binding TotalTurnover, StringFormat='{}{0:N2} TRY'}" 
+                             Style="{StaticResource MaterialDesignHeadline3TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
-                             HorizontalAlignment="Center"/>
-                    <TextBlock Text="Toplam Gelir" 
-                             Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                             HorizontalAlignment="Center"
+                             TextAlignment="Center"/>
+                    <TextBlock Text="Ciro" 
+                             Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
                              Foreground="{StaticResource BulkaMediumBlue}"
-                             HorizontalAlignment="Center"/>
+                             HorizontalAlignment="Center"
+                             Margin="0,10,0,0"/>
+                    <TextBlock Text="Toplam yaptığı işlerin maliyeti" 
+                             Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                             Foreground="Gray"
+                             HorizontalAlignment="Center"
+                             TextAlignment="Center"
+                             TextWrapping="Wrap"
+                             Margin="0,5,0,0"/>
                 </StackPanel>
             </materialDesign:Card>
 
-            <materialDesign:Card Margin="10" Padding="20" Background="White">
+            <materialDesign:Card Margin="10" Padding="30" Background="White">
                 <StackPanel>
-                    <materialDesign:PackIcon Kind="Percent" 
-                                           Width="48" 
-                                           Height="48" 
+                    <materialDesign:PackIcon Kind="CashCheck" 
+                                           Width="56" 
+                                           Height="56" 
                                            HorizontalAlignment="Center" 
-                                           Margin="0,0,0,10"
-                                           Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="{Binding CommissionRate, StringFormat='{}{0:F1}%'}" 
-                             Style="{StaticResource MaterialDesignHeadline2TextBlock}" 
+                                           Margin="0,0,0,15"
+                                           Foreground="{StaticResource BulkaLightGreen}"/>
+                    <TextBlock Text="{Binding PaidTurnoverShare, StringFormat='{}{0:N2} TRY'}" 
+                             Style="{StaticResource MaterialDesignHeadline3TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
-                             HorizontalAlignment="Center"/>
-                    <TextBlock Text="Komisyon Oranı" 
-                             Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                             HorizontalAlignment="Center"
+                             TextAlignment="Center"/>
+                    <TextBlock Text="Ödenen Ciro Payı" 
+                             Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
                              Foreground="{StaticResource BulkaMediumBlue}"
-                             HorizontalAlignment="Center"/>
+                             HorizontalAlignment="Center"
+                             Margin="0,10,0,0"/>
+                    <TextBlock Text="{Binding CommissionRate, StringFormat='Ciro Payı: {0:F1}%'}" 
+                             Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                             Foreground="Gray"
+                             HorizontalAlignment="Center"
+                             TextAlignment="Center"
+                             Margin="0,5,0,0"/>
                 </StackPanel>
             </materialDesign:Card>
 
-            <materialDesign:Card Margin="10" Padding="20" Background="White">
+            <materialDesign:Card Margin="10" Padding="30" Background="{StaticResource BulkaLightBlue}">
                 <StackPanel>
-                    <materialDesign:PackIcon Kind="Cash" 
-                                           Width="48" 
-                                           Height="48" 
+                    <materialDesign:PackIcon Kind="TrendingUp" 
+                                           Width="56" 
+                                           Height="56" 
                                            HorizontalAlignment="Center" 
-                                           Margin="0,0,0,10"
-                                           Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="{Binding TotalEarnings, StringFormat='{}{0:F2} TRY'}" 
-                             Style="{StaticResource MaterialDesignHeadline2TextBlock}" 
+                                           Margin="0,0,0,15"
+                                           Foreground="{StaticResource BulkaDarkBlue}"/>
+                    <TextBlock Text="{Binding TotalEarnings, StringFormat='{}{0:N2} TRY'}" 
+                             Style="{StaticResource MaterialDesignHeadline3TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
-                             HorizontalAlignment="Center"/>
+                             HorizontalAlignment="Center"
+                             TextAlignment="Center"/>
                     <TextBlock Text="Toplam Kazanç" 
-                             Style="{StaticResource MaterialDesignBody2TextBlock}" 
-                             Foreground="{StaticResource BulkaMediumBlue}"
-                             HorizontalAlignment="Center"/>
-                </StackPanel>
-            </materialDesign:Card>
-
-            <materialDesign:Card Margin="10" Padding="20" Background="White">
-                <StackPanel>
-                    <materialDesign:PackIcon Kind="MedicalBag" 
-                                           Width="48" 
-                                           Height="48" 
-                                           HorizontalAlignment="Center" 
-                                           Margin="0,0,0,10"
-                                           Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="{Binding TreatmentCount}" 
-                             Style="{StaticResource MaterialDesignHeadline2TextBlock}" 
+                             Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
-                             FontWeight="Bold"
-                             HorizontalAlignment="Center"/>
-                    <TextBlock Text="Toplam Tedavi" 
+                             HorizontalAlignment="Center"
+                             Margin="0,10,0,0"/>
+                    <TextBlock Text="{Binding Salary, StringFormat='Maaş: {0:N2} TRY'}" 
                              Style="{StaticResource MaterialDesignBody2TextBlock}" 
-                             Foreground="{StaticResource BulkaMediumBlue}"
-                             HorizontalAlignment="Center"/>
+                             Foreground="{StaticResource BulkaDarkBlue}"
+                             HorizontalAlignment="Center"
+                             TextAlignment="Center"
+                             Margin="0,5,0,0"/>
+                    <TextBlock Text="Maaş + Ödenen Ciro Payı" 
+                             Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                             Foreground="Gray"
+                             HorizontalAlignment="Center"
+                             TextAlignment="Center"
+                             TextWrapping="Wrap"
+                             Margin="0,5,0,0"/>
                 </StackPanel>
             </materialDesign:Card>
         </UniformGrid>
-
-        <materialDesign:Card Grid.Row="2" Padding="20" Background="White">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <TextBlock Text="Tedavi Detayları" 
-                           Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
-                           Foreground="{StaticResource BulkaDarkBlue}"
-                           Margin="0,0,0,15"/>
-
-                <DataGrid Grid.Row="1" 
-                         ItemsSource="{Binding Treatments}"
-                         AutoGenerateColumns="False"
-                         IsReadOnly="True"
-                         HeadersVisibility="Column">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Tarih" Binding="{Binding TreatmentDate, StringFormat='{}{0:dd.MM.yyyy}'}" Width="100"/>
-                        <DataGridTextColumn Header="Hasta" Binding="{Binding PatientFullName}" Width="200"/>
-                        <DataGridTextColumn Header="Tedavi Türü" Binding="{Binding TreatmentType}" Width="*"/>
-                        <DataGridTextColumn Header="Gelir" Binding="{Binding Cost, StringFormat='{}{0:F2} TRY'}" Width="120"/>
-                        <DataGridTextColumn Header="Kazanç" Binding="{Binding Earnings, StringFormat='{}{0:F2} TRY'}" Width="120"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </Grid>
-        </materialDesign:Card>
 
         <ProgressBar Grid.Row="2" 
                      Style="{StaticResource MaterialDesignCircularProgressBar}" 

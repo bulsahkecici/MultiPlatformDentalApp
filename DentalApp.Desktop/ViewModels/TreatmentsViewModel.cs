@@ -13,6 +13,7 @@ namespace DentalApp.Desktop.ViewModels
         private readonly TreatmentService _treatmentService;
         private readonly PatientService _patientService;
         private bool _isBusy;
+        private bool _canViewPrices;
         private Treatment? _selectedTreatment;
         private int? _selectedPatientId;
         private DateTime? _startDate;
@@ -88,6 +89,12 @@ namespace DentalApp.Desktop.ViewModels
         }
 
         public string PageInfo => $"Sayfa {CurrentPage} / {TotalPages}";
+        
+        public bool CanViewPrices
+        {
+            get => _canViewPrices;
+            set => SetProperty(ref _canViewPrices, value);
+        }
 
         public ICommand RefreshCommand { get; }
         public ICommand AddTreatmentCommand { get; }
@@ -99,10 +106,11 @@ namespace DentalApp.Desktop.ViewModels
         public event Action<Treatment>? EditTreatmentRequested;
         public event Action? AddTreatmentRequested;
 
-        public TreatmentsViewModel(TreatmentService treatmentService, PatientService patientService)
+        public TreatmentsViewModel(TreatmentService treatmentService, PatientService patientService, bool canViewPrices = false)
         {
             _treatmentService = treatmentService;
             _patientService = patientService;
+            _canViewPrices = canViewPrices;
             RefreshCommand = new RelayCommand(async _ => await LoadTreatmentsAsync(), _ => !IsBusy);
             AddTreatmentCommand = new RelayCommand(_ => AddTreatmentRequested?.Invoke());
             EditTreatmentCommand = new RelayCommand(_ =>

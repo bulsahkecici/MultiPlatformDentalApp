@@ -21,9 +21,7 @@
     <Content Include="Data\tdb_2026_tarife_full.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Assets\bulka dental logo.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <Resource Include="Assets\bulka dental logo.png" />
     <Content Include="Assets\mouth_chart.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

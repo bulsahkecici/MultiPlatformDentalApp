@@ -32,10 +32,16 @@
                          Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                          Margin="0,0,0,10"/>
 
-                <DatePicker SelectedDate="{Binding Patient.DateOfBirth}" 
+                <DatePicker SelectedDate="{Binding Patient.DateOfBirth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, NotifyOnTargetUpdated=True}" 
                            materialDesign:HintAssist.Hint="Doğum Tarihi"
                            Language="tr-TR"
-                           Margin="0,0,0,10"/>
+                           Margin="0,0,0,5"
+                           SelectedDateChanged="DatePicker_SelectedDateChanged"/>
+                <TextBlock x:Name="AgeTextBlock"
+                         Text="{Binding PatientAge, StringFormat='Yaş: {0}'}" 
+                         Style="{StaticResource MaterialDesignBody2TextBlock}"
+                         Foreground="{StaticResource BulkaMediumBlue}"
+                         Margin="0,0,0,10"/>
 
                 <ComboBox SelectedValue="{Binding Patient.Gender}"
                          SelectedValuePath="Content"
@@ -66,15 +72,27 @@
                          Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                          Margin="0,0,0,10"/>
 
-                <TextBox Text="{Binding Patient.PostalCode, UpdateSourceTrigger=PropertyChanged}" 
-                         materialDesign:HintAssist.Hint="Posta Kodu" 
-                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                         Margin="0,0,0,10"/>
-
                 <TextBox Text="{Binding Patient.Country, UpdateSourceTrigger=PropertyChanged}" 
                          materialDesign:HintAssist.Hint="Ülke" 
                          Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                          Margin="0,0,0,10"/>
+                
+                <!-- İndirim Anlaşması -->
+                <ComboBox ItemsSource="{Binding InstitutionAgreements}"
+                         SelectedItem="{Binding SelectedInstitutionAgreement}"
+                         materialDesign:HintAssist.Hint="Kurum/Sigorta (İndirim Anlaşması)"
+                         Margin="0,0,0,10">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock>
+                                <Run Text="{Binding Name}"/>
+                                <Run Text=" (" Foreground="Gray"/>
+                                <Run Text="{Binding AverageDiscountPercentage, StringFormat='{}{0:F1}%'}" Foreground="Gray"/>
+                                <Run Text=")" Foreground="Gray"/>
+                            </TextBlock>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
 
                 <TextBox Text="{Binding Patient.BloodType, UpdateSourceTrigger=PropertyChanged}" 
                          materialDesign:HintAssist.Hint="Kan Grubu" 

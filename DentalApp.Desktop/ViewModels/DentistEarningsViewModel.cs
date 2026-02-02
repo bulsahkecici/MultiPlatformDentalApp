@@ -10,10 +10,11 @@ namespace DentalApp.Desktop.ViewModels
     {
         private readonly ApiService _apiService;
         private bool _isBusy;
-        private decimal _totalRevenue;
-        private decimal _totalEarnings;
+        private decimal _salary;
+        private decimal _totalTurnover; // Ciro: toplam yaptığı işlerin maliyeti
+        private decimal _paidTurnoverShare; // Ödenen Ciro Payı: anlaştığı yüzde ile ödemesi alınan işlerin ücreti
+        private decimal _totalEarnings; // Toplam Kazanç: maaş + ödenen ciro payı
         private decimal _commissionRate;
-        private int _treatmentCount;
 
         public bool IsBusy
         {
@@ -21,28 +22,57 @@ namespace DentalApp.Desktop.ViewModels
             set => SetProperty(ref _isBusy, value);
         }
 
-        public decimal TotalRevenue
+        public decimal Salary
         {
-            get => _totalRevenue;
-            set => SetProperty(ref _totalRevenue, value);
+            get => _salary;
+            set
+            {
+                if (SetProperty(ref _salary, value))
+                {
+                    CalculateTotalEarnings();
+                }
+            }
         }
-
+        
+        public decimal TotalTurnover
+        {
+            get => _totalTurnover;
+            set
+            {
+                if (SetProperty(ref _totalTurnover, value))
+                {
+                    CalculateTotalEarnings();
+                }
+            }
+        }
+        
+        public decimal PaidTurnoverShare
+        {
+            get => _paidTurnoverShare;
+            set
+            {
+                if (SetProperty(ref _paidTurnoverShare, value))
+                {
+                    CalculateTotalEarnings();
+                }
+            }
+        }
+        
         public decimal TotalEarnings
         {
             get => _totalEarnings;
-            set => SetProperty(ref _totalEarnings, value);
+            private set => SetProperty(ref _totalEarnings, value);
+        }
+        
+        private void CalculateTotalEarnings()
+        {
+            TotalEarnings = Salary + PaidTurnoverShare;
         }
 
         public decimal CommissionRate
         {
             get => _commissionRate;
             set => SetProperty(ref _commissionRate, value);
-        }
-
-        public int TreatmentCount
-        {
-            get => _treatmentCount;
-            set => SetProperty(ref _treatmentCount, value);
         }
 
         public ObservableCollection<EarningsTreatment> Treatments { get; } = new();
@@ -60,23 +90,18 @@ namespace DentalApp.Desktop.ViewModels
             IsBusy = true;
             try
             {
-                var response = await _apiService.GetAsync<DentistEarningsResponse>("/dentist/earnings");
-                if (response != null && response.Earnings != null)
-                {
-                    TotalRevenue = response.Earnings.TotalRevenue;
-                    TotalEarnings = response.Earnings.Earnings;
-                    CommissionRate = response.Earnings.CommissionRate;
-                    TreatmentCount = response.Earnings.TreatmentCount;
-
-                    Treatments.Clear();
-                    if (response.Treatments != null)
-                    {
-                        foreach (var treatment in response.Treatments)
-                        {
-                            Treatments.Add(treatment);
-                        }
-                    }
-                }
+                // TODO: Load from backend when API is ready
+                // Placeholder data
+                Salary = 15000m; // Placeholder
+                TotalTurnover = 50000m; // Placeholder - toplam yaptığı işlerin maliyeti
+                CommissionRate = 30m; // Placeholder - %30
+                PaidTurnoverShare = 15000m; // Placeholder - ödenen ciro payı (TotalTurnover * CommissionRate / 100)
+                
+                // Calculate total earnings
+                CalculateTotalEarnings();
+                
+                // TODO: Load treatments from API
+                Treatments.Clear();
             }
             catch (Exception ex)
             {

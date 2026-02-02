@@ -4,11 +4,11 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
              mc:Ignorable="d" 
              d:DesignHeight="600" d:DesignWidth="1000">
     <Grid Margin="20" Background="Transparent">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
@@ -30,89 +30,211 @@
             </Button>
         </StackPanel>
 
-        <UniformGrid Grid.Row="1" Columns="2" Rows="2" Margin="0,0,0,20">
-            <materialDesign:Card Margin="10" Padding="20" Background="White">
+        <!-- PATRON DASHBOARD -->
+        <Grid Grid.Row="1" Visibility="{Binding IsPatron, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            
+            <!-- Toplam Tutar ve Ödenen Tutar -->
+            <UniformGrid Grid.Row="0" Columns="2" Rows="1" Margin="0,0,0,20">
+                <materialDesign:Card Margin="10" Padding="20" Background="White">
+                    <StackPanel>
+                        <materialDesign:PackIcon Kind="CurrencyUsd" 
+                                               Width="48" 
+                                               Height="48" 
+                                               HorizontalAlignment="Center" 
+                                               Margin="0,0,0,10"
+                                               Foreground="{StaticResource BulkaMediumBlue}"/>
+                        <TextBlock Text="{Binding TotalAmount, StringFormat='{}{0:N2} TRY'}" 
+                                 Style="{StaticResource MaterialDesignHeadline3TextBlock}" 
+                                 Foreground="{StaticResource BulkaDarkBlue}"
+                                 FontWeight="Bold"
+                                 HorizontalAlignment="Center"/>
+                        <TextBlock Text="Toplam Tutar" 
+                                 Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                                 Foreground="{StaticResource BulkaMediumBlue}"
+                                 HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <materialDesign:Card Margin="10" Padding="20" Background="White">
+                    <StackPanel>
+                        <materialDesign:PackIcon Kind="CheckCircle" 
+                                               Width="48" 
+                                               Height="48" 
+                                               HorizontalAlignment="Center" 
+                                               Margin="0,0,0,10"
+                                               Foreground="{StaticResource BulkaLightGreen}"/>
+                        <TextBlock Text="{Binding PaidAmount, StringFormat='{}{0:N2} TRY'}" 
+                                 Style="{StaticResource MaterialDesignHeadline3TextBlock}" 
+                                 Foreground="{StaticResource BulkaDarkBlue}"
+                                 FontWeight="Bold"
+                                 HorizontalAlignment="Center"/>
+                        <TextBlock Text="Ödenen Tutar" 
+                                 Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                                 Foreground="{StaticResource BulkaMediumBlue}"
+                                 HorizontalAlignment="Center"/>
+                        <ProgressBar Value="{Binding PaidPercentage, Mode=OneWay}" 
+                                   Maximum="100"
+                                   Height="8"
+                                   Margin="0,10,0,0"
+                                   Foreground="{StaticResource BulkaLightGreen}"/>
+                        <TextBlock Text="{Binding PaidPercentage, Mode=OneWay, StringFormat='{}{0:F1}%'}" 
+                                 Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                                 Foreground="{StaticResource BulkaMediumBlue}"
+                                 HorizontalAlignment="Center"
+                                 Margin="0,5,0,0"/>
+                    </StackPanel>
+                </materialDesign:Card>
+            </UniformGrid>
+            
+            <!-- Doktorların Ciroları -->
+            <materialDesign:Card Grid.Row="1" Margin="10" Padding="20" Background="White">
                 <StackPanel>
-                    <materialDesign:PackIcon Kind="Account" 
-                                           Width="48" 
-                                           Height="48" 
-                                           HorizontalAlignment="Center" 
-                                           Margin="0,0,0,10"
-                                           Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="{Binding TotalPatients}" 
-                             Style="{StaticResource MaterialDesignHeadline2TextBlock}" 
+                    <TextBlock Text="Doktorların Ciroları" 
+                             Style="{StaticResource MaterialDesignHeadline5TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
-                             HorizontalAlignment="Center"/>
-                    <TextBlock Text="Toplam Hasta" 
-                             Style="{StaticResource MaterialDesignBody2TextBlock}" 
-                             Foreground="{StaticResource BulkaMediumBlue}"
-                             HorizontalAlignment="Center"/>
+                             Margin="0,0,0,15"/>
+                    <DataGrid ItemsSource="{Binding DentistTurnovers}" 
+                            AutoGenerateColumns="False"
+                            CanUserAddRows="False"
+                            IsReadOnly="True"
+                            Style="{StaticResource MaterialDesignDataGrid}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Doktor Adı" Binding="{Binding DentistName}" Width="*"/>
+                            <DataGridTextColumn Header="Ciro" Binding="{Binding Turnover, StringFormat='{}{0:N2} TRY'}" Width="*"/>
+                            <DataGridTextColumn Header="Ciro Payı (%)" Binding="{Binding TurnoverPercentage, StringFormat='{}{0:F2}%'}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </StackPanel>
             </materialDesign:Card>
+        </Grid>
 
-            <materialDesign:Card Margin="10" Padding="20" Background="White">
+        <!-- SEKRETER/DENTIST DASHBOARD -->
+        <Grid Grid.Row="1" Visibility="{Binding IsSecretary, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Sol Panel: Yaklaşan Randevular -->
+            <materialDesign:Card Grid.Column="0" Padding="15" Background="White">
                 <StackPanel>
-                    <materialDesign:PackIcon Kind="CalendarToday" 
-                                           Width="48" 
-                                           Height="48" 
-                                           HorizontalAlignment="Center" 
-                                           Margin="0,0,0,10"
-                                           Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="{Binding TodayAppointments}" 
-                             Style="{StaticResource MaterialDesignHeadline2TextBlock}" 
+                    <TextBlock Text="Yaklaşan Randevular" 
+                             Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
-                             HorizontalAlignment="Center"/>
-                    <TextBlock Text="Bugünkü Randevular" 
-                             Style="{StaticResource MaterialDesignBody2TextBlock}" 
-                             Foreground="{StaticResource BulkaMediumBlue}"
-                             HorizontalAlignment="Center"/>
+                             Margin="0,0,0,15"/>
+                    <ListView ItemsSource="{Binding UpcomingAppointmentsList}" 
+                             MaxHeight="500"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <materialDesign:Card Margin="0,0,0,10" Padding="10">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding AppointmentDateTime, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
+                                                 Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                                 FontWeight="Bold"
+                                                 Foreground="{StaticResource BulkaDarkBlue}"/>
+                                        <TextBlock Text="{Binding PatientFullName}" 
+                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                 Foreground="{StaticResource BulkaMediumBlue}"/>
+                                        <TextBlock Text="{Binding DentistEmail, StringFormat='Doktor: {0}'}" 
+                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                 Foreground="{StaticResource BulkaMediumBlue}"/>
+                                    </StackPanel>
+                                </materialDesign:Card>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
                 </StackPanel>
             </materialDesign:Card>
-
-            <materialDesign:Card Margin="10" Padding="20" Background="White">
+            
+            <!-- Sağ Panel: Analog Saat + Takvim (Placeholder - basit dijital saat) -->
+            <StackPanel Grid.Column="2" Margin="10,0,0,0">
+                <materialDesign:Card Padding="20" Background="White" Margin="0,0,0,20">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding CurrentTime, StringFormat='{}{0:HH:mm:ss}'}" 
+                                 Style="{StaticResource MaterialDesignHeadline2TextBlock}" 
+                                 Foreground="{StaticResource BulkaDarkBlue}"
+                                 FontWeight="Bold"
+                                 HorizontalAlignment="Center"
+                                 x:Name="ClockTextBlock"/>
+                        <TextBlock Text="{Binding CurrentDate, StringFormat='{}{0:dddd, dd MMMM yyyy}'}" 
+                                 Style="{StaticResource MaterialDesignBody1TextBlock}" 
+                                 Foreground="{StaticResource BulkaMediumBlue}"
+                                 HorizontalAlignment="Center"
+                                 Margin="0,10,0,0"/>
+                        <!-- TODO: Analog saat görseli eklenecek -->
+                    </StackPanel>
+                </materialDesign:Card>
+                
+                <materialDesign:Card Padding="20" Background="White">
+                    <Calendar SelectedDate="{Binding CurrentDate}" 
+                            IsTodayHighlighted="True"
+                            HorizontalAlignment="Center"/>
+                </materialDesign:Card>
+            </StackPanel>
+        </Grid>
+        
+        <!-- DENTIST DASHBOARD (Same as Secretary but without clock/calendar) -->
+        <Grid Grid.Row="1" Visibility="{Binding IsDentist, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Sol Panel: Yaklaşan Randevular -->
+            <materialDesign:Card Grid.Column="0" Padding="15" Background="White">
                 <StackPanel>
-                    <materialDesign:PackIcon Kind="CalendarClock" 
-                                           Width="48" 
-                                           Height="48" 
-                                           HorizontalAlignment="Center" 
-                                           Margin="0,0,0,10"
-                                           Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="{Binding UpcomingAppointments}" 
-                             Style="{StaticResource MaterialDesignHeadline2TextBlock}" 
+                    <TextBlock Text="Yaklaşan Randevular" 
+                             Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
-                             HorizontalAlignment="Center"/>
-                    <TextBlock Text="Yaklaşan (7 gün)" 
-                             Style="{StaticResource MaterialDesignBody2TextBlock}" 
-                             Foreground="{StaticResource BulkaMediumBlue}"
-                             HorizontalAlignment="Center"/>
+                             Margin="0,0,0,15"/>
+                    <ListView ItemsSource="{Binding UpcomingAppointmentsList}" 
+                             MaxHeight="500"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <materialDesign:Card Margin="0,0,0,10" Padding="10">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding AppointmentDateTime, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
+                                                 Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                                 FontWeight="Bold"
+                                                 Foreground="{StaticResource BulkaDarkBlue}"/>
+                                        <TextBlock Text="{Binding PatientFullName}" 
+                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                 Foreground="{StaticResource BulkaMediumBlue}"/>
+                                        <TextBlock Text="{Binding DentistEmail, StringFormat='Doktor: {0}'}" 
+                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                 Foreground="{StaticResource BulkaMediumBlue}"/>
+                                    </StackPanel>
+                                </materialDesign:Card>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
                 </StackPanel>
             </materialDesign:Card>
-
-            <materialDesign:Card Margin="10" Padding="20" Background="White">
-                <StackPanel>
-                    <materialDesign:PackIcon Kind="MedicalBag" 
-                                           Width="48" 
-                                           Height="48" 
-                                           HorizontalAlignment="Center" 
-                                           Margin="0,0,0,10"
-                                           Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="{Binding TotalTreatments}" 
-                             Style="{StaticResource MaterialDesignHeadline2TextBlock}" 
+            
+            <!-- Sağ Panel: Boş alan veya istatistikler -->
+            <StackPanel Grid.Column="2" Margin="10,0,0,0">
+                <materialDesign:Card Padding="20" Background="White">
+                    <TextBlock Text="Tedavi Planlama ve Hasta Bilgileri" 
+                             Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
-                             FontWeight="Bold"
-                             HorizontalAlignment="Center"/>
-                    <TextBlock Text="Toplam Tedavi" 
-                             Style="{StaticResource MaterialDesignBody2TextBlock}" 
-                             Foreground="{StaticResource BulkaMediumBlue}"
-                             HorizontalAlignment="Center"/>
-                </StackPanel>
-            </materialDesign:Card>
-        </UniformGrid>
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"/>
+                </materialDesign:Card>
+            </StackPanel>
+        </Grid>
 
-        <ProgressBar Grid.Row="2" Style="{StaticResource MaterialDesignCircularProgressBar}" 
+        <ProgressBar Grid.Row="1" Style="{StaticResource MaterialDesignCircularProgressBar}" 
                      IsIndeterminate="True" 
                      Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
                      HorizontalAlignment="Center" VerticalAlignment="Center" Width="60" Height="60"/>

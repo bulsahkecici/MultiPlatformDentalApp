@@ -12,9 +12,9 @@ async function getDentistEarnings(req, res, next) {
         const dentistId = req.user.sub;
         const { startDate, endDate } = req.query;
 
-        // Get dentist commission rate
+        // Get dentist commission rate and salary
         const userResult = await query(
-            'SELECT commission_rate FROM users WHERE id = $1',
+            'SELECT commission_rate, salary FROM users WHERE id = $1',
             [dentistId],
         );
 
@@ -23,13 +23,16 @@ async function getDentistEarnings(req, res, next) {
         }
 
         const commissionRate = userResult.rows[0].commission_rate;
+        const salary = parseFloat(userResult.rows[0].salary || 0);
+        
         if (!commissionRate || commissionRate <= 0) {
             return res.status(200).json({
                 earnings: {
-                    totalRevenue: 0,
+                    totalTurnover: 0,
+                    paidTurnoverShare: 0,
+                    totalEarnings: salary,
+                    salary: salary,
                     commissionRate: 0,
-                    earnings: 0,
-                    treatmentCount: 0,
                 },
                 treatments: [],
             });
@@ -71,14 +74,25 @@ async function getDentistEarnings(req, res, next) {
         );
 
         const treatments = result.rows;
-        const totalRevenue = treatments.reduce((sum, t) => sum + parseFloat(t.cost || 0), 0);
-        const totalEarnings = treatments.reduce((sum, t) => sum + parseFloat(t.earnings || 0), 0);
+        const totalTurnover = treatments.reduce((sum, t) => sum + parseFloat(t.cost || 0), 0);
+
+        // Get paid commission from payments table
+        const paymentsResult = await query(
+            `SELECT COALESCE(SUM(dentist_commission), 0) as paid_commission
+            FROM payments
+            WHERE dentist_id = $1`,
+            [dentistId],
+        );
+        const paidTurnoverShare = parseFloat(paymentsResult.rows[0].paid_commission || 0);
+        const totalEarnings = salary + paidTurnoverShare;
 
         return res.status(200).json({
             earnings: {
-                totalRevenue,
+                totalTurnover,
+                paidTurnoverShare,
+                totalEarnings,
+                salary,
                 commissionRate: parseFloat(commissionRate),
-                earnings: totalEarnings,
                 treatmentCount: treatments.length,
             },
             treatments: treatments.map(t => ({

@@ -9,136 +9,338 @@
     <Grid Margin="20" Background="Transparent">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
-            <TextBlock Text="Yönetim Paneli" 
-                       Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
-                       Foreground="{StaticResource BulkaDarkBlue}"
-                       FontWeight="Bold"
-                       Margin="0,0,20,0"/>
-            <Button Command="{Binding RefreshCommand}" 
-                    Style="{StaticResource MaterialDesignFlatButton}"
-                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
-                    Foreground="{StaticResource BulkaMediumBlue}">
-                <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="Refresh" Margin="0,0,5,0" Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="YENİLE" Foreground="{StaticResource BulkaMediumBlue}"/>
-                </StackPanel>
-            </Button>
-        </StackPanel>
+        <TextBlock Text="Kullanıcı Ekle" 
+                   Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
+                   Foreground="{StaticResource BulkaDarkBlue}"
+                   FontWeight="Bold"
+                   Margin="0,0,0,20"/>
 
-        <UniformGrid Grid.Row="1" Columns="5" Margin="0,0,0,20" IsEnabled="True">
-            <materialDesign:Card Margin="10" Padding="20" Background="White" IsEnabled="True">
-                <StackPanel>
-                    <materialDesign:PackIcon Kind="Account" 
-                                           Width="48" 
-                                           Height="48" 
-                                           HorizontalAlignment="Center" 
-                                           Margin="0,0,0,10"
-                                           Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="{Binding Statistics.Patients.Total, TargetNullValue=0}" 
-                             Style="{StaticResource MaterialDesignHeadline2TextBlock}" 
+        <materialDesign:Card Grid.Row="1" Padding="30" Background="White">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <!-- Kullanıcı Türü Seçimi -->
+                <StackPanel Grid.Row="0" Margin="0,0,0,30">
+                    <TextBlock Text="Kullanıcı Türü Seçin" 
+                             Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
-                             HorizontalAlignment="Center"/>
-                    <TextBlock Text="Toplam Hasta" 
-                             Style="{StaticResource MaterialDesignBody2TextBlock}" 
-                             Foreground="{StaticResource BulkaMediumBlue}"
-                             HorizontalAlignment="Center"/>
+                             Margin="0,0,0,15"/>
+                    
+                    <UniformGrid Columns="3" Margin="0,0,0,0">
+                        <RadioButton Content="Doktor" 
+                                   IsChecked="{Binding IsDentistSelected, Mode=OneWay}"
+                                   GroupName="UserType"
+                                   Style="{StaticResource MaterialDesignChoiceChipRadioButton}"
+                                   Margin="5"
+                                   Command="{Binding SelectUserTypeCommand}"
+                                   CommandParameter="Dentist"/>
+                        <RadioButton Content="Sekreter" 
+                                   IsChecked="{Binding IsSecretarySelected, Mode=OneWay}"
+                                   GroupName="UserType"
+                                   Style="{StaticResource MaterialDesignChoiceChipRadioButton}"
+                                   Margin="5"
+                                   Command="{Binding SelectUserTypeCommand}"
+                                   CommandParameter="Secretary"/>
+                        <RadioButton Content="Patron" 
+                                   IsChecked="{Binding IsPatronSelected, Mode=OneWay}"
+                                   GroupName="UserType"
+                                   Style="{StaticResource MaterialDesignChoiceChipRadioButton}"
+                                   Margin="5"
+                                   Command="{Binding SelectUserTypeCommand}"
+                                   CommandParameter="Patron"/>
+                    </UniformGrid>
                 </StackPanel>
-            </materialDesign:Card>
-
-            <materialDesign:Card Margin="10" Padding="20" Background="White" IsEnabled="True">
-                <StackPanel>
-                    <materialDesign:PackIcon Kind="Calendar" 
-                                           Width="48" 
-                                           Height="48" 
-                                           HorizontalAlignment="Center" 
-                                           Margin="0,0,0,10"
-                                           Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="{Binding Statistics.Appointments.Total, TargetNullValue=0}" 
-                             Style="{StaticResource MaterialDesignHeadline2TextBlock}" 
-                             Foreground="{StaticResource BulkaDarkBlue}"
-                             FontWeight="Bold"
-                             HorizontalAlignment="Center"/>
-                    <TextBlock Text="Toplam Randevu" 
-                             Style="{StaticResource MaterialDesignBody2TextBlock}" 
-                             Foreground="{StaticResource BulkaMediumBlue}"
-                             HorizontalAlignment="Center"/>
+                
+                <!-- Doktor Formu -->
+                <ScrollViewer Grid.Row="2" 
+                            VerticalScrollBarVisibility="Auto"
+                            Visibility="{Binding IsDentistSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="Doktor Bilgileri" 
+                                 Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                 Foreground="{StaticResource BulkaDarkBlue}"
+                                 FontWeight="Bold"
+                                 Margin="0,0,0,15"/>
+                        
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Grid.Column="0">
+                                <TextBox Text="{Binding User.FirstName, UpdateSourceTrigger=PropertyChanged}" 
+                                       materialDesign:HintAssist.Hint="Ad *" 
+                                       Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                       Margin="0,0,0,10"/>
+                                
+                                <TextBox Text="{Binding User.LastName, UpdateSourceTrigger=PropertyChanged}" 
+                                       materialDesign:HintAssist.Hint="Soyad *" 
+                                       Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                       Margin="0,0,0,10"/>
+                                
+                                <TextBox Text="{Binding User.TCNo, UpdateSourceTrigger=PropertyChanged}" 
+                                       materialDesign:HintAssist.Hint="TC No *" 
+                                       Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                       Margin="0,0,0,10"/>
+                                
+                                <TextBox Text="{Binding User.Phone, UpdateSourceTrigger=PropertyChanged}" 
+                                       materialDesign:HintAssist.Hint="Telefon *" 
+                                       Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                       Margin="0,0,0,10"/>
+                                
+                                <TextBox Text="{Binding User.University, UpdateSourceTrigger=PropertyChanged}" 
+                                       materialDesign:HintAssist.Hint="Mezun Olduğu Üniversite *" 
+                                       Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                       Margin="0,0,0,10"/>
+                                
+                                <DatePicker SelectedDate="{Binding User.DiplomaDate}" 
+                                           materialDesign:HintAssist.Hint="Diploma Tarihi *"
+                                           Language="tr-TR"
+                                           Margin="0,0,0,10"/>
+                                
+                                <TextBox Text="{Binding User.DiplomaNo, UpdateSourceTrigger=PropertyChanged}" 
+                                       materialDesign:HintAssist.Hint="Diploma No *" 
+                                       Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                       Margin="0,0,0,10"/>
+                            </StackPanel>
+                            
+                            <StackPanel Grid.Column="2">
+                                <TextBox Text="{Binding User.Address, UpdateSourceTrigger=PropertyChanged}" 
+                                       materialDesign:HintAssist.Hint="Adres" 
+                                       Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                       TextWrapping="Wrap"
+                                       AcceptsReturn="True"
+                                       MinHeight="60"
+                                       Margin="0,0,0,10"/>
+                                
+                                <TextBox Text="{Binding User.IBAN, UpdateSourceTrigger=PropertyChanged}" 
+                                       materialDesign:HintAssist.Hint="IBAN" 
+                                       Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                       Margin="0,0,0,10"/>
+                                
+                                <TextBox Text="{Binding User.Salary, UpdateSourceTrigger=PropertyChanged}" 
+                                       materialDesign:HintAssist.Hint="Maaş (TRY)" 
+                                       Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                       Margin="0,0,0,10"/>
+                                
+                                <TextBox Text="{Binding User.CommissionRate, UpdateSourceTrigger=PropertyChanged}" 
+                                       materialDesign:HintAssist.Hint="Ciro Yüzdesi (%)" 
+                                       Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                       Margin="0,0,0,10"/>
+                                
+                                <TextBox Text="{Binding User.Email, UpdateSourceTrigger=PropertyChanged}" 
+                                       materialDesign:HintAssist.Hint="Kullanıcı Adı (E-posta) *" 
+                                       Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                       Margin="0,0,0,10"/>
+                                
+                                <PasswordBox x:Name="DentistPasswordBox"
+                                           materialDesign:HintAssist.Hint="Parola *" 
+                                           Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                           PasswordChanged="PasswordBox_PasswordChanged"
+                                           Margin="0,0,0,10"/>
+                            </StackPanel>
+                        </Grid>
+                        
+                        <!-- Uzmanlık Grid -->
+                        <TextBlock Text="Uzmanlık" 
+                                 Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
+                                 Margin="0,15,0,10"/>
+                        <UniformGrid Columns="3" Margin="0,10,0,20">
+                            <CheckBox Content="Diş Tabibi" 
+                                    IsChecked="{Binding Specializations[0], Mode=TwoWay}"
+                                    Margin="5"/>
+                            <CheckBox Content="Ağız-Diş-Çene Cerrahisi" 
+                                    IsChecked="{Binding Specializations[1], Mode=TwoWay}"
+                                    Margin="5"/>
+                            <CheckBox Content="Radyoloji" 
+                                    IsChecked="{Binding Specializations[2], Mode=TwoWay}"
+                                    Margin="5"/>
+                            <CheckBox Content="Endodonti" 
+                                    IsChecked="{Binding Specializations[3], Mode=TwoWay}"
+                                    Margin="5"/>
+                            <CheckBox Content="Ortodonti" 
+                                    IsChecked="{Binding Specializations[4], Mode=TwoWay}"
+                                    Margin="5"/>
+                            <CheckBox Content="Pedodonti" 
+                                    IsChecked="{Binding Specializations[5], Mode=TwoWay}"
+                                    Margin="5"/>
+                            <CheckBox Content="Periodontoloji" 
+                                    IsChecked="{Binding Specializations[6], Mode=TwoWay}"
+                                    Margin="5"/>
+                            <CheckBox Content="Protetik" 
+                                    IsChecked="{Binding Specializations[7], Mode=TwoWay}"
+                                    Margin="5"/>
+                            <CheckBox Content="Restoratif" 
+                                    IsChecked="{Binding Specializations[8], Mode=TwoWay}"
+                                    Margin="5"/>
+                        </UniformGrid>
+                    </StackPanel>
+                </ScrollViewer>
+                
+                <!-- Sekreter Formu -->
+                <ScrollViewer Grid.Row="2" 
+                            VerticalScrollBarVisibility="Auto"
+                            Visibility="{Binding IsSecretarySelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Sekreter Bilgileri" 
+                                     Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                     Foreground="{StaticResource BulkaDarkBlue}"
+                                     FontWeight="Bold"
+                                     Margin="0,0,0,15"/>
+                            
+                            <TextBox Text="{Binding User.FirstName, UpdateSourceTrigger=PropertyChanged}" 
+                                   materialDesign:HintAssist.Hint="Ad *" 
+                                   Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                   Margin="0,0,0,10"/>
+                            
+                            <TextBox Text="{Binding User.LastName, UpdateSourceTrigger=PropertyChanged}" 
+                                   materialDesign:HintAssist.Hint="Soyad *" 
+                                   Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                   Margin="0,0,0,10"/>
+                            
+                            <TextBox Text="{Binding User.TCNo, UpdateSourceTrigger=PropertyChanged}" 
+                                   materialDesign:HintAssist.Hint="TC No *" 
+                                   Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                   Margin="0,0,0,10"/>
+                            
+                            <TextBox Text="{Binding User.Phone, UpdateSourceTrigger=PropertyChanged}" 
+                                   materialDesign:HintAssist.Hint="Telefon *" 
+                                   Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                   Margin="0,0,0,10"/>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="2">
+                            <TextBox Text="{Binding User.Address, UpdateSourceTrigger=PropertyChanged}" 
+                                   materialDesign:HintAssist.Hint="Adres" 
+                                   Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                   TextWrapping="Wrap"
+                                   AcceptsReturn="True"
+                                   MinHeight="60"
+                                   Margin="0,0,0,10"/>
+                            
+                            <TextBox Text="{Binding User.IBAN, UpdateSourceTrigger=PropertyChanged}" 
+                                   materialDesign:HintAssist.Hint="IBAN" 
+                                   Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                   Margin="0,0,0,10"/>
+                            
+                            <TextBox Text="{Binding User.Salary, UpdateSourceTrigger=PropertyChanged}" 
+                                   materialDesign:HintAssist.Hint="Maaş (TRY)" 
+                                   Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                   Margin="0,0,0,10"/>
+                            
+                            <TextBox Text="{Binding User.Email, UpdateSourceTrigger=PropertyChanged}" 
+                                   materialDesign:HintAssist.Hint="Kullanıcı Adı (E-posta) *" 
+                                   Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                   Margin="0,0,0,10"/>
+                            
+                            <PasswordBox x:Name="SecretaryPasswordBox"
+                                       materialDesign:HintAssist.Hint="Parola *" 
+                                       Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                       PasswordChanged="PasswordBox_PasswordChanged"
+                                       Margin="0,0,0,10"/>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+                
+                <!-- Patron Formu -->
+                <ScrollViewer Grid.Row="2" 
+                            VerticalScrollBarVisibility="Auto"
+                            Visibility="{Binding IsPatronSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Patron Bilgileri" 
+                                     Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                     Foreground="{StaticResource BulkaDarkBlue}"
+                                     FontWeight="Bold"
+                                     Margin="0,0,0,15"/>
+                            
+                            <TextBox Text="{Binding User.FirstName, UpdateSourceTrigger=PropertyChanged}" 
+                                   materialDesign:HintAssist.Hint="Ad *" 
+                                   Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                   Margin="0,0,0,10"/>
+                            
+                            <TextBox Text="{Binding User.LastName, UpdateSourceTrigger=PropertyChanged}" 
+                                   materialDesign:HintAssist.Hint="Soyad *" 
+                                   Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                   Margin="0,0,0,10"/>
+                            
+                            <TextBox Text="{Binding User.Phone, UpdateSourceTrigger=PropertyChanged}" 
+                                   materialDesign:HintAssist.Hint="Telefon *" 
+                                   Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                   Margin="0,0,0,10"/>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="2">
+                            <TextBox Text="{Binding User.TCNo, UpdateSourceTrigger=PropertyChanged}" 
+                                   materialDesign:HintAssist.Hint="TC No (Opsiyonel)" 
+                                   Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                   Margin="0,0,0,10"/>
+                            
+                            <TextBox Text="{Binding User.Address, UpdateSourceTrigger=PropertyChanged}" 
+                                   materialDesign:HintAssist.Hint="Adres (Opsiyonel)" 
+                                   Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                   TextWrapping="Wrap"
+                                   AcceptsReturn="True"
+                                   MinHeight="60"
+                                   Margin="0,0,0,10"/>
+                            
+                            <TextBox Text="{Binding User.Email, UpdateSourceTrigger=PropertyChanged}" 
+                                   materialDesign:HintAssist.Hint="Kullanıcı Adı (E-posta) *" 
+                                   Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                   Margin="0,0,0,10"/>
+                            
+                            <PasswordBox x:Name="PatronPasswordBox"
+                                       materialDesign:HintAssist.Hint="Parola *" 
+                                       Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                       PasswordChanged="PasswordBox_PasswordChanged"
+                                       Margin="0,0,0,10"/>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+                
+                <!-- Kaydet Butonu -->
+                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                    <Button Content="İPTAL" 
+                          Command="{Binding CancelCommand}" 
+                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                          Margin="0,0,10,0"
+                          Width="120"/>
+                    <Button Content="KAYDET" 
+                          Command="{Binding SaveCommand}" 
+                          materialDesign:ButtonProgressAssist.IsIndeterminate="{Binding IsBusy}"
+                          materialDesign:ButtonProgressAssist.IsIndicatorVisible="{Binding IsBusy}"
+                          Width="120"/>
                 </StackPanel>
-            </materialDesign:Card>
+            </Grid>
+        </materialDesign:Card>
 
-            <materialDesign:Card Margin="10" Padding="20" Background="White" IsEnabled="True">
-                <StackPanel>
-                    <materialDesign:PackIcon Kind="MedicalBag" 
-                                           Width="48" 
-                                           Height="48" 
-                                           HorizontalAlignment="Center" 
-                                           Margin="0,0,0,10"
-                                           Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="{Binding Statistics.Treatments.Total, TargetNullValue=0}" 
-                             Style="{StaticResource MaterialDesignHeadline2TextBlock}" 
-                             Foreground="{StaticResource BulkaDarkBlue}"
-                             FontWeight="Bold"
-                             HorizontalAlignment="Center"/>
-                    <TextBlock Text="Toplam Tedavi" 
-                             Style="{StaticResource MaterialDesignBody2TextBlock}" 
-                             Foreground="{StaticResource BulkaMediumBlue}"
-                             HorizontalAlignment="Center"/>
-                </StackPanel>
-            </materialDesign:Card>
-
-            <materialDesign:Card Margin="10" Padding="20" Background="White" IsEnabled="True">
-                <StackPanel>
-                    <materialDesign:PackIcon Kind="Cash" 
-                                           Width="48" 
-                                           Height="48" 
-                                           HorizontalAlignment="Center" 
-                                           Margin="0,0,0,10"
-                                           Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="{Binding Statistics.Invoices.TotalRevenue, StringFormat='{}{0:F2} TRY', TargetNullValue='0.00 TRY'}" 
-                             Style="{StaticResource MaterialDesignHeadline2TextBlock}" 
-                             Foreground="{StaticResource BulkaDarkBlue}"
-                             FontWeight="Bold"
-                             HorizontalAlignment="Center"/>
-                    <TextBlock Text="Toplam Gelir" 
-                             Style="{StaticResource MaterialDesignBody2TextBlock}" 
-                             Foreground="{StaticResource BulkaMediumBlue}"
-                             HorizontalAlignment="Center"/>
-                </StackPanel>
-            </materialDesign:Card>
-
-            <materialDesign:Card Margin="10" Padding="20" Background="White" IsEnabled="True">
-                <StackPanel>
-                    <materialDesign:PackIcon Kind="AccountGroup" 
-                                           Width="48" 
-                                           Height="48" 
-                                           HorizontalAlignment="Center" 
-                                           Margin="0,0,0,10"
-                                           Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="{Binding Statistics.Dentists.Total, TargetNullValue=0}" 
-                             Style="{StaticResource MaterialDesignHeadline2TextBlock}" 
-                             Foreground="{StaticResource BulkaDarkBlue}"
-                             FontWeight="Bold"
-                             HorizontalAlignment="Center"/>
-                    <TextBlock Text="Diş Hekimi" 
-                             Style="{StaticResource MaterialDesignBody2TextBlock}" 
-                             Foreground="{StaticResource BulkaMediumBlue}"
-                             HorizontalAlignment="Center"/>
-                </StackPanel>
-            </materialDesign:Card>
-        </UniformGrid>
-
-        <ProgressBar Grid.Row="2" 
-                     Style="{StaticResource MaterialDesignCircularProgressBar}" 
+        <ProgressBar Grid.Row="1" Style="{StaticResource MaterialDesignCircularProgressBar}" 
                      IsIndeterminate="True" 
                      Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
-                     HorizontalAlignment="Center" 
-                     VerticalAlignment="Center" 
-                     Width="60" 
-                     Height="60"/>
+                     HorizontalAlignment="Center" VerticalAlignment="Center" Width="60" Height="60"/>
     </Grid>
 </UserControl>
