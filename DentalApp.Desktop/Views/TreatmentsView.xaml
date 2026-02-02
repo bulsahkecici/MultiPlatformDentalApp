@@ -78,8 +78,8 @@
 
         <materialDesign:Card Grid.Row="2" VerticalAlignment="Stretch">
             <TreeView ItemsSource="{Binding PatientGroups}" 
-                      SelectedItem="{Binding SelectedTreatment}"
-                      BorderThickness="0">
+                      BorderThickness="0"
+                      SelectedItemChanged="TreeView_SelectedItemChanged">
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate ItemsSource="{Binding Treatments}">
                         <StackPanel Orientation="Horizontal">
@@ -102,7 +102,7 @@
                                 <Border BorderBrush="{StaticResource BulkaLightBlue}" 
                                       BorderThickness="0,0,0,1" 
                                       Padding="5"
-                                      MouseDoubleClick="TreatmentItem_MouseDoubleClick">
+                                      MouseDown="TreatmentItem_MouseDown">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="100"/>
