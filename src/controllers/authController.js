@@ -76,7 +76,7 @@ async function login(req, res, next) {
 
     // Get user from database
     const result = await query(
-      `SELECT id, email, password_hash, roles, email_verified, deleted_at 
+      `SELECT id, email, password_hash, roles, email_verified, deleted_at, last_login_at 
        FROM users WHERE email = $1`,
       [email],
     );
@@ -176,6 +176,8 @@ async function login(req, res, next) {
         id: user.id,
         email: user.email,
         roles,
+        emailVerified: user.email_verified || false,
+        lastLoginAt: user.last_login_at || null,
       },
     });
   } catch (err) {

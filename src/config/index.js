@@ -24,7 +24,9 @@ const config = {
   port: Number(process.env.PORT) || 3000,
   appUrl: process.env.APP_URL || 'http://localhost:3000',
   cors: {
-    origins: parseList(process.env.CORS_ORIGINS), // e.g. https://app.example.com,https://admin.example.com
+    origins: parseList(process.env.CORS_ORIGINS).length > 0 
+      ? parseList(process.env.CORS_ORIGINS)
+      : ['http://localhost:4200', 'http://localhost:3000'], // Default for development
   },
   security: {
     jwtSecret: process.env.JWT_SECRET || 'dev-secret',
