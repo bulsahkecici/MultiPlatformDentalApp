@@ -2,9 +2,11 @@ using DentalApp.Desktop.Helpers;
 using DentalApp.Desktop.Models;
 using DentalApp.Desktop.Services;
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Input;
 using System.Linq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace DentalApp.Desktop.ViewModels
 {
@@ -15,6 +17,7 @@ namespace DentalApp.Desktop.ViewModels
         private readonly TariffService _tariffService;
         private bool _isBusy;
         private bool _canViewPrices = true; // Patron ve Sekreter için true
+        private bool _isSecretary = false; // Treatment plan approval sadece secretary'de
         
         // İndirim Anlaşmaları
         private string _newAgreementName = string.Empty;
@@ -40,9 +43,51 @@ namespace DentalApp.Desktop.ViewModels
             get => _canViewPrices;
             set => SetProperty(ref _canViewPrices, value);
         }
+        
+        public bool IsSecretary
+        {
+            get => _isSecretary;
+            set => SetProperty(ref _isSecretary, value);
+        }
 
         // İndirim Anlaşmaları
         public ObservableCollection<InstitutionAgreement> InstitutionAgreements { get; } = new();
+        /// <summary>Liste boş mesajı için; yükleme sonrası güncellenir.</summary>
+        public int AgreementCount => InstitutionAgreements.Count;
+        public bool IsAgreementsListEmpty => InstitutionAgreements.Count == 0;
+        
+        private InstitutionAgreement? _selectedAgreement;
+        public InstitutionAgreement? SelectedAgreement
+        {
+            get => _selectedAgreement;
+            set
+            {
+                if (SetProperty(ref _selectedAgreement, value))
+                {
+                    UpdateSelectedAgreementCategoryDiscounts();
+                }
+            }
+        }
+        
+        public ObservableCollection<CategoryDiscount> SelectedAgreementCategoryDiscounts { get; } = new();
+        public bool HasCategoryDiscounts => SelectedAgreementCategoryDiscounts.Count > 0;
+        
+        private void UpdateSelectedAgreementCategoryDiscounts()
+        {
+            SelectedAgreementCategoryDiscounts.Clear();
+            if (SelectedAgreement != null && SelectedAgreement.CategoryDiscounts != null)
+            {
+                foreach (var kvp in SelectedAgreement.CategoryDiscounts)
+                {
+                    SelectedAgreementCategoryDiscounts.Add(new CategoryDiscount
+                    {
+                        CategoryName = kvp.Key,
+                        DiscountPercentage = kvp.Value
+                    });
+                }
+            }
+            OnPropertyChanged(nameof(HasCategoryDiscounts));
+        }
         
         public string NewAgreementName
         {
@@ -141,9 +186,31 @@ namespace DentalApp.Desktop.ViewModels
         public decimal RemainingDebt { get; private set; }
         public decimal DentistCommission { get; private set; }
         public decimal DentistCommissionPercentage { get; private set; }
+        
+        // Gelir Gider
+        private Patient? _selectedIncomePatient;
+        public Patient? SelectedIncomePatient
+        {
+            get => _selectedIncomePatient;
+            set
+            {
+                if (SetProperty(ref _selectedIncomePatient, value))
+                {
+                    _ = LoadPatientIncomeDetailsAsync();
+                }
+            }
+        }
+        
+        public decimal TotalReceivables { get; private set; }
+        public decimal TotalIncome { get; private set; }
+        public decimal SelectedPatientTotalDebt { get; private set; }
+        public decimal SelectedPatientPaidAmount { get; private set; }
+        public decimal SelectedPatientRemainingDebt { get; private set; }
+        public ObservableCollection<PaymentHistoryItem> SelectedPatientPayments { get; } = new();
 
         public ICommand AddAgreementCommand { get; }
         public ICommand EditAgreementCommand { get; }
+        public ICommand LoadAgreementsCommand { get; }
         public ICommand LoadPendingPlansCommand { get; }
         public ICommand ApprovePlansCommand { get; }
         public ICommand ProcessPaymentCommand { get; }
@@ -157,6 +224,7 @@ namespace DentalApp.Desktop.ViewModels
             
             AddAgreementCommand = new RelayCommand(async _ => await AddAgreementAsync(), _ => !IsBusy && !string.IsNullOrWhiteSpace(NewAgreementName));
             EditAgreementCommand = new RelayCommand<InstitutionAgreement>(async a => await EditAgreementAsync(a));
+            LoadAgreementsCommand = new RelayCommand(async _ => await LoadAgreementsAsync(), _ => !IsBusy);
             LoadPendingPlansCommand = new RelayCommand(async _ => await LoadPendingPlansAsync(), _ => !IsBusy);
             ApprovePlansCommand = new RelayCommand(async _ => await ApprovePlansAsync(), _ => !IsBusy && PendingTreatmentPlans.Any(p => p.IsSelected));
             ProcessPaymentCommand = new RelayCommand(async _ => await ProcessPaymentAsync(), _ => !IsBusy && SelectedPaymentPatient != null && PaymentAmount > 0);
@@ -168,6 +236,91 @@ namespace DentalApp.Desktop.ViewModels
             _ = LoadDataAsync();
             _ = LoadAgreementsAsync();
             _ = LoadCategoriesAsync();
+            _ = LoadIncomeExpenseDataAsync();
+        }
+        
+        private async Task LoadIncomeExpenseDataAsync()
+        {
+            try
+            {
+                // Load total receivables (sum of all remaining_debt from patient_debts)
+                var receivablesResponse = await _apiService.GetAsync<dynamic>("/payments/total-receivables");
+                if (receivablesResponse != null)
+                {
+                    TotalReceivables = receivablesResponse.totalReceivables != null 
+                        ? (decimal)receivablesResponse.totalReceivables 
+                        : 0m;
+                    OnPropertyChanged(nameof(TotalReceivables));
+                }
+                
+                // Load total income (sum of all payments)
+                var incomeResponse = await _apiService.GetAsync<dynamic>("/payments/total-income");
+                if (incomeResponse != null)
+                {
+                    TotalIncome = incomeResponse.totalIncome != null 
+                        ? (decimal)incomeResponse.totalIncome 
+                        : 0m;
+                    OnPropertyChanged(nameof(TotalIncome));
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Gelir gider verileri yüklenirken hata: {ex.Message}");
+            }
+        }
+        
+        private async Task LoadPatientIncomeDetailsAsync()
+        {
+            if (SelectedIncomePatient == null)
+            {
+                SelectedPatientTotalDebt = 0m;
+                SelectedPatientPaidAmount = 0m;
+                SelectedPatientRemainingDebt = 0m;
+                SelectedPatientPayments.Clear();
+                OnPropertyChanged(nameof(SelectedPatientTotalDebt));
+                OnPropertyChanged(nameof(SelectedPatientPaidAmount));
+                OnPropertyChanged(nameof(SelectedPatientRemainingDebt));
+                return;
+            }
+            
+            try
+            {
+                // Load patient debt
+                var debtResponse = await _apiService.GetAsync<dynamic>($"/payments/patient-debt/{SelectedIncomePatient.Id}");
+                var debtObj = debtResponse?.debt;
+                if (debtObj != null)
+                {
+                    SelectedPatientTotalDebt = Convert.ToDecimal(debtObj.total_debt ?? 0m);
+                    SelectedPatientPaidAmount = Convert.ToDecimal(debtObj.paid_amount ?? 0m);
+                    SelectedPatientRemainingDebt = Convert.ToDecimal(debtObj.remaining_debt ?? 0m);
+                    OnPropertyChanged(nameof(SelectedPatientTotalDebt));
+                    OnPropertyChanged(nameof(SelectedPatientPaidAmount));
+                    OnPropertyChanged(nameof(SelectedPatientRemainingDebt));
+                }
+                
+                var paymentsResponse = await _apiService.GetAsync<dynamic>($"/payments/patient-payments/{SelectedIncomePatient.Id}");
+                var paymentsList = paymentsResponse?.payments;
+                if (paymentsList != null)
+                {
+                    SelectedPatientPayments.Clear();
+                    foreach (var payment in paymentsList)
+                    {
+                        var amount = payment?.amount;
+                        var method = payment?.payment_method?.ToString() ?? "";
+                        var createdAt = payment?.created_at;
+                        SelectedPatientPayments.Add(new PaymentHistoryItem
+                        {
+                            Amount = amount != null ? Convert.ToDecimal(amount) : 0m,
+                            PaymentMethod = method,
+                            CreatedAt = createdAt != null ? DateTime.Parse(createdAt.ToString() ?? "") : DateTime.Now
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Hasta gelir detayları yüklenirken hata: {ex.Message}");
+            }
         }
         
         private async Task LoadCategoriesAsync()
@@ -205,6 +358,7 @@ namespace DentalApp.Desktop.ViewModels
                         Patients.Add(patient);
                     }
                 }
+                await LoadAgreementsAsync();
             }
             catch (Exception ex)
             {
@@ -217,39 +371,121 @@ namespace DentalApp.Desktop.ViewModels
             }
         }
         
-        private async Task LoadAgreementsAsync()
+        /// <summary>Anlaşmalı kurumlar listesini API'den yükler. Sekme açıldığında veya Yenile'de çağrılır.</summary>
+        public async Task LoadAgreementsAsync()
         {
             try
             {
-                var response = await _apiService.GetAsync<dynamic>("/institution-agreements");
-                if (response != null)
+                // Önce tip güvenli modelle dene
+                var response = await _apiService.GetAsync<InstitutionAgreementsResponse>("/institution-agreements");
+                var list = response?.Agreements;
+                if (list != null)
                 {
-                    var json = JsonConvert.SerializeObject(response);
-                    var agreementsData = JsonConvert.DeserializeObject<dynamic>(json);
-                    
-                    InstitutionAgreements.Clear();
-                    if (agreementsData?.agreements != null)
+                    var toAdd = list.Select(a => new InstitutionAgreement
                     {
-                        foreach (var agreement in agreementsData.agreements)
-                        {
-                            var instAgreement = new InstitutionAgreement
-                            {
-                                Id = (int)(agreement.id ?? 0),
-                                Name = agreement.institution_name?.ToString() ?? "",
-                                DiscountPercentage = agreement.discount_percentage != null ? (decimal)agreement.discount_percentage : 0m
-                            };
-                            InstitutionAgreements.Add(instAgreement);
-                        }
-                    }
+                        Id = a.Id,
+                        Name = a.InstitutionName ?? string.Empty,
+                        DiscountPercentage = a.DiscountPercentage,
+                        CategoryDiscounts = a.CategoryDiscounts != null
+                            ? new Dictionary<string, decimal>(a.CategoryDiscounts)
+                            : new Dictionary<string, decimal>()
+                    }).ToList();
+
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        InstitutionAgreements.Clear();
+                        foreach (var item in toAdd)
+                            InstitutionAgreements.Add(item);
+                        OnPropertyChanged(nameof(AgreementCount));
+                        OnPropertyChanged(nameof(IsAgreementsListEmpty));
+                    });
+                    return;
                 }
+
+                // Fallback: ham JSON ile parse (backend farklı formatta dönerse)
+                var raw = await _apiService.GetAsync<JObject>("/institution-agreements");
+                if (raw != null && raw["agreements"] is JArray arr)
+                {
+                    var toAdd = new List<InstitutionAgreement>();
+                    foreach (var token in arr)
+                    {
+                        if (token is not JObject jo) continue;
+                        var id = jo["id"]?.Type == JTokenType.Integer ? (int)jo["id"]! : 0;
+                        var name = jo["institution_name"]?.ToString() ?? "";
+                        var pct = 0m;
+                        if (jo["discount_percentage"] != null)
+                            decimal.TryParse(jo["discount_percentage"]?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out pct);
+                        var catDiscounts = new Dictionary<string, decimal>();
+                        if (jo["category_discounts"] is JObject catObj)
+                        {
+                            foreach (var kv in catObj)
+                                if (kv.Value != null && decimal.TryParse(kv.Value.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var d))
+                                    catDiscounts[kv.Key] = d;
+                        }
+                        toAdd.Add(new InstitutionAgreement { Id = id, Name = name, DiscountPercentage = pct, CategoryDiscounts = catDiscounts });
+                    }
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        InstitutionAgreements.Clear();
+                        foreach (var item in toAdd)
+                            InstitutionAgreements.Add(item);
+                        OnPropertyChanged(nameof(AgreementCount));
+                        OnPropertyChanged(nameof(IsAgreementsListEmpty));
+                    });
+                    return;
+                }
+
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    InstitutionAgreements.Clear();
+                    OnPropertyChanged(nameof(AgreementCount));
+                    OnPropertyChanged(nameof(IsAgreementsListEmpty));
+                });
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Kurum anlaşmaları yüklenirken hata: {ex.Message}");
-                // Fallback to placeholder data
-                InstitutionAgreements.Clear();
-                InstitutionAgreements.Add(new InstitutionAgreement { Id = 1, Name = "SGK", DiscountPercentage = 20m });
-                InstitutionAgreements.Add(new InstitutionAgreement { Id = 2, Name = "Özel Sigorta A", DiscountPercentage = 15m });
+                try
+                {
+                    var raw = await _apiService.GetAsync<JObject>("/institution-agreements");
+                    if (raw != null && raw["agreements"] is JArray arr)
+                    {
+                        var toAdd = new List<InstitutionAgreement>();
+                        foreach (var token in arr)
+                        {
+                            if (token is not JObject jo) continue;
+                            var id = jo["id"]?.Type == JTokenType.Integer ? (int)jo["id"]! : 0;
+                            var name = jo["institution_name"]?.ToString() ?? "";
+                            var pct = 0m;
+                            if (jo["discount_percentage"] != null)
+                                decimal.TryParse(jo["discount_percentage"]?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out pct);
+                            var catDiscounts = new Dictionary<string, decimal>();
+                            if (jo["category_discounts"] is JObject catObj)
+                            {
+                                foreach (var kv in catObj)
+                                    if (kv.Value != null && decimal.TryParse(kv.Value.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var d))
+                                        catDiscounts[kv.Key] = d;
+                            }
+                            toAdd.Add(new InstitutionAgreement { Id = id, Name = name, DiscountPercentage = pct, CategoryDiscounts = catDiscounts });
+                        }
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            InstitutionAgreements.Clear();
+                            foreach (var item in toAdd)
+                                InstitutionAgreements.Add(item);
+                            OnPropertyChanged(nameof(AgreementCount));
+                            OnPropertyChanged(nameof(IsAgreementsListEmpty));
+                        });
+                        return;
+                    }
+                }
+                catch { /* ignore */ }
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    InstitutionAgreements.Clear();
+                    OnPropertyChanged(nameof(AgreementCount));
+                    OnPropertyChanged(nameof(IsAgreementsListEmpty));
+                });
             }
         }
         
@@ -265,36 +501,38 @@ namespace DentalApp.Desktop.ViewModels
             IsBusy = true;
             try
             {
-                // TODO: Save to backend when API is ready
                 // Kategori bazlı indirimleri de kaydet
                 var categoryDiscounts = CategoryDiscounts
                     .Where(cd => cd.DiscountPercentage > 0)
                     .ToDictionary(cd => cd.CategoryName, cd => cd.DiscountPercentage);
                 
-                var newAgreement = new InstitutionAgreement
+                var request = new
                 {
-                    Id = InstitutionAgreements.Count + 1,
-                    Name = NewAgreementName,
-                    DiscountPercentage = 0m, // Genel indirim artık kullanılmıyor, kategori bazlı kullanılıyor
-                    CategoryDiscounts = categoryDiscounts
+                    institutionName = NewAgreementName,
+                    discountPercentage = 0, // Genel indirim artık kullanılmıyor, kategori bazlı kullanılıyor
+                    categoryDiscounts = categoryDiscounts
                 };
-                InstitutionAgreements.Add(newAgreement);
-                OnPropertyChanged(nameof(InstitutionAgreements));
                 
-                NewAgreementName = string.Empty;
-                NewAgreementDiscount = string.Empty;
-                // Kategori indirimlerini sıfırla
-                foreach (var cd in CategoryDiscounts)
+                var response = await _apiService.PostAsync<dynamic>("/institution-agreements", request);
+                var agreementObj = response?.agreement;
+                if (response != null && agreementObj != null)
                 {
-                    cd.DiscountPercentage = 0m;
+                    // Reload agreements to get the new one with proper ID
+                    await LoadAgreementsAsync();
+                    
+                    NewAgreementName = string.Empty;
+                    NewAgreementDiscount = string.Empty;
+                    // Kategori indirimlerini sıfırla
+                    foreach (var cd in CategoryDiscounts)
+                    {
+                        cd.DiscountPercentage = 0m;
+                    }
+                    OnPropertyChanged(nameof(NewAgreementName));
+                    OnPropertyChanged(nameof(NewAgreementDiscount));
+                    
+                    System.Windows.MessageBox.Show("İndirim anlaşması başarıyla eklendi.", "Başarılı",
+                        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
                 }
-                OnPropertyChanged(nameof(NewAgreementName));
-                OnPropertyChanged(nameof(NewAgreementDiscount));
-                
-                await Task.CompletedTask; // Placeholder for future API call
-                
-                System.Windows.MessageBox.Show("İndirim anlaşması başarıyla eklendi.", "Başarılı",
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -387,7 +625,7 @@ namespace DentalApp.Desktop.ViewModels
                 var total = selectedPlans.Sum(p => p.TotalCost);
                 
                 System.Windows.MessageBox.Show(
-                    $"{selectedPlans.Count} tedavi planı onaylandı.\nToplam maliyet: {total:F2} TRY\n\nHasta borcu oluşturuldu.",
+                    $"{selectedPlans.Count} tedavi planı onaylandı.\nToplam maliyet: {total:F2} ₺\n\nHasta borcu oluşturuldu.",
                     "Başarılı",
                     System.Windows.MessageBoxButton.OK,
                     System.Windows.MessageBoxImage.Information);
@@ -413,19 +651,61 @@ namespace DentalApp.Desktop.ViewModels
         
         private void CalculatePaymentInfo()
         {
-            // TODO: Calculate from backend data
-            // Placeholder calculations
-            SelectedPaymentPatientTotal = 2500m; // Placeholder
-            RemainingDebt = SelectedPaymentPatientTotal - PaymentAmount;
+            if (SelectedPaymentPatient == null)
+            {
+                SelectedPaymentPatientTotal = 0m;
+                RemainingDebt = 0m;
+                DentistCommission = 0m;
+                DentistCommissionPercentage = 0m;
+                OnPropertyChanged(nameof(SelectedPaymentPatientTotal));
+                OnPropertyChanged(nameof(RemainingDebt));
+                OnPropertyChanged(nameof(DentistCommission));
+                OnPropertyChanged(nameof(DentistCommissionPercentage));
+                return;
+            }
             
-            // Dentist commission (placeholder: 30%)
-            DentistCommissionPercentage = 30m;
-            DentistCommission = PaymentAmount * (DentistCommissionPercentage / 100m);
-            
-            OnPropertyChanged(nameof(SelectedPaymentPatientTotal));
-            OnPropertyChanged(nameof(RemainingDebt));
-            OnPropertyChanged(nameof(DentistCommission));
-            OnPropertyChanged(nameof(DentistCommissionPercentage));
+            // Load patient debt from API
+            _ = LoadPatientDebtAsync(SelectedPaymentPatient.Id);
+        }
+        
+        private async Task LoadPatientDebtAsync(int patientId)
+        {
+            try
+            {
+                var response = await _apiService.GetAsync<dynamic>($"/payments/patient-debt/{patientId}");
+                var debt = response?.debt;
+                if (response != null && debt != null)
+                {
+                    SelectedPaymentPatientTotal = Convert.ToDecimal(debt?.total_debt ?? 0m);
+                    var paidAmount = Convert.ToDecimal(debt?.paid_amount ?? 0m);
+                    var currentRemainingDebt = Convert.ToDecimal(debt?.remaining_debt ?? 0m);
+                    
+                    // Calculate remaining debt after current payment
+                    RemainingDebt = Math.Max(0, currentRemainingDebt - PaymentAmount);
+                    
+                    // Calculate dentist commission (placeholder - should get from dentist's commission_rate)
+                    DentistCommissionPercentage = 15m; // TODO: Get from dentist's commission_rate
+                    DentistCommission = PaymentAmount * (DentistCommissionPercentage / 100m);
+                    
+                    OnPropertyChanged(nameof(SelectedPaymentPatientTotal));
+                    OnPropertyChanged(nameof(RemainingDebt));
+                    OnPropertyChanged(nameof(DentistCommission));
+                    OnPropertyChanged(nameof(DentistCommissionPercentage));
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Hasta borç bilgileri yüklenirken hata: {ex.Message}");
+                // Fallback to placeholder
+                SelectedPaymentPatientTotal = 0m;
+                RemainingDebt = 0m;
+                DentistCommission = 0m;
+                DentistCommissionPercentage = 0m;
+                OnPropertyChanged(nameof(SelectedPaymentPatientTotal));
+                OnPropertyChanged(nameof(RemainingDebt));
+                OnPropertyChanged(nameof(DentistCommission));
+                OnPropertyChanged(nameof(DentistCommissionPercentage));
+            }
         }
 
         private async Task ProcessPaymentAsync()
@@ -440,25 +720,41 @@ namespace DentalApp.Desktop.ViewModels
             IsBusy = true;
             try
             {
-                // TODO: Process payment via API
-                await Task.CompletedTask; // Placeholder for future API call
-                
                 var request = new
                 {
                     patientId = SelectedPaymentPatient.Id,
                     amount = PaymentAmount,
-                    method = SelectedPaymentMethod,
-                    remainingDebt = RemainingDebt
+                    paymentMethod = SelectedPaymentMethod,
+                    treatmentPlanId = (int?)null, // Can be set if needed
+                    notes = (string?)null
                 };
                 
-                System.Windows.MessageBox.Show(
-                    $"Ödeme başarıyla işlendi.\nAlınan: {PaymentAmount:F2} TRY\nKalan Borç: {RemainingDebt:F2} TRY\nHekim Ciro Payı: {DentistCommission:F2} TRY",
-                    "Başarılı",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Information);
-                
-                PaymentAmount = 0;
-                CalculatePaymentInfo();
+                var response = await _apiService.PostAsync<dynamic>("/payments/process", request);
+                var success = response?.success;
+                if (response != null && success == true)
+                {
+                    System.Windows.MessageBox.Show(
+                        $"Ödeme başarıyla işlendi.\nAlınan: {PaymentAmount:F2} ₺\nKalan Borç: {RemainingDebt:F2} ₺\nHekim Ciro Payı: {DentistCommission:F2} ₺",
+                        "Başarılı",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Information);
+                    
+                    PaymentAmount = 0;
+                    // Ana bölümdeki bilgileri de güncelle
+                    CalculatePaymentInfo();
+                    // Hasta borç bilgilerini yeniden yükle
+                    if (SelectedPaymentPatient != null)
+                    {
+                        await LoadPatientDebtAsync(SelectedPaymentPatient.Id);
+                    }
+                    // Gelir gider verilerini yeniden yükle
+                    await LoadIncomeExpenseDataAsync();
+                    // Eğer seçili hasta varsa, onun bilgilerini de güncelle
+                    if (SelectedIncomePatient != null)
+                    {
+                        await LoadPatientIncomeDetailsAsync();
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -527,5 +823,30 @@ namespace DentalApp.Desktop.ViewModels
         public ObservableCollection<ProcedureItem> Procedures { get; } = new();
         
         public PaymentsViewModel? ParentViewModel { get; set; }
+    }
+    
+    public class PaymentHistoryItem : ObservableObject
+    {
+        private decimal _amount;
+        private string _paymentMethod = string.Empty;
+        private DateTime _createdAt;
+        
+        public decimal Amount
+        {
+            get => _amount;
+            set => SetProperty(ref _amount, value);
+        }
+        
+        public string PaymentMethod
+        {
+            get => _paymentMethod;
+            set => SetProperty(ref _paymentMethod, value);
+        }
+        
+        public DateTime CreatedAt
+        {
+            get => _createdAt;
+            set => SetProperty(ref _createdAt, value);
+        }
     }
 }

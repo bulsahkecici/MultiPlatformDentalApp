@@ -1,4 +1,4 @@
-﻿<Application x:Class="DentalApp.Desktop.App"
+<Application x:Class="DentalApp.Desktop.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:DentalApp.Desktop"
@@ -35,6 +35,10 @@
             <helpers:NullToBooleanConverter x:Key="NullToBooleanConverter"/>
             <helpers:ToothNumberEqualityConverter x:Key="ToothNumberEqualityConverter"/>
             <helpers:ToothInCollectionConverter x:Key="ToothInCollectionConverter"/>
+            <helpers:DateToColorConverter x:Key="DateToColorConverter"/>
+            <helpers:BooleanToBrushConverter x:Key="BooleanToBrushConverter"/>
+            <helpers:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             
             <!-- Global DatePicker Style for Turkish -->
             <Style TargetType="DatePicker">

@@ -18,7 +18,7 @@
         FontFamily="{materialDesign:MaterialDesignFont}">
     
     <Window.Resources>
-        <helpers:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+        <!-- Converters App.xaml'de global olarak tanımlı, burada tekrar tanımlamaya gerek yok -->
         
         <DataTemplate DataType="{x:Type vm:LoginViewModel}">
             <v:LoginView/>
@@ -43,6 +43,9 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:AdminManagementViewModel}">
             <v:AdminManagementView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:InstitutionAgreementsViewModel}">
+            <v:InstitutionAgreementsView/>
         </DataTemplate>
     </Window.Resources>
 
@@ -220,6 +223,26 @@
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Cash" Margin="0,0,10,0" Foreground="{StaticResource BulkaMediumBlue}"/>
                                 <TextBlock Text="Finans" Foreground="{StaticResource BulkaDarkBlue}"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Command="{Binding NavigateToInstitutionAgreementsCommand}" 
+                                Margin="10,5" 
+                                HorizontalContentAlignment="Left"
+                                Visibility="{Binding IsSecretary, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                    <Setter Property="Foreground" Value="{StaticResource BulkaDarkBlue}"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource BulkaLightBlue}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Domain" Margin="0,0,10,0" Foreground="{StaticResource BulkaMediumBlue}"/>
+                                <TextBlock Text="Kurum Anlaşmaları" Foreground="{StaticResource BulkaDarkBlue}"/>
                             </StackPanel>
                         </Button>
                         

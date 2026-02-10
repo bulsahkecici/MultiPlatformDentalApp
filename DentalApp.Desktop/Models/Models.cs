@@ -21,6 +21,46 @@ namespace DentalApp.Desktop.Models
         
         [JsonProperty("lastLoginAt")]
         public DateTime? LastLoginAt { get; set; }
+        
+        [JsonProperty("firstName")]
+        public string FirstName { get; set; } = string.Empty;
+        
+        [JsonProperty("lastName")]
+        public string LastName { get; set; } = string.Empty;
+        
+        [JsonProperty("phone")]
+        public string? Phone { get; set; }
+        
+        [JsonProperty("tcNo")]
+        public string? TCNo { get; set; }
+        
+        [JsonProperty("createdAt")]
+        public DateTime? CreatedAt { get; set; }
+        
+        [JsonIgnore]
+        public string FullName => string.IsNullOrWhiteSpace(FirstName) && string.IsNullOrWhiteSpace(LastName) 
+            ? Email 
+            : $"{FirstName} {LastName}".Trim();
+        
+        [JsonIgnore]
+        public string RoleDisplay => Roles.Count > 0 
+            ? string.Join(", ", Roles.Select(r => r == "admin" ? "Patron" : r == "dentist" ? "Doktor" : r == "secretary" ? "Sekreter" : r))
+            : "Kullanıcı";
+
+        [JsonIgnore]
+        public string CreatedAtDisplay => CreatedAt.HasValue ? CreatedAt.Value.ToString("dd.MM.yyyy HH:mm") : "—";
+
+        [JsonIgnore]
+        public string LastLoginAtDisplay => LastLoginAt.HasValue ? LastLoginAt.Value.ToString("dd.MM.yyyy HH:mm") : "—";
+    }
+    
+    public class UsersResponse
+    {
+        [JsonProperty("users")]
+        public List<User> Users { get; set; } = new();
+        
+        [JsonProperty("pagination")]
+        public PaginationInfo Pagination { get; set; } = new();
     }
 
     public class RolesConverter : JsonConverter<List<string>>
@@ -125,6 +165,15 @@ namespace DentalApp.Desktop.Models
         
         [JsonProperty("notes")]
         public string? Notes { get; set; }
+        
+        [JsonProperty("institution_agreement_id")]
+        public int? InstitutionAgreementId { get; set; }
+        
+        [JsonProperty("institution_name")]
+        public string? InstitutionName { get; set; }
+        
+        [JsonProperty("category_discounts")]
+        public Dictionary<string, decimal>? CategoryDiscounts { get; set; }
         
         [JsonProperty("created_at")]
         public DateTime CreatedAt { get; set; }
@@ -320,5 +369,69 @@ namespace DentalApp.Desktop.Models
     {
         [JsonProperty("treatment")]
         public Treatment Treatment { get; set; } = new();
+    }
+
+    /// <summary>API yanıtı: GET /institution-agreements</summary>
+    public class InstitutionAgreementsResponse
+    {
+        [JsonProperty("agreements")]
+        public List<InstitutionAgreement> Agreements { get; set; } = new();
+    }
+
+    public class InstitutionAgreement
+    {
+        [JsonProperty("id")]
+        public int Id { get; set; }
+        
+        [JsonProperty("institution_name")]
+        public string InstitutionName { get; set; } = string.Empty;
+        
+        [JsonProperty("contact_person")]
+        public string? ContactPerson { get; set; }
+        
+        [JsonProperty("contact_phone")]
+        public string? ContactPhone { get; set; }
+        
+        [JsonProperty("contact_email")]
+        public string? ContactEmail { get; set; }
+        
+        [JsonProperty("discount_percentage")]
+        [JsonConverter(typeof(FlexibleDecimalConverter))]
+        public decimal DiscountPercentage { get; set; }
+        
+        [JsonProperty("is_active")]
+        public bool IsActive { get; set; }
+        
+        [JsonProperty("notes")]
+        public string? Notes { get; set; }
+        
+        [JsonProperty("category_discounts")]
+        public Dictionary<string, decimal>? CategoryDiscounts { get; set; }
+        
+        [JsonProperty("created_at")]
+        public DateTime? CreatedAt { get; set; }
+        
+        [JsonProperty("updated_at")]
+        public DateTime? UpdatedAt { get; set; }
+    }
+
+    public class CategoryDiscount
+    {
+        public string CategoryName { get; set; } = string.Empty;
+        public decimal DiscountPercentage { get; set; }
+    }
+
+    /// <summary>JSON'da sayı veya string gelse de decimal'e çevirir (PostgreSQL/Node bazen string döner).</summary>
+    public class FlexibleDecimalConverter : JsonConverter<decimal>
+    {
+        public override decimal ReadJson(JsonReader reader, Type objectType, decimal existingValue, bool hasExistingValue, JsonSerializer serializer)
+        {
+            if (reader.TokenType == JsonToken.Integer || reader.TokenType == JsonToken.Float)
+                return Convert.ToDecimal(reader.Value);
+            if (reader.TokenType == JsonToken.String && decimal.TryParse(reader.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var d))
+                return d;
+            return 0m;
+        }
+        public override void WriteJson(JsonWriter writer, decimal value, JsonSerializer serializer) => writer.WriteValue(value);
     }
 }

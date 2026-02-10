@@ -182,10 +182,10 @@
                                                 <Setter Property="IsEnabled" Value="True"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding Status}" Value="Occupied">
-                                                <Setter Property="Background" Value="#3B82F6"/>
+                                                <Setter Property="Background" Value="#DC2626"/>
                                                 <Setter Property="Foreground" Value="White"/>
                                                 <Setter Property="BorderThickness" Value="1"/>
-                                                <Setter Property="BorderBrush" Value="#2563EB"/>
+                                                <Setter Property="BorderBrush" Value="#B91C1C"/>
                                                 <Setter Property="IsEnabled" Value="True"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding Status}" Value="Unavailable">
@@ -211,6 +211,25 @@
                                              HorizontalAlignment="Center"
                                              TextTrimming="CharacterEllipsis"
                                              MaxWidth="100">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Occupied">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding AppointmentType}" 
+                                             FontSize="7"
+                                             FontStyle="Italic"
+                                             TextWrapping="Wrap"
+                                             HorizontalAlignment="Center"
+                                             TextTrimming="CharacterEllipsis"
+                                             MaxWidth="100"
+                                             Margin="0,1,0,0">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Visibility" Value="Collapsed"/>

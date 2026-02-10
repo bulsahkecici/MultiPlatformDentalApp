@@ -23,7 +23,7 @@ namespace DentalApp.Desktop.Services
                     password
                 });
 
-                if (response != null)
+                if (response != null && !string.IsNullOrEmpty(response.AccessToken) && response.User != null)
                 {
                     CurrentUser = response.User;
                     _apiService.SetTokens(response.AccessToken, response.RefreshToken);

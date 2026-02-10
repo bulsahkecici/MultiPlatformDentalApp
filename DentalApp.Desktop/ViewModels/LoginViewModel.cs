@@ -47,6 +47,43 @@ namespace DentalApp.Desktop.ViewModels
             LoginCommand = new RelayCommand(ExecuteLogin, _ => !IsBusy);
         }
 
+        private static string GetUserFriendlyErrorMessage(Exception ex)
+        {
+            var msg = ex.Message;
+            if (string.IsNullOrWhiteSpace(msg))
+                return "Giriş sırasında bir hata oluştu.";
+
+            // Ağ / bağlantı hataları
+            if (msg.Contains("connection") || msg.Contains("bağlan") || msg.Contains("No connection") ||
+                msg.Contains("Connection refused") || msg.Contains("Unable to connect") ||
+                msg.Contains("Timeout") || msg.Contains("timed out"))
+                return "Sunucuya bağlanılamadı. API sunucusunun çalıştığından emin olun (örn. npm start).";
+
+            // Yetki / kimlik hataları
+            if (msg.Contains("Invalid credentials") || msg.Contains("Geçersiz"))
+                return "Geçersiz e-posta veya şifre.";
+            if (msg.Contains("Account is locked") || msg.Contains("locked"))
+                return "Çok fazla hatalı deneme. Hesap geçici olarak kilitlendi. Lütfen daha sonra tekrar deneyin.";
+            if (msg.Contains("verify your email") || msg.Contains("verify"))
+                return "Giriş yapmadan önce e-posta adresinizi doğrulamanız gerekiyor.";
+            if (msg.Contains("Oturum süresi doldu") || msg.Contains("Unauthorized"))
+                return "Oturum süresi doldu. Lütfen tekrar giriş yapın.";
+
+            // JSON / yanıt hatası
+            if (msg.Contains("parse") || msg.Contains("Failed to parse"))
+                return "Sunucu yanıtı işlenemedi. Sunucu sürümünü kontrol edin.";
+
+            // Diğer API hatalarında İngilizce mesajı Türkçe’ye çevir
+            if (msg.Contains("Email and password are required"))
+                return "E-posta ve şifre gereklidir.";
+            if (msg.Contains("Invalid email format"))
+                return "Geçerli bir e-posta adresi girin.";
+            if (msg.Contains("Login failed"))
+                return "Giriş başarısız. Lütfen bilgilerinizi kontrol edip tekrar deneyin.";
+
+            return msg.Length > 200 ? "Sunucu hatası. Lütfen daha sonra tekrar deneyin." : msg;
+        }
+
         private async void ExecuteLogin(object? parameter)
         {
             if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
@@ -72,7 +109,7 @@ namespace DentalApp.Desktop.ViewModels
             }
             catch (Exception ex)
             {
-                ErrorMessage = ex.Message;
+                ErrorMessage = GetUserFriendlyErrorMessage(ex);
             }
             finally
             {

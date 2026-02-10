@@ -50,7 +50,7 @@ async function createAppointment(req, res, next) {
 
         if (conflictCheck.rows.length > 0) {
             return next(
-                new AppError('Time slot conflicts with existing appointment', 409),
+                new AppError('Bu tarih ve saatte zaten hasta randevusu bulunmaktadır', 409),
             );
         }
 
@@ -92,9 +92,28 @@ async function createAppointment(req, res, next) {
             patient_id, dentist_id, appointment_date, start_time, end_time,
             appointment_type, notes, status, created_by, updated_by, created_at, updated_at
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
-          RETURNING *`,
+          RETURNING id`,
                 insertParams,
             );
+            
+            // Get the created appointment with patient and dentist info
+            if (result.rows.length > 0) {
+                const appointmentId = result.rows[0].id;
+                result = await query(
+                    `SELECT 
+                a.*,
+                p.first_name as patient_first_name,
+                p.last_name as patient_last_name,
+                p.email as patient_email,
+                p.phone as patient_phone,
+                u.email as dentist_email
+               FROM appointments a
+               LEFT JOIN patients p ON a.patient_id = p.id
+               LEFT JOIN users u ON a.dentist_id = u.id
+               WHERE a.id = $1`,
+                    [appointmentId],
+                );
+            }
         } catch (dbError) {
             logger.error({ 
                 dbError: {

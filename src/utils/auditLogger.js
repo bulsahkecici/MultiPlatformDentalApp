@@ -36,6 +36,10 @@ const AuditEventType = {
     TREATMENT_CREATED: 'treatment_created',
     TREATMENT_UPDATED: 'treatment_updated',
 
+    // Generic data events (institution_agreement, payment, etc.)
+    DATA_CREATED: 'data_created',
+    DATA_MODIFIED: 'data_modified',
+
     // Security events
     UNAUTHORIZED_ACCESS: 'unauthorized_access',
     RATE_LIMIT_EXCEEDED: 'rate_limit_exceeded',

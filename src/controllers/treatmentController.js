@@ -21,8 +21,8 @@ async function createTreatment(req, res, next) {
             diagnosis,
             procedureNotes,
             cost,
-            currency = 'USD',
-            status = 'completed',
+            currency = 'TRY',
+            status = 'planned',
         } = req.body || {};
 
         // Validate required fields

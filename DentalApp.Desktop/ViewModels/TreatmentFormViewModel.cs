@@ -15,6 +15,7 @@ namespace DentalApp.Desktop.ViewModels
     public class TreatmentFormViewModel : ObservableObject
     {
         private readonly TreatmentService _treatmentService;
+        private readonly PatientService _patientService;
         private readonly TariffService _tariffService;
         private Treatment _treatment;
         private bool _isEditMode;
@@ -28,6 +29,7 @@ namespace DentalApp.Desktop.ViewModels
         private DispatcherTimer? _searchTimer;
         private Patient? _selectedPatient;
         private string? _selectedToothNumber;
+        private Dictionary<string, decimal>? _patientCategoryDiscounts;
 
         public Treatment Treatment
         {
@@ -112,14 +114,78 @@ namespace DentalApp.Desktop.ViewModels
                     if (value != null)
                     {
                         Treatment.PatientId = value.Id;
+                        // Load patient with institution agreement details
+                        _ = LoadPatientWithDiscountsAsync(value.Id);
                     }
                     else
                     {
                         Treatment.PatientId = 0;
+                        _patientCategoryDiscounts = null;
+                        OnPropertyChanged(nameof(TotalCostWithDiscount));
+                        OnPropertyChanged(nameof(TotalDiscount));
                     }
                 }
             }
         }
+        
+        public decimal TotalCostWithDiscount
+        {
+            get
+            {
+                var total = TotalCost;
+                if (_patientCategoryDiscounts != null && _patientCategoryDiscounts.Count > 0)
+                {
+                    var discount = TotalDiscount;
+                    return total - discount;
+                }
+                return total;
+            }
+        }
+        
+        public decimal TotalDiscount
+        {
+            get
+            {
+                if (_patientCategoryDiscounts == null || _patientCategoryDiscounts.Count == 0)
+                    return 0m;
+                
+                decimal totalDiscount = 0m;
+                foreach (var toothPlan in ToothPlans)
+                {
+                    foreach (var proc in toothPlan.Value)
+                    {
+                        if (_patientCategoryDiscounts.TryGetValue(proc.Category, out decimal discountPercent))
+                        {
+                            totalDiscount += proc.Price * (discountPercent / 100m);
+                        }
+                    }
+                }
+                return totalDiscount;
+            }
+        }
+        
+        private async Task LoadPatientWithDiscountsAsync(int patientId)
+        {
+            try
+            {
+                var patient = await _patientService.GetPatientAsync(patientId);
+                if (patient != null)
+                {
+                    _patientCategoryDiscounts = patient.CategoryDiscounts;
+                    OnPropertyChanged(nameof(TotalCostWithDiscount));
+                    OnPropertyChanged(nameof(TotalDiscount));
+                    OnPropertyChanged(nameof(HasDiscount));
+                    OnPropertyChanged(nameof(InstitutionName));
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Hasta indirim bilgileri yüklenirken hata: {ex.Message}");
+            }
+        }
+        
+        public bool HasDiscount => _patientCategoryDiscounts != null && _patientCategoryDiscounts.Count > 0;
+        public string? InstitutionName => SelectedPatient?.InstitutionName;
 
         public TariffCategory? SelectedCategory
         {
@@ -172,6 +238,7 @@ namespace DentalApp.Desktop.ViewModels
         public TreatmentFormViewModel(TreatmentService treatmentService, PatientService patientService, Treatment? treatment = null, bool canViewPrices = false)
         {
             _treatmentService = treatmentService;
+            _patientService = patientService;
             _tariffService = new TariffService();
             CanViewPrices = canViewPrices;
             
@@ -196,7 +263,7 @@ namespace DentalApp.Desktop.ViewModels
             _treatment = treatment ?? new Treatment 
             { 
                 TreatmentDate = DateTime.Today,
-                Status = "completed",
+                Status = "planned",
                 Currency = "TRY"
             };
             _isEditMode = treatment != null;
@@ -227,6 +294,79 @@ namespace DentalApp.Desktop.ViewModels
 
             _ = LoadPatientsAsync(patientService);
             _ = LoadTariffDataAsync();
+            
+            // If editing, reload full treatment data to ensure all fields are populated
+            if (_isEditMode && treatment != null && treatment.Id > 0)
+            {
+                _ = LoadTreatmentDataAsync(treatment.Id);
+            }
+        }
+        
+        private async Task LoadTreatmentDataAsync(int treatmentId)
+        {
+            try
+            {
+                var fullTreatment = await _treatmentService.GetTreatmentAsync(treatmentId);
+                if (fullTreatment != null)
+                {
+                    Treatment = fullTreatment;
+                    _costString = fullTreatment.Cost?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+                    OnPropertyChanged(nameof(CostString));
+                    
+                    // Update selected patient if not already set
+                    if (Treatment.PatientId > 0 && SelectedPatient == null)
+                    {
+                        SelectedPatient = Patients.FirstOrDefault(p => p.Id == Treatment.PatientId);
+                    }
+                    
+                    // Load tooth plans if tooth number exists
+                    if (!string.IsNullOrWhiteSpace(Treatment.ToothNumber))
+                    {
+                        if (int.TryParse(Treatment.ToothNumber, out var toothNumber))
+                        {
+                            SelectedTeeth.Clear();
+                            SelectedTeeth.Add(toothNumber);
+                            
+                            if (!ToothPlans.ContainsKey(toothNumber))
+                            {
+                                ToothPlans[toothNumber] = new ObservableCollection<ProcedureItem>();
+                            }
+                            
+                            // Add the existing treatment as a procedure item
+                            var procItem = new ProcedureItem
+                            {
+                                Code = Treatment.Description?.Contains("Kod:") == true 
+                                    ? Treatment.Description.Split("Kod:")[1].Trim().Split(')')[0].Trim()
+                                    : "",
+                                Name = Treatment.TreatmentType ?? Treatment.Description ?? "",
+                                Price = Treatment.Cost ?? 0,
+                                Category = Treatment.TreatmentType ?? ""
+                            };
+                            
+                            if (!ToothPlans[toothNumber].Any(p => p.Code == procItem.Code && p.Name == procItem.Name))
+                            {
+                                ToothPlans[toothNumber].Add(procItem);
+                            }
+                            
+                            UpdateSelectedProcedures();
+                        }
+                    }
+                    
+                    // Set category if treatment type matches
+                    if (!string.IsNullOrWhiteSpace(Treatment.TreatmentType))
+                    {
+                        var matchingCategory = Categories.FirstOrDefault(c => c.Name == Treatment.TreatmentType);
+                        if (matchingCategory != null)
+                        {
+                            SelectedCategory = matchingCategory;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Tedavi verileri yüklenirken hata: {ex.Message}", "Hata", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
         }
 
         private async Task LoadTariffDataAsync()
@@ -517,6 +657,25 @@ namespace DentalApp.Desktop.ViewModels
                         SelectedProcedures.Add(proc);
                     }
                 }
+            }
+            OnPropertyChanged(nameof(TotalCost));
+            OnPropertyChanged(nameof(TotalCostWithDiscount));
+            OnPropertyChanged(nameof(TotalDiscount));
+        }
+        
+        public decimal TotalCost
+        {
+            get
+            {
+                decimal total = 0m;
+                foreach (var toothPlan in ToothPlans)
+                {
+                    foreach (var proc in toothPlan.Value)
+                    {
+                        total += proc.Price;
+                    }
+                }
+                return total;
             }
         }
         

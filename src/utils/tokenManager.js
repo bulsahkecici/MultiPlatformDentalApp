@@ -5,7 +5,7 @@ const { query } = require('../db');
 const logger = require('./logger');
 
 // Token expiry times
-const ACCESS_TOKEN_EXPIRY = '15m'; // 15 minutes
+const ACCESS_TOKEN_EXPIRY = '1h'; // 1 hour (extended from 15 minutes)
 const REFRESH_TOKEN_EXPIRY = '7d'; // 7 days
 const EMAIL_VERIFICATION_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 const PASSWORD_RESET_EXPIRY = 60 * 60 * 1000; // 1 hour

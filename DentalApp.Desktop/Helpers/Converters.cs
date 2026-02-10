@@ -25,6 +25,19 @@ namespace DentalApp.Desktop.Helpers
         }
     }
 
+    /// <summary>true -> Collapsed, false -> Visible (liste dolu iken DataGrid göster).</summary>
+    public class InverseBooleanToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool b)
+                return b ? Visibility.Collapsed : Visibility.Visible;
+            return Visibility.Visible;
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
+
     public class BooleanToTextConverter : IValueConverter
     {
         public string TrueText { get; set; } = "Yes";
@@ -149,6 +162,60 @@ namespace DentalApp.Desktop.Helpers
                 }
             }
             return false;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+    
+    public class DateToColorConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is DateTime date)
+            {
+                var today = DateTime.Today;
+                var tomorrow = today.AddDays(1);
+                
+                if (date.Date == today)
+                {
+                    // Bugün - açık mavi
+                    return System.Windows.Media.Brushes.LightBlue;
+                }
+                else if (date.Date == tomorrow)
+                {
+                    // Yarın - açık yeşil
+                    return System.Windows.Media.Brushes.LightGreen;
+                }
+                else
+                {
+                    // Diğer günler - beyaz
+                    return System.Windows.Media.Brushes.White;
+                }
+            }
+            return System.Windows.Media.Brushes.White;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+    
+    public class BooleanToBrushConverter : IValueConverter
+    {
+        public System.Windows.Media.Brush TrueBrush { get; set; } = System.Windows.Media.Brushes.Green;
+        public System.Windows.Media.Brush FalseBrush { get; set; } = System.Windows.Media.Brushes.Red;
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool boolValue)
+            {
+                return boolValue ? TrueBrush : FalseBrush;
+            }
+            return FalseBrush;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

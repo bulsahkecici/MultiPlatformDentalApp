@@ -15,6 +15,7 @@ namespace DentalApp.Desktop.ViewModels
         private readonly PatientService _patientService;
         private readonly AppointmentService _appointmentService;
         private readonly TreatmentService _treatmentService;
+        private readonly InstitutionAgreementService _institutionAgreementService;
         
         private object? _currentView;
         public object? CurrentView
@@ -40,6 +41,7 @@ namespace DentalApp.Desktop.ViewModels
         public ICommand NavigateToDentistEarningsCommand { get; }
         public ICommand NavigateToPaymentsCommand { get; }
         public ICommand NavigateToAdminManagementCommand { get; }
+        public ICommand NavigateToInstitutionAgreementsCommand { get; }
         public ICommand NavigateToProsthesisCommand { get; }
         public ICommand NavigateToSMSCommand { get; }
         public ICommand LogoutCommand { get; }
@@ -52,6 +54,7 @@ namespace DentalApp.Desktop.ViewModels
             _patientService = new PatientService(_apiService);
             _appointmentService = new AppointmentService(_apiService);
             _treatmentService = new TreatmentService(_apiService);
+            _institutionAgreementService = new InstitutionAgreementService(_apiService);
 
             NavigateToDashboardCommand = new RelayCommand(_ => ShowDashboard());
             NavigateToPatientsCommand = new RelayCommand(_ => ShowPatients());
@@ -60,6 +63,7 @@ namespace DentalApp.Desktop.ViewModels
             NavigateToDentistEarningsCommand = new RelayCommand(_ => ShowDentistEarnings());
             NavigateToPaymentsCommand = new RelayCommand(_ => ShowPayments());
             NavigateToAdminManagementCommand = new RelayCommand(_ => ShowAdminManagement());
+            NavigateToInstitutionAgreementsCommand = new RelayCommand(_ => ShowInstitutionAgreements());
             NavigateToProsthesisCommand = new RelayCommand(_ => ShowProsthesis());
             NavigateToSMSCommand = new RelayCommand(_ => ShowSMS());
             LogoutCommand = new RelayCommand(_ => Logout());
@@ -107,6 +111,57 @@ namespace DentalApp.Desktop.ViewModels
             try
             {
                 var dashboardVM = new DashboardViewModel(_patientService, _appointmentService, _treatmentService, _apiService, IsPatron, IsSecretary, IsDentist);
+                // Randevu kartına tıklandığında tedavi detaylarını aç
+                dashboardVM.AppointmentCardClicked += async (appointment) =>
+                {
+                    try
+                    {
+                        // Hasta için planlanmış tedavileri kontrol et
+                        if (appointment.PatientId > 0)
+                        {
+                            var (treatments, _) = await _treatmentService.GetTreatmentsAsync(
+                                page: 1,
+                                limit: 100,
+                                patientId: appointment.PatientId);
+                            
+                            // Planlanmış (planned) durumundaki tedavileri bul
+                            var plannedTreatments = treatments
+                                .Where(t => t.Status == "planned" && t.AppointmentId == appointment.Id)
+                                .OrderByDescending(t => t.TreatmentDate)
+                                .ToList();
+                            
+                            if (plannedTreatments.Any())
+                            {
+                                // İlk planlanmış tedaviyi aç
+                                var treatment = plannedTreatments.First();
+                                ShowTreatmentForm(treatment);
+                            }
+                            else
+                            {
+                                // Planlanmış tedavi yoksa, hasta bilgilerini göster
+                                var patient = await _patientService.GetPatientAsync(appointment.PatientId);
+                                if (patient != null)
+                                {
+                                    ShowPatientForm(patient);
+                                }
+                                else
+                                {
+                                    System.Windows.MessageBox.Show(
+                                        $"Randevu için planlanmış tedavi bulunamadı.\nHasta: {appointment.PatientFullName}",
+                                        "Bilgi",
+                                        System.Windows.MessageBoxButton.OK,
+                                        System.Windows.MessageBoxImage.Information);
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Windows.MessageBox.Show($"Randevu detayları açılırken hata: {ex.Message}", "Hata",
+                            System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    }
+                };
+                
                 CurrentView = dashboardVM;
                 // Load data asynchronously without blocking UI
                 _ = dashboardVM.LoadDashboardDataAsync();
@@ -174,15 +229,36 @@ namespace DentalApp.Desktop.ViewModels
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"[ShowAppointmentForm] Opening appointment form. IsEditMode: {appointment != null && appointment.Id > 0}");
+                
                 var formVM = new AppointmentFormViewModel(_appointmentService, _patientService, appointment);
                 var dialog = new AppointmentFormDialog(formVM);
                 dialog.Owner = Application.Current.MainWindow;
                 var result = dialog.ShowDialog();
                 
-                // Refresh appointments list if we're on appointments view
-                if (CurrentView is AppointmentsViewModel appointmentsVM)
+                System.Diagnostics.Debug.WriteLine($"[ShowAppointmentForm] Dialog closed. Result: {result}, CurrentView type: {CurrentView?.GetType().Name}");
+                
+                // Refresh appointments list and slots if we're on appointments view
+                // DialogResult true ise randevu başarıyla kaydedildi
+                if (result == true && CurrentView is AppointmentsViewModel appointmentsVM)
                 {
+                    System.Diagnostics.Debug.WriteLine($"[ShowAppointmentForm] Refreshing appointments view. SelectedDate: {appointmentsVM.SelectedDate:yyyy-MM-dd}");
+                    
+                    // Randevu eklendikten/güncellendikten sonra slot'ları yenile
+                    // SelectedDate'i de güncelle (eğer yeni randevu farklı bir tarihte ise)
+                    if (formVM.Appointment != null && formVM.Appointment.AppointmentDate != default)
+                    {
+                        var newDate = formVM.Appointment.AppointmentDate;
+                        System.Diagnostics.Debug.WriteLine($"[ShowAppointmentForm] Updating SelectedDate to: {newDate:yyyy-MM-dd}");
+                        appointmentsVM.SelectedDate = newDate;
+                    }
+                    
+                    System.Diagnostics.Debug.WriteLine($"[ShowAppointmentForm] Calling LoadAppointmentsAsync()");
                     _ = appointmentsVM.LoadAppointmentsAsync();
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ShowAppointmentForm] Not refreshing - result: {result}, is AppointmentsViewModel: {CurrentView is AppointmentsViewModel}");
                 }
             }
             catch (Exception ex)
@@ -229,8 +305,11 @@ namespace DentalApp.Desktop.ViewModels
             if (!IsSecretary && !IsAdmin) return;
             var tariffService = new Services.TariffService();
             var paymentsVM = new PaymentsViewModel(_apiService, _patientService, tariffService);
+            paymentsVM.CanViewPrices = CanViewPrices;
+            paymentsVM.IsSecretary = IsSecretary; // Treatment plan approval sadece secretary'de
             CurrentView = paymentsVM;
             _ = paymentsVM.LoadDataAsync();
+            _ = paymentsVM.LoadAgreementsAsync(); // Anlaşmalı kurumlar listesini hemen yükle
         }
 
         private void ShowAdminManagement()
@@ -259,6 +338,13 @@ namespace DentalApp.Desktop.ViewModels
                 "Yakında",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Information);
+        }
+
+        private void ShowInstitutionAgreements()
+        {
+            if (!IsSecretary && !IsAdmin) return;
+            var institutionAgreementsVM = new InstitutionAgreementsViewModel(_institutionAgreementService);
+            CurrentView = institutionAgreementsVM;
         }
 
         private void Logout()

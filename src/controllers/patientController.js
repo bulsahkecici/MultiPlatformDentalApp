@@ -171,7 +171,7 @@ async function getPatientById(req, res, next) {
         const patientId = parseInt(req.params.id, 10);
 
         const result = await query(
-            `SELECT p.*, ia.institution_name, ia.discount_percentage
+            `SELECT p.*, ia.id as institution_agreement_id, ia.institution_name, ia.discount_percentage
             FROM patients p
             LEFT JOIN institution_agreements ia ON p.institution_agreement_id = ia.id
             WHERE p.id = $1 AND p.deleted_at IS NULL`,

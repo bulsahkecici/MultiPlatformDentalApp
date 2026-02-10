@@ -14,6 +14,7 @@ namespace DentalApp.Desktop.ViewModels
         private bool _isBusy;
         private string _selectedUserType = string.Empty;
         private UserFormData _user = new();
+        private ObservableCollection<User> _users = new();
         
         public bool IsBusy
         {
@@ -50,10 +51,17 @@ namespace DentalApp.Desktop.ViewModels
         public ObservableCollection<bool> Specializations { get; } = new();
         
         public string Password { get; set; } = string.Empty;
+        
+        public ObservableCollection<User> Users
+        {
+            get => _users;
+            set => SetProperty(ref _users, value);
+        }
 
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
         public ICommand SelectUserTypeCommand { get; }
+        public ICommand LoadUsersCommand { get; }
 
         public AdminManagementViewModel(ApiService apiService)
         {
@@ -77,6 +85,10 @@ namespace DentalApp.Desktop.ViewModels
                     Specializations[i] = false;
                 }
             });
+            LoadUsersCommand = new RelayCommand(async _ => await LoadUsersAsync());
+            
+            // Load users on initialization
+            _ = LoadUsersAsync();
         }
         
         private bool IsValid()
@@ -131,7 +143,7 @@ namespace DentalApp.Desktop.ViewModels
                 {
                     email = User.Email,
                     password = Password,
-                    roles = string.Join(",", roles),
+                    roles = roles, // Send as array, not string
                     firstName = User.FirstName,
                     lastName = User.LastName,
                     phone = User.Phone,
@@ -162,6 +174,9 @@ namespace DentalApp.Desktop.ViewModels
                 {
                     Specializations[i] = false;
                 }
+                
+                // Reload users list
+                await LoadUsersAsync();
             }
             catch (Exception ex)
             {
@@ -225,6 +240,30 @@ namespace DentalApp.Desktop.ViewModels
         {
             // Placeholder for statistics loading
             await Task.CompletedTask;
+        }
+        
+        private async Task LoadUsersAsync()
+        {
+            try
+            {
+                var response = await _apiService.GetAsync<UsersResponse>("/users?limit=1000");
+                if (response?.Users != null)
+                {
+                    var list = response.Users;
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        Users.Clear();
+                        foreach (var user in list)
+                        {
+                            Users.Add(user);
+                        }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Kullanıcılar yüklenirken hata: {ex.Message}");
+            }
         }
     }
     

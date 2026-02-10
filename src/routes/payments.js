@@ -4,7 +4,10 @@ const {
     processPayment, 
     getPendingTreatmentPlans,
     approveTreatmentPlan,
-    getPatientDebt
+    getPatientDebt,
+    getTotalReceivables,
+    getTotalIncome,
+    getPatientPayments
 } = require('../controllers/paymentController');
 const { requireAuth, requireAnyRole } = require('../middlewares/auth');
 const { mutateLimiter } = require('../middlewares/rateLimit');
@@ -21,5 +24,10 @@ router.post('/api/payments/approve-plan/:id', requireAuth, requireAnyRole('admin
 
 // Patient debt (admin and secretary only)
 router.get('/api/payments/patient-debt/:patientId', requireAuth, requireAnyRole('admin', 'secretary'), getPatientDebt);
+
+// Income/Expense (admin and secretary only)
+router.get('/api/payments/total-receivables', requireAuth, requireAnyRole('admin', 'secretary'), getTotalReceivables);
+router.get('/api/payments/total-income', requireAuth, requireAnyRole('admin', 'secretary'), getTotalIncome);
+router.get('/api/payments/patient-payments/:patientId', requireAuth, requireAnyRole('admin', 'secretary'), getPatientPayments);
 
 module.exports = router;

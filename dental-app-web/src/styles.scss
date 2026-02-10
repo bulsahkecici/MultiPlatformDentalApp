@@ -1,3 +1,44 @@
 /* You can add global styles to this file, and also import other style files */
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+
+html, body { 
+  height: 100%; 
+  margin: 0; 
+  font-family: Roboto, "Helvetica Neue", sans-serif; 
+}
+
+/* BULKA DENTAL Color Palette */
+:root {
+  --bulka-light-blue: #B3D9FF;
+  --bulka-medium-blue: #3B82F6;
+  --bulka-dark-blue: #1E3A8A;
+  --bulka-silver: #C0C0C0;
+  --bulka-light-green: #90EE90;
+  --bulka-gradient-start: #E6F2FF;
+  --bulka-gradient-end: #FFFFFF;
+}
+
+/* Material Theme Override */
+.mat-primary {
+  background-color: var(--bulka-medium-blue) !important;
+  color: white !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bulka-medium-blue);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--bulka-dark-blue);
+}

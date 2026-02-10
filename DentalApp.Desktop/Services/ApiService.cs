@@ -61,12 +61,10 @@ namespace DentalApp.Desktop.Services
                 System.Diagnostics.Debug.WriteLine($"[ApiService] Authorization header: {authHeader}");
                 
                 var response = await _httpClient.GetAsync(url);
-                
                 var responseContent = await response.Content.ReadAsStringAsync();
                 System.Diagnostics.Debug.WriteLine($"[ApiService] Response Status: {response.StatusCode}");
                 System.Diagnostics.Debug.WriteLine($"[ApiService] Response: {responseContent}");
-                
-                return await HandleResponseAsync<T>(response, endpoint, "GET");
+                return await HandleResponseAsync<T>(response, endpoint, "GET", responseContent);
             }
             catch (Exception ex)
             {
@@ -92,12 +90,10 @@ namespace DentalApp.Desktop.Services
                 
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var response = await _httpClient.PostAsync(url, content);
-                
                 var responseContent = await response.Content.ReadAsStringAsync();
                 System.Diagnostics.Debug.WriteLine($"[ApiService] Response Status: {response.StatusCode}");
                 System.Diagnostics.Debug.WriteLine($"[ApiService] Response: {responseContent}");
-                
-                return await HandleResponseAsync<T>(response, endpoint, "POST");
+                return await HandleResponseAsync<T>(response, endpoint, "POST", responseContent);
             }
             catch (Exception ex)
             {
@@ -122,7 +118,8 @@ namespace DentalApp.Desktop.Services
                 
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var response = await _httpClient.PutAsync(url, content);
-                return await HandleResponseAsync<T>(response, endpoint, "PUT");
+                var responseContent = await response.Content.ReadAsStringAsync();
+                return await HandleResponseAsync<T>(response, endpoint, "PUT", responseContent);
             }
             catch (Exception ex)
             {
@@ -144,10 +141,14 @@ namespace DentalApp.Desktop.Services
             }
         }
 
-        private async Task<T?> HandleResponseAsync<T>(HttpResponseMessage response, string endpoint, string method)
+        private async Task<T?> HandleResponseAsync<T>(HttpResponseMessage response, string endpoint, string method, string? contentPreRead = null)
         {
-            var content = await response.Content.ReadAsStringAsync();
-            
+            var content = contentPreRead ?? await response.Content.ReadAsStringAsync();
+            return await HandleResponseCoreAsync<T>(response, endpoint, method, content);
+        }
+
+        private Task<T?> HandleResponseCoreAsync<T>(HttpResponseMessage response, string endpoint, string method, string content)
+        {
             // Handle 401 Unauthorized
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
@@ -257,10 +258,9 @@ namespace DentalApp.Desktop.Services
                 if (string.IsNullOrWhiteSpace(content))
                 {
                     System.Diagnostics.Debug.WriteLine("[ApiService] Warning: Empty response from API");
-                    return default(T);
+                    return Task.FromResult<T?>(default);
                 }
-                
-                return JsonConvert.DeserializeObject<T>(content);
+                return Task.FromResult<T?>(JsonConvert.DeserializeObject<T>(content));
             }
             catch (JsonException ex)
             {

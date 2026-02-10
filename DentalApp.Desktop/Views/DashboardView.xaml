@@ -47,7 +47,7 @@
                                                HorizontalAlignment="Center" 
                                                Margin="0,0,0,10"
                                                Foreground="{StaticResource BulkaMediumBlue}"/>
-                        <TextBlock Text="{Binding TotalAmount, StringFormat='{}{0:N2} TRY'}" 
+                        <TextBlock Text="{Binding TotalAmount, StringFormat='{}{0:N2} ₺'}" 
                                  Style="{StaticResource MaterialDesignHeadline3TextBlock}" 
                                  Foreground="{StaticResource BulkaDarkBlue}"
                                  FontWeight="Bold"
@@ -67,7 +67,7 @@
                                                HorizontalAlignment="Center" 
                                                Margin="0,0,0,10"
                                                Foreground="{StaticResource BulkaLightGreen}"/>
-                        <TextBlock Text="{Binding PaidAmount, StringFormat='{}{0:N2} TRY'}" 
+                        <TextBlock Text="{Binding PaidAmount, StringFormat='{}{0:N2} ₺'}" 
                                  Style="{StaticResource MaterialDesignHeadline3TextBlock}" 
                                  Foreground="{StaticResource BulkaDarkBlue}"
                                  FontWeight="Bold"
@@ -105,7 +105,7 @@
                             Style="{StaticResource MaterialDesignDataGrid}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Doktor Adı" Binding="{Binding DentistName}" Width="*"/>
-                            <DataGridTextColumn Header="Ciro" Binding="{Binding Turnover, StringFormat='{}{0:N2} TRY'}" Width="*"/>
+                            <DataGridTextColumn Header="Ciro" Binding="{Binding Turnover, StringFormat='{}{0:N2} ₺'}" Width="*"/>
                             <DataGridTextColumn Header="Ciro Payı (%)" Binding="{Binding TurnoverPercentage, StringFormat='{}{0:F2}%'}" Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>
@@ -113,39 +113,55 @@
             </materialDesign:Card>
         </Grid>
 
-        <!-- SEKRETER/DENTIST DASHBOARD -->
+        <!-- SEKRETER DASHBOARD -->
         <Grid Grid.Row="1" Visibility="{Binding IsSecretary, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="350"/>
                 <ColumnDefinition Width="10"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             
-            <!-- Sol Panel: Yaklaşan Randevular -->
+            <!-- Sol Panel: Yaklaşan Randevular (Bugün ve Yarın) -->
             <materialDesign:Card Grid.Column="0" Padding="15" Background="White">
                 <StackPanel>
-                    <TextBlock Text="Yaklaşan Randevular" 
+                    <TextBlock Text="Yaklaşan Randevular (Bugün &amp; Yarın)" 
                              Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
                              Margin="0,0,0,15"/>
+                    <TextBlock Text="Sadece bugün ve yarınki randevular gösterilmektedir." 
+                             Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                             Foreground="Gray"
+                             TextWrapping="Wrap"
+                             Margin="0,0,0,10"/>
                     <ListView ItemsSource="{Binding UpcomingAppointmentsList}" 
                              MaxHeight="500"
                              ScrollViewer.VerticalScrollBarVisibility="Auto">
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <materialDesign:Card Margin="0,0,0,10" Padding="10">
+                                <materialDesign:Card Margin="0,0,0,10" Padding="10" 
+                                                   Background="{Binding AppointmentDate, Converter={StaticResource DateToColorConverter}}"
+                                                   Cursor="Hand"
+                                                   MouseLeftButtonDown="AppointmentCard_MouseLeftButtonDown">
                                     <StackPanel>
-                                        <TextBlock Text="{Binding AppointmentDateTime, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
+                                        <TextBlock Text="{Binding AppointmentDateTime, StringFormat='{}{0:dddd, dd MMMM yyyy HH:mm}', ConverterCulture='tr-TR'}" 
                                                  Style="{StaticResource MaterialDesignBody1TextBlock}"
                                                  FontWeight="Bold"
                                                  Foreground="{StaticResource BulkaDarkBlue}"/>
                                         <TextBlock Text="{Binding PatientFullName}" 
                                                  Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                                 Foreground="{StaticResource BulkaMediumBlue}"/>
+                                                 Foreground="{StaticResource BulkaMediumBlue}"
+                                                 FontWeight="SemiBold"
+                                                 Margin="0,5,0,0"/>
                                         <TextBlock Text="{Binding DentistEmail, StringFormat='Doktor: {0}'}" 
                                                  Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                                 Foreground="{StaticResource BulkaMediumBlue}"/>
+                                                 Foreground="{StaticResource BulkaMediumBlue}"
+                                                 Margin="0,2,0,0"/>
+                                        <TextBlock Text="{Binding AppointmentType, StringFormat='Tip: {0}'}" 
+                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                 Foreground="Gray"
+                                                 Margin="0,2,0,0"
+                                                 Visibility="{Binding AppointmentType, Converter={StaticResource NullToBooleanConverter}}"/>
                                     </StackPanel>
                                 </materialDesign:Card>
                             </DataTemplate>
@@ -154,7 +170,7 @@
                 </StackPanel>
             </materialDesign:Card>
             
-            <!-- Sağ Panel: Analog Saat + Takvim (Placeholder - basit dijital saat) -->
+            <!-- Sağ Panel: Saat + Takvim + İstatistikler -->
             <StackPanel Grid.Column="2" Margin="10,0,0,0">
                 <materialDesign:Card Padding="20" Background="White" Margin="0,0,0,20">
                     <StackPanel HorizontalAlignment="Center">
@@ -164,19 +180,55 @@
                                  FontWeight="Bold"
                                  HorizontalAlignment="Center"
                                  x:Name="ClockTextBlock"/>
-                        <TextBlock Text="{Binding CurrentDate, StringFormat='{}{0:dddd, dd MMMM yyyy}'}" 
+                        <TextBlock Text="{Binding CurrentDate, StringFormat='{}{0:dddd, dd MMMM yyyy}', ConverterCulture='tr-TR'}" 
                                  Style="{StaticResource MaterialDesignBody1TextBlock}" 
                                  Foreground="{StaticResource BulkaMediumBlue}"
                                  HorizontalAlignment="Center"
                                  Margin="0,10,0,0"/>
-                        <!-- TODO: Analog saat görseli eklenecek -->
                     </StackPanel>
                 </materialDesign:Card>
                 
-                <materialDesign:Card Padding="20" Background="White">
+                <materialDesign:Card Padding="20" Background="White" Margin="0,0,0,20">
                     <Calendar SelectedDate="{Binding CurrentDate}" 
                             IsTodayHighlighted="True"
-                            HorizontalAlignment="Center"/>
+                            HorizontalAlignment="Center"
+                            Language="tr-TR"/>
+                </materialDesign:Card>
+                
+                <materialDesign:Card Padding="20" Background="White">
+                    <StackPanel>
+                        <TextBlock Text="Bugünkü İstatistikler" 
+                                 Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                 Foreground="{StaticResource BulkaDarkBlue}"
+                                 FontWeight="Bold"
+                                 Margin="0,0,0,15"/>
+                        <UniformGrid Columns="2" Rows="2">
+                            <StackPanel Margin="5">
+                                <TextBlock Text="{Binding TodayAppointments, StringFormat='{}{0}'}" 
+                                         Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
+                                         Foreground="{StaticResource BulkaMediumBlue}"
+                                         FontWeight="Bold"
+                                         HorizontalAlignment="Center"/>
+                                <TextBlock Text="Bugünkü Randevu" 
+                                         Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                                         Foreground="Gray"
+                                         HorizontalAlignment="Center"
+                                         TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <StackPanel Margin="5">
+                                <TextBlock Text="{Binding TotalPatients, StringFormat='{}{0}'}" 
+                                         Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
+                                         Foreground="{StaticResource BulkaMediumBlue}"
+                                         FontWeight="Bold"
+                                         HorizontalAlignment="Center"/>
+                                <TextBlock Text="Toplam Hasta" 
+                                         Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                                         Foreground="Gray"
+                                         HorizontalAlignment="Center"
+                                         TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </UniformGrid>
+                    </StackPanel>
                 </materialDesign:Card>
             </StackPanel>
         </Grid>
@@ -202,7 +254,9 @@
                              ScrollViewer.VerticalScrollBarVisibility="Auto">
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <materialDesign:Card Margin="0,0,0,10" Padding="10">
+                                <materialDesign:Card Margin="0,0,0,10" Padding="10"
+                                                   Cursor="Hand"
+                                                   MouseLeftButtonDown="AppointmentCard_MouseLeftButtonDown">
                                     <StackPanel>
                                         <TextBlock Text="{Binding AppointmentDateTime, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
                                                  Style="{StaticResource MaterialDesignBody1TextBlock}"
@@ -222,14 +276,58 @@
                 </StackPanel>
             </materialDesign:Card>
             
-            <!-- Sağ Panel: Boş alan veya istatistikler -->
+            <!-- Sağ Panel: İstatistikler ve Bilgiler -->
             <StackPanel Grid.Column="2" Margin="10,0,0,0">
+                <materialDesign:Card Padding="20" Background="White" Margin="0,0,0,20">
+                    <StackPanel>
+                        <TextBlock Text="Bugünkü Randevular" 
+                                 Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                 Foreground="{StaticResource BulkaDarkBlue}"
+                                 FontWeight="Bold"
+                                 Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding TodayAppointments, StringFormat='Toplam: {0}'}" 
+                                 Style="{StaticResource MaterialDesignHeadline5TextBlock}" 
+                                 Foreground="{StaticResource BulkaMediumBlue}"
+                                 HorizontalAlignment="Center"
+                                 Margin="0,10,0,0"/>
+                    </StackPanel>
+                </materialDesign:Card>
+                
+                <materialDesign:Card Padding="20" Background="White" Margin="0,0,0,20">
+                    <StackPanel>
+                        <TextBlock Text="Bu Ay Yapılan Tedaviler" 
+                                 Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                 Foreground="{StaticResource BulkaDarkBlue}"
+                                 FontWeight="Bold"
+                                 Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding TotalTreatments, StringFormat='Toplam: {0}'}" 
+                                 Style="{StaticResource MaterialDesignHeadline5TextBlock}" 
+                                 Foreground="{StaticResource BulkaMediumBlue}"
+                                 HorizontalAlignment="Center"
+                                 Margin="0,10,0,0"/>
+                    </StackPanel>
+                </materialDesign:Card>
+                
                 <materialDesign:Card Padding="20" Background="White">
-                    <TextBlock Text="Tedavi Planlama ve Hasta Bilgileri" 
-                             Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
-                             Foreground="{StaticResource BulkaDarkBlue}"
-                             HorizontalAlignment="Center"
-                             VerticalAlignment="Center"/>
+                    <StackPanel>
+                        <TextBlock Text="Hızlı Erişim" 
+                                 Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                 Foreground="{StaticResource BulkaDarkBlue}"
+                                 FontWeight="Bold"
+                                 Margin="0,0,0,15"/>
+                        <TextBlock Text="• Yeni tedavi eklemek için Tedaviler menüsünü kullanın" 
+                                 Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                                 Foreground="{StaticResource BulkaMediumBlue}"
+                                 Margin="0,5,0,5"/>
+                        <TextBlock Text="• Randevularınızı görüntülemek için Randevular menüsünü kullanın" 
+                                 Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                                 Foreground="{StaticResource BulkaMediumBlue}"
+                                 Margin="0,5,0,5"/>
+                        <TextBlock Text="• Hasta bilgilerini görmek için Hastalar menüsünü kullanın" 
+                                 Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                                 Foreground="{StaticResource BulkaMediumBlue}"
+                                 Margin="0,5,0,5"/>
+                    </StackPanel>
                 </materialDesign:Card>
             </StackPanel>
         </Grid>

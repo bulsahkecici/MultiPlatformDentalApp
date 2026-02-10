@@ -189,10 +189,11 @@ async function getUsers(req, res, next) {
         );
         const total = parseInt(countResult.rows[0].count, 10);
 
-        // Get users
+        // Get users (first_name, last_name, phone, tc_no are on users table)
         params.push(parseInt(limit, 10), offset);
         const result = await query(
-            `SELECT id, email, roles, email_verified, last_login_at, created_at, updated_at
+            `SELECT id, email, roles, email_verified, last_login_at, created_at, updated_at,
+                    first_name, last_name, phone, tc_no
        FROM users
        WHERE ${whereClause}
        ORDER BY created_at DESC
@@ -208,6 +209,10 @@ async function getUsers(req, res, next) {
             lastLoginAt: user.last_login_at,
             createdAt: user.created_at,
             updatedAt: user.updated_at,
+            firstName: user.first_name || '',
+            lastName: user.last_name || '',
+            phone: user.phone || '',
+            tcNo: user.tc_no || '',
         }));
 
         return res.status(200).json({

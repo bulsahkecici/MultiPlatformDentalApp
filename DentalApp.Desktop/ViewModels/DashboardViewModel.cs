@@ -112,6 +112,10 @@ namespace DentalApp.Desktop.ViewModels
         private System.Windows.Threading.DispatcherTimer? _clockTimer;
 
         public ICommand RefreshCommand { get; }
+        public ICommand AppointmentCardClickCommand { get; }
+        
+        // Event for opening treatment details
+        public event Action<Appointment>? AppointmentCardClicked;
 
         public DashboardViewModel(PatientService patientService, AppointmentService appointmentService, TreatmentService treatmentService, ApiService apiService, bool isPatron, bool isSecretary, bool isDentist)
         {
@@ -123,6 +127,13 @@ namespace DentalApp.Desktop.ViewModels
             _isSecretary = isSecretary;
             _isDentist = isDentist;
             RefreshCommand = new RelayCommand(async _ => await LoadDashboardDataAsync(), _ => !IsBusy);
+            AppointmentCardClickCommand = new RelayCommand<Appointment>(appointment => 
+            {
+                if (appointment != null)
+                {
+                    AppointmentCardClicked?.Invoke(appointment);
+                }
+            });
             
             // Start clock timer for Secretary/Dentist dashboard
             if (_isSecretary || _isDentist)
@@ -167,38 +178,172 @@ namespace DentalApp.Desktop.ViewModels
             }
         }
         
-        private Task LoadPatronDashboardAsync()
+        // Admin Dashboard Statistics
+        private int _totalRegisteredPatients;
+        private decimal _lastMonthFinancial;
+        private int _lastMonthPatients;
+        private int _lastMonthTransactions;
+        private int _thisMonthPatients;
+        private decimal _thisMonthFinancial;
+        private int _upcomingAppointmentsCount;
+        
+        public int TotalRegisteredPatients
         {
-            // TODO: Load from backend when API is ready
-            // For now, use placeholder data
-            TotalAmount = 150000m; // Placeholder
-            PaidAmount = 95000m; // Placeholder
-            
-            // Placeholder dentist turnovers
-            DentistTurnovers.Clear();
-            DentistTurnovers.Add(new DentistTurnover { DentistName = "Dr. Ahmet Yılmaz", Turnover = 50000m, TurnoverPercentage = 33.33m });
-            DentistTurnovers.Add(new DentistTurnover { DentistName = "Dr. Ayşe Demir", Turnover = 45000m, TurnoverPercentage = 30.00m });
-            DentistTurnovers.Add(new DentistTurnover { DentistName = "Dr. Mehmet Kaya", Turnover = 55000m, TurnoverPercentage = 36.67m });
-            
-            OnPropertyChanged(nameof(RemainingAmount));
-            OnPropertyChanged(nameof(PaidPercentage));
-            return Task.CompletedTask;
+            get => _totalRegisteredPatients;
+            set => SetProperty(ref _totalRegisteredPatients, value);
+        }
+        
+        public decimal LastMonthFinancial
+        {
+            get => _lastMonthFinancial;
+            set => SetProperty(ref _lastMonthFinancial, value);
+        }
+        
+        public int LastMonthPatients
+        {
+            get => _lastMonthPatients;
+            set => SetProperty(ref _lastMonthPatients, value);
+        }
+        
+        public int LastMonthTransactions
+        {
+            get => _lastMonthTransactions;
+            set => SetProperty(ref _lastMonthTransactions, value);
+        }
+        
+        public int ThisMonthPatients
+        {
+            get => _thisMonthPatients;
+            set => SetProperty(ref _thisMonthPatients, value);
+        }
+        
+        public decimal ThisMonthFinancial
+        {
+            get => _thisMonthFinancial;
+            set => SetProperty(ref _thisMonthFinancial, value);
+        }
+        
+        public int UpcomingAppointmentsCount
+        {
+            get => _upcomingAppointmentsCount;
+            set => SetProperty(ref _upcomingAppointmentsCount, value);
+        }
+        
+        private async Task LoadPatronDashboardAsync()
+        {
+            try
+            {
+                // Load total patients
+                var (_, patientsPagination) = await _patientService.GetPatientsAsync(page: 1, limit: 1);
+                TotalRegisteredPatients = patientsPagination.Total;
+                
+                // Load last month data
+                var lastMonthStart = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-1);
+                var lastMonthEnd = lastMonthStart.AddMonths(1).AddDays(-1);
+                
+                var (lastMonthAppts, _) = await _appointmentService.GetAppointmentsAsync(
+                    page: 1, limit: 1, 
+                    startDate: lastMonthStart, 
+                    endDate: lastMonthEnd);
+                LastMonthPatients = lastMonthAppts.Count;
+                
+                var (lastMonthTreatments, _) = await _treatmentService.GetTreatmentsAsync(
+                    page: 1, limit: 1,
+                    startDate: lastMonthStart,
+                    endDate: lastMonthEnd);
+                LastMonthTransactions = lastMonthTreatments.Count;
+                
+                // Calculate last month financial (placeholder - needs payment API)
+                LastMonthFinancial = 0m; // TODO: Load from payments API
+                
+                // Load this month data
+                var thisMonthStart = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                var (thisMonthAppts, _) = await _appointmentService.GetAppointmentsAsync(
+                    page: 1, limit: 1,
+                    startDate: thisMonthStart,
+                    endDate: DateTime.Today);
+                ThisMonthPatients = thisMonthAppts.Count;
+                
+                // Calculate this month financial (placeholder - needs payment API)
+                ThisMonthFinancial = 0m; // TODO: Load from payments API
+                
+                // Load upcoming appointments
+                var (upcomingAppts, _) = await _appointmentService.GetAppointmentsAsync(
+                    page: 1, limit: 1,
+                    startDate: DateTime.Today,
+                    endDate: DateTime.Today.AddDays(30));
+                UpcomingAppointmentsCount = upcomingAppts.Count;
+                
+                // Load financial data
+                TotalAmount = 150000m; // Placeholder - TODO: Load from API
+                PaidAmount = 95000m; // Placeholder - TODO: Load from API
+                
+                // Placeholder dentist turnovers
+                DentistTurnovers.Clear();
+                DentistTurnovers.Add(new DentistTurnover { DentistName = "Dr. Ahmet Yılmaz", Turnover = 50000m, TurnoverPercentage = 33.33m });
+                DentistTurnovers.Add(new DentistTurnover { DentistName = "Dr. Ayşe Demir", Turnover = 45000m, TurnoverPercentage = 30.00m });
+                DentistTurnovers.Add(new DentistTurnover { DentistName = "Dr. Mehmet Kaya", Turnover = 55000m, TurnoverPercentage = 36.67m });
+                
+                OnPropertyChanged(nameof(RemainingAmount));
+                OnPropertyChanged(nameof(PaidPercentage));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading patron dashboard: {ex}");
+            }
         }
         
         private async Task LoadSecretaryDentistDashboardAsync()
         {
             try
             {
+                DateTime startDate = DateTime.Today;
+                DateTime endDate;
+                
+                if (_isSecretary)
+                {
+                    // Secretary: Sadece bugün ve yarın
+                    endDate = DateTime.Today.AddDays(1);
+                }
+                else if (_isDentist)
+                {
+                    // Dentist: Sadece kendi randevuları (backend otomatik filtreler)
+                    endDate = DateTime.Today.AddDays(7);
+                }
+                else
+                {
+                    endDate = DateTime.Today.AddDays(7);
+                }
+                
                 var (appointments, _) = await _appointmentService.GetAppointmentsAsync(
                     page: 1, 
-                    limit: 10, 
-                    startDate: DateTime.Today, 
-                    endDate: DateTime.Today.AddDays(7));
+                    limit: 50, 
+                    startDate: startDate, 
+                    endDate: endDate);
                 
                 UpcomingAppointmentsList.Clear();
-                foreach (var apt in appointments.OrderBy(a => a.AppointmentDateTime).Take(10))
+                var filteredAppointments = appointments
+                    .Where(a => a.AppointmentDate >= startDate && a.AppointmentDate <= endDate)
+                    .OrderBy(a => a.AppointmentDateTime)
+                    .Take(_isSecretary ? 20 : 10);
+                
+                foreach (var apt in filteredAppointments)
                 {
                     UpcomingAppointmentsList.Add(apt);
+                }
+                
+                // Secretary için bugünkü randevu sayısını yükle
+                if (_isSecretary)
+                {
+                    var (todayAppts, _) = await _appointmentService.GetAppointmentsAsync(
+                        page: 1, limit: 1, 
+                        startDate: DateTime.Today, 
+                        endDate: DateTime.Today);
+                    TodayAppointments = todayAppts.Count;
+                    
+                    // Toplam hasta sayısını yükle
+                    var (_, patientsPagination) = await _patientService.GetPatientsAsync(page: 1, limit: 1);
+                    TotalPatients = patientsPagination.Total;
                 }
             }
             catch (Exception ex)

@@ -3,6 +3,7 @@ using DentalApp.Desktop.Models;
 using DentalApp.Desktop.Services;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using Newtonsoft.Json;
@@ -148,6 +149,12 @@ namespace DentalApp.Desktop.ViewModels
         
         private Task RefreshSlotsAsync()
         {
+            System.Diagnostics.Debug.WriteLine($"[RefreshSlotsAsync] Starting refresh for date: {SelectedDate:yyyy-MM-dd}");
+            System.Diagnostics.Debug.WriteLine($"[RefreshSlotsAsync] Appointments count: {Appointments.Count}");
+            System.Diagnostics.Debug.WriteLine($"[RefreshSlotsAsync] Dentists count: {Dentists.Count}");
+            System.Diagnostics.Debug.WriteLine($"[RefreshSlotsAsync] TimeSlots count: {TimeSlots.Count}");
+            
+            // Clear existing slots
             AppointmentSlots.Clear();
             
             // Create slots for each time and dentist combination
@@ -164,47 +171,53 @@ namespace DentalApp.Desktop.ViewModels
                     };
                     
                     // Check if there's an appointment for this slot
+                    // Match by date, dentist, and time overlap
                     var appointment = Appointments.FirstOrDefault(a => 
                         a.AppointmentDate.Date == SelectedDate.Date &&
                         a.DentistId == dentist.Id &&
                         a.StartTime <= timeSlot.Time &&
-                        a.EndTime > timeSlot.Time);
+                        a.EndTime > timeSlot.Time &&
+                        a.Status != "cancelled" && 
+                        a.Status != "no_show");
                     
                     if (appointment != null)
                     {
                         slot.Appointment = appointment;
                         slot.Status = SlotStatus.Occupied;
+                        System.Diagnostics.Debug.WriteLine($"[RefreshSlotsAsync] Found appointment: {appointment.PatientFullName} at {timeSlot.Time} for dentist {dentist.Name}");
                     }
                     else
                     {
                         slot.Status = SlotStatus.Available;
                     }
                     
-                    OnPropertyChanged(nameof(slot.Status));
-                    OnPropertyChanged(nameof(slot.PatientName));
-                    
                     AppointmentSlots.Add(slot);
                 }
             }
+            
+            System.Diagnostics.Debug.WriteLine($"[RefreshSlotsAsync] Created {AppointmentSlots.Count} slots, Occupied: {AppointmentSlots.Count(s => s.Status == SlotStatus.Occupied)}");
+            
+            // Force UI update
+            OnPropertyChanged(nameof(AppointmentSlots));
             return Task.CompletedTask;
         }
         
-        private Task HandleSlotClickAsync(AppointmentSlot? slot)
+        private async Task HandleSlotClickAsync(AppointmentSlot? slot)
         {
             try
             {
-                if (slot == null) return Task.CompletedTask;
+                if (slot == null) return;
                 
                 if (slot.Status == SlotStatus.Unavailable)
                 {
-                    return Task.CompletedTask; // Kırmızı slotlara tıklanamaz
+                    return; // Kırmızı slotlara tıklanamaz
                 }
                 
                 if (slot.Status == SlotStatus.Occupied && slot.Appointment != null)
                 {
-                    // Dolu slot - detay/düzenle
+                    // Dolu slot - detay dialog'u göster
                     SelectedAppointment = slot.Appointment;
-                    EditAppointmentRequested?.Invoke(slot.Appointment);
+                    await ShowAppointmentDetailsAsync(slot.Appointment);
                 }
                 else
                 {
@@ -225,7 +238,40 @@ namespace DentalApp.Desktop.ViewModels
                 System.Windows.MessageBox.Show($"Randevu slot'una tıklanırken hata: {ex.Message}\n\nDetay: {ex.InnerException?.Message ?? "Detay yok"}", "Hata",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
-            return Task.CompletedTask;
+        }
+        
+        private async Task ShowAppointmentDetailsAsync(Appointment appointment)
+        {
+            try
+            {
+                var detailsViewModel = new AppointmentDetailsViewModel(appointment);
+                
+                // Edit requested handler
+                detailsViewModel.EditRequested += () =>
+                {
+                    MaterialDesignThemes.Wpf.DialogHost.CloseDialogCommand.Execute(null, null);
+                    EditAppointmentRequested?.Invoke(appointment);
+                };
+                
+                // Close requested handler
+                detailsViewModel.CloseRequested += () =>
+                {
+                    MaterialDesignThemes.Wpf.DialogHost.CloseDialogCommand.Execute(null, null);
+                };
+                
+                var view = new Views.AppointmentDetailsDialog
+                {
+                    DataContext = detailsViewModel
+                };
+                
+                await MaterialDesignThemes.Wpf.DialogHost.Show(view, "RootDialog");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ShowAppointmentDetailsAsync Error: {ex}");
+                MessageBox.Show($"Randevu detayları gösterilirken hata: {ex.Message}", "Hata", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
         
         private Task SendSMSAsync(Appointment? appointment)
@@ -246,16 +292,21 @@ namespace DentalApp.Desktop.ViewModels
             IsBusy = true;
             try
             {
+                System.Diagnostics.Debug.WriteLine($"[LoadAppointmentsAsync] Loading appointments for date: {SelectedDate:yyyy-MM-dd}");
+                
                 var (appointments, pagination) = await _appointmentService.GetAppointmentsAsync(
                     page: CurrentPage,
                     limit: 1000, // Load all for scheduler
                     startDate: SelectedDate,
                     endDate: SelectedDate);
 
+                System.Diagnostics.Debug.WriteLine($"[LoadAppointmentsAsync] Received {appointments.Count} appointments from API");
+
                 Appointments.Clear();
                 foreach (var a in appointments)
                 {
                     Appointments.Add(a);
+                    System.Diagnostics.Debug.WriteLine($"[LoadAppointmentsAsync] Added appointment: ID={a.Id}, Patient={a.PatientFullName}, Date={a.AppointmentDate:yyyy-MM-dd}, Time={a.StartTime}, DentistId={a.DentistId}");
                 }
 
                 TotalPages = pagination.Pages;
@@ -266,6 +317,7 @@ namespace DentalApp.Desktop.ViewModels
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[LoadAppointmentsAsync] Error: {ex.Message}\n{ex.StackTrace}");
                 MessageBox.Show($"Randevular yüklenirken hata: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -409,11 +461,21 @@ namespace DentalApp.Desktop.ViewModels
         public Appointment? Appointment
         {
             get => _appointment;
-            set => SetProperty(ref _appointment, value);
+            set
+            {
+                if (SetProperty(ref _appointment, value))
+                {
+                    // Appointment değiştiğinde PatientName ve AppointmentType'ı da güncelle
+                    OnPropertyChanged(nameof(PatientName));
+                    OnPropertyChanged(nameof(AppointmentType));
+                }
+            }
         }
         
         public string TimeString => $"{Time.Hours:D2}:{Time.Minutes:D2}";
         
         public string PatientName => Appointment?.PatientFullName ?? "";
+        
+        public string AppointmentType => Appointment?.AppointmentType ?? "";
     }
 }

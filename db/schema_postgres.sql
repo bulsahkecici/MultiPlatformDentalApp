@@ -294,6 +294,20 @@ CREATE TABLE IF NOT EXISTS institution_agreements (
 
 CREATE INDEX IF NOT EXISTS idx_institution_agreements_active ON institution_agreements (is_active);
 
+-- Institution agreement category discounts (kurum anlaşması kategori indirimleri)
+CREATE TABLE IF NOT EXISTS institution_agreement_category_discounts (
+  id SERIAL PRIMARY KEY,
+  institution_agreement_id INTEGER NOT NULL REFERENCES institution_agreements(id) ON DELETE CASCADE,
+  category_name VARCHAR(200) NOT NULL,
+  discount_percentage DECIMAL(5, 2) NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(institution_agreement_id, category_name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_institution_category_discounts_agreement ON institution_agreement_category_discounts (institution_agreement_id);
+CREATE INDEX IF NOT EXISTS idx_institution_category_discounts_category ON institution_agreement_category_discounts (category_name);
+
 -- Patient institution link (hastanın hangi kuruma bağlı olduğu)
 ALTER TABLE patients ADD COLUMN IF NOT EXISTS institution_agreement_id INTEGER REFERENCES institution_agreements(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS idx_patients_institution ON patients (institution_agreement_id);

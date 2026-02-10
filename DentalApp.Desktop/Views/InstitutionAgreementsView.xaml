@@ -1,0 +1,215 @@
+<UserControl x:Class="DentalApp.Desktop.Views.InstitutionAgreementsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="1000">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="Kurum Anlaşmaları Yönetimi" 
+                      Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
+                      Foreground="{StaticResource BulkaDarkBlue}"
+                      FontWeight="Bold"/>
+            <TextBlock Text="Kurum anlaşmalarını ve kategori bazlı indirim oranlarını yönetin" 
+                      Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                      Foreground="{StaticResource BulkaMediumBlue}"
+                      Margin="0,5,0,0"/>
+            <Separator Margin="0,15,0,0"/>
+        </StackPanel>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="3*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Panel: Institution List -->
+            <materialDesign:Card Grid.Column="0" Padding="20">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
+                        <TextBlock Text="Kurum Listesi" 
+                                  Style="{StaticResource MaterialDesignHeadline6TextBlock}" 
+                                  Foreground="{StaticResource BulkaMediumBlue}"
+                                  FontWeight="Bold"
+                                  VerticalAlignment="Center"/>
+                        <Button Command="{Binding RefreshCommand}" 
+                               Style="{StaticResource MaterialDesignIconButton}"
+                               ToolTip="Yenile"
+                               Margin="10,0,0,0">
+                            <materialDesign:PackIcon Kind="Refresh"/>
+                        </Button>
+                    </StackPanel>
+
+                    <DataGrid Grid.Row="1" 
+                             ItemsSource="{Binding Agreements}" 
+                             SelectedItem="{Binding SelectedAgreement}"
+                             AutoGenerateColumns="False" 
+                             CanUserAddRows="False"
+                             CanUserDeleteRows="False"
+                             IsReadOnly="True"
+                             SelectionMode="Single"
+                             materialDesign:DataGridAssist.CellPadding="10"
+                             materialDesign:DataGridAssist.ColumnHeaderPadding="10">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Kurum Adı" 
+                                               Binding="{Binding InstitutionName}" 
+                                               Width="*"/>
+                            <DataGridTextColumn Header="Genel İndirim %" 
+                                               Binding="{Binding DiscountPercentage, StringFormat='{}{0:0.##}%'}" 
+                                               Width="Auto"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </materialDesign:Card>
+
+            <!-- Right Panel: Category Discounts -->
+            <materialDesign:Card Grid.Column="2" Padding="20">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <TextBlock Grid.Row="0" 
+                              Text="Kategori Bazlı İndirimler" 
+                              Style="{StaticResource MaterialDesignHeadline6TextBlock}" 
+                              Foreground="{StaticResource BulkaMediumBlue}"
+                              FontWeight="Bold"
+                              Margin="0,0,0,15"/>
+
+                    <!-- Add New Category Discount -->
+                    <materialDesign:Card Grid.Row="1" 
+                                        Padding="15" 
+                                        Margin="0,0,0,15"
+                                        Background="{StaticResource BulkaLightBlue}">
+                        <StackPanel>
+                            <TextBlock Text="Yeni Kategori İndirimi Ekle" 
+                                      FontWeight="SemiBold" 
+                                      Margin="0,0,0,10"
+                                      Foreground="{StaticResource BulkaDarkBlue}"/>
+                            
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBox Grid.Column="0" 
+                                        Text="{Binding NewCategoryName, UpdateSourceTrigger=PropertyChanged}"
+                                        materialDesign:HintAssist.Hint="Kategori Adı (örn: Dolgu, Kanal Tedavisi)"
+                                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                        Margin="0,0,0,0"/>
+
+                                <TextBox Grid.Column="2" 
+                                        Text="{Binding NewCategoryDiscount, UpdateSourceTrigger=PropertyChanged}"
+                                        materialDesign:HintAssist.Hint="İndirim %"
+                                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                        Margin="0,0,0,0"/>
+
+                                <Button Grid.Column="4" 
+                                       Command="{Binding AddCategoryDiscountCommand}"
+                                       Style="{StaticResource MaterialDesignRaisedButton}"
+                                       Background="{StaticResource BulkaMediumBlue}"
+                                       Foreground="White"
+                                       Content="EKLE"
+                                       Height="40"/>
+                            </Grid>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <!-- Category Discounts List -->
+                    <DataGrid Grid.Row="2" 
+                             ItemsSource="{Binding CategoryDiscounts}" 
+                             AutoGenerateColumns="False" 
+                             CanUserAddRows="False"
+                             CanUserDeleteRows="False"
+                             IsReadOnly="True"
+                             materialDesign:DataGridAssist.CellPadding="10"
+                             materialDesign:DataGridAssist.ColumnHeaderPadding="10">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Kategori" 
+                                               Binding="{Binding CategoryName}" 
+                                               Width="*"/>
+                            <DataGridTextColumn Header="İndirim Oranı" 
+                                               Binding="{Binding DiscountPercentage, StringFormat='{}{0:0.##}%'}" 
+                                               Width="Auto"/>
+                            <DataGridTemplateColumn Header="İşlemler" Width="Auto">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding DataContext.DeleteCategoryDiscountCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               CommandParameter="{Binding}"
+                                               Style="{StaticResource MaterialDesignIconButton}"
+                                               ToolTip="Sil"
+                                               Foreground="#DC2626">
+                                            <materialDesign:PackIcon Kind="Delete"/>
+                                        </Button>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Empty State -->
+                    <StackPanel Grid.Row="2" 
+                               HorizontalAlignment="Center" 
+                               VerticalAlignment="Center"
+                               Visibility="{Binding CategoryDiscounts.Count, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                        <materialDesign:PackIcon Kind="InformationOutline" 
+                                                Width="48" 
+                                                Height="48" 
+                                                Foreground="{StaticResource BulkaMediumBlue}"
+                                                HorizontalAlignment="Center"/>
+                        <TextBlock Text="Kategori indirimi bulunmuyor" 
+                                  Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                  Foreground="{StaticResource BulkaMediumBlue}"
+                                  Margin="0,10,0,0"
+                                  HorizontalAlignment="Center"/>
+                        <TextBlock Text="Yukarıdaki formu kullanarak yeni kategori indirimi ekleyebilirsiniz" 
+                                  Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                  Foreground="{StaticResource BulkaMediumBlue}"
+                                  TextAlignment="Center"
+                                  Margin="0,5,0,0"
+                                  HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+            </materialDesign:Card>
+
+            <!-- Loading Overlay -->
+            <Grid Grid.ColumnSpan="3" 
+                 Background="#80000000" 
+                 Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                Value="0"
+                                IsIndeterminate="True"
+                                Width="50"
+                                Height="50"/>
+                    <TextBlock Text="Yükleniyor..." 
+                              Foreground="White" 
+                              Margin="0,10,0,0"
+                              FontWeight="SemiBold"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

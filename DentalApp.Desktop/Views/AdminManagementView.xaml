@@ -12,59 +12,117 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Kullanıcı Ekle" 
+        <TextBlock Text="Kullanıcı Yönetimi" 
                    Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
                    Foreground="{StaticResource BulkaDarkBlue}"
                    FontWeight="Bold"
                    Margin="0,0,0,20"/>
 
-        <materialDesign:Card Grid.Row="1" Padding="30" Background="White">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                
-                <!-- Kullanıcı Türü Seçimi -->
-                <StackPanel Grid.Row="0" Margin="0,0,0,30">
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" MinWidth="380"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="1.4*" MinWidth="520"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Sol Panel: Kullanıcı Ekleme Formu -->
+            <materialDesign:Card Grid.Column="0" Padding="30" Background="White">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="600">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Kullanıcı Türü Seçimi - İyileştirilmiş -->
+                    <StackPanel Grid.Row="0" Margin="0,0,0,30">
                     <TextBlock Text="Kullanıcı Türü Seçin" 
                              Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
-                             Margin="0,0,0,15"/>
+                             Margin="0,0,0,20"/>
                     
-                    <UniformGrid Columns="3" Margin="0,0,0,0">
-                        <RadioButton Content="Doktor" 
-                                   IsChecked="{Binding IsDentistSelected, Mode=OneWay}"
-                                   GroupName="UserType"
-                                   Style="{StaticResource MaterialDesignChoiceChipRadioButton}"
-                                   Margin="5"
-                                   Command="{Binding SelectUserTypeCommand}"
-                                   CommandParameter="Dentist"/>
-                        <RadioButton Content="Sekreter" 
-                                   IsChecked="{Binding IsSecretarySelected, Mode=OneWay}"
-                                   GroupName="UserType"
-                                   Style="{StaticResource MaterialDesignChoiceChipRadioButton}"
-                                   Margin="5"
-                                   Command="{Binding SelectUserTypeCommand}"
-                                   CommandParameter="Secretary"/>
-                        <RadioButton Content="Patron" 
-                                   IsChecked="{Binding IsPatronSelected, Mode=OneWay}"
-                                   GroupName="UserType"
-                                   Style="{StaticResource MaterialDesignChoiceChipRadioButton}"
-                                   Margin="5"
-                                   Command="{Binding SelectUserTypeCommand}"
-                                   CommandParameter="Patron"/>
+                    <UniformGrid Columns="3" Rows="1" Margin="0,0,0,0">
+                        <materialDesign:Card Margin="5" Padding="20" 
+                                           Background="{Binding IsDentistSelected, Converter={StaticResource BooleanToBrushConverter}, ConverterParameter='#E3F2FD|White'}"
+                                           BorderBrush="{Binding IsDentistSelected, Converter={StaticResource BooleanToBrushConverter}, ConverterParameter='#1976D2|#E0E0E0'}"
+                                           BorderThickness="2"
+                                           Cursor="Hand"
+                                           MouseLeftButtonDown="DentistCard_MouseLeftButtonDown">
+                            <StackPanel HorizontalAlignment="Center">
+                                <materialDesign:PackIcon Kind="Doctor" Width="48" Height="48" 
+                                                       Foreground="{StaticResource BulkaMediumBlue}"
+                                                       HorizontalAlignment="Center"
+                                                       Margin="0,0,0,10"/>
+                                <TextBlock Text="Doktor" 
+                                         Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                         Foreground="{StaticResource BulkaDarkBlue}"
+                                         FontWeight="Bold"
+                                         HorizontalAlignment="Center"/>
+                                <TextBlock Text="Diş hekimi ekle" 
+                                         Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                                         Foreground="Gray"
+                                         HorizontalAlignment="Center"
+                                         Margin="0,5,0,0"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+                        
+                        <materialDesign:Card Margin="5" Padding="20" 
+                                           Background="{Binding IsSecretarySelected, Converter={StaticResource BooleanToBrushConverter}, ConverterParameter='#E8F5E9|White'}"
+                                           BorderBrush="{Binding IsSecretarySelected, Converter={StaticResource BooleanToBrushConverter}, ConverterParameter='#388E3C|#E0E0E0'}"
+                                           BorderThickness="2"
+                                           Cursor="Hand"
+                                           MouseLeftButtonDown="SecretaryCard_MouseLeftButtonDown">
+                            <StackPanel HorizontalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AccountTie" Width="48" Height="48" 
+                                                       Foreground="{StaticResource BulkaLightGreen}"
+                                                       HorizontalAlignment="Center"
+                                                       Margin="0,0,0,10"/>
+                                <TextBlock Text="Sekreter" 
+                                         Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                         Foreground="{StaticResource BulkaDarkBlue}"
+                                         FontWeight="Bold"
+                                         HorizontalAlignment="Center"/>
+                                <TextBlock Text="Sekreter ekle" 
+                                         Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                                         Foreground="Gray"
+                                         HorizontalAlignment="Center"
+                                         Margin="0,5,0,0"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+                        
+                        <materialDesign:Card Margin="5" Padding="20" 
+                                           Background="{Binding IsPatronSelected, Converter={StaticResource BooleanToBrushConverter}, ConverterParameter='#FFF3E0|White'}"
+                                           BorderBrush="{Binding IsPatronSelected, Converter={StaticResource BooleanToBrushConverter}, ConverterParameter='#F57C00|#E0E0E0'}"
+                                           BorderThickness="2"
+                                           Cursor="Hand"
+                                           MouseLeftButtonDown="PatronCard_MouseLeftButtonDown">
+                            <StackPanel HorizontalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AccountStar" Width="48" Height="48" 
+                                                       Foreground="#FF9800"
+                                                       HorizontalAlignment="Center"
+                                                       Margin="0,0,0,10"/>
+                                <TextBlock Text="Patron" 
+                                         Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                         Foreground="{StaticResource BulkaDarkBlue}"
+                                         FontWeight="Bold"
+                                         HorizontalAlignment="Center"/>
+                                <TextBlock Text="Patron ekle" 
+                                         Style="{StaticResource MaterialDesignBody2TextBlock}" 
+                                         Foreground="Gray"
+                                         HorizontalAlignment="Center"
+                                         Margin="0,5,0,0"/>
+                            </StackPanel>
+                        </materialDesign:Card>
                     </UniformGrid>
                 </StackPanel>
                 
-                <!-- Doktor Formu -->
-                <ScrollViewer Grid.Row="2" 
-                            VerticalScrollBarVisibility="Auto"
-                            Visibility="{Binding IsDentistSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <StackPanel>
+                    <!-- Doktor Formu -->
+                    <StackPanel Grid.Row="2" 
+                            Visibility="{Binding IsDentistSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Margin="0,0,0,20">
                         <TextBlock Text="Doktor Bilgileri" 
                                  Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
                                  Foreground="{StaticResource BulkaDarkBlue}"
@@ -186,13 +244,11 @@
                                     Margin="5"/>
                         </UniformGrid>
                     </StackPanel>
-                </ScrollViewer>
-                
-                <!-- Sekreter Formu -->
-                <ScrollViewer Grid.Row="2" 
-                            VerticalScrollBarVisibility="Auto"
-                            Visibility="{Binding IsSecretarySelected, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <Grid>
+                    
+                    <!-- Sekreter Formu -->
+                    <Grid Grid.Row="2"
+                            Visibility="{Binding IsSecretarySelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Margin="0,0,0,20">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="20"/>
@@ -258,13 +314,11 @@
                                        Margin="0,0,0,10"/>
                         </StackPanel>
                     </Grid>
-                </ScrollViewer>
-                
-                <!-- Patron Formu -->
-                <ScrollViewer Grid.Row="2" 
-                            VerticalScrollBarVisibility="Auto"
-                            Visibility="{Binding IsPatronSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <Grid>
+                    
+                    <!-- Patron Formu -->
+                    <Grid Grid.Row="2"
+                            Visibility="{Binding IsPatronSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Margin="0,0,0,20">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="20"/>
@@ -320,23 +374,87 @@
                                        Margin="0,0,0,10"/>
                         </StackPanel>
                     </Grid>
-                </ScrollViewer>
+                    
+                    <!-- Kaydet Butonu -->
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <Button Content="İPTAL" 
+                              Command="{Binding CancelCommand}" 
+                              Style="{StaticResource MaterialDesignOutlinedButton}"
+                              Margin="0,0,10,0"
+                              Width="120"/>
+                        <Button Content="KAYDET" 
+                              Command="{Binding SaveCommand}" 
+                              Style="{StaticResource MaterialDesignRaisedButton}"
+                              Background="{StaticResource BulkaMediumBlue}"
+                              Foreground="White"
+                              materialDesign:ButtonProgressAssist.IsIndeterminate="{Binding IsBusy}"
+                              materialDesign:ButtonProgressAssist.IsIndicatorVisible="{Binding IsBusy}"
+                              Width="120"/>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+        </materialDesign:Card>
+        
+        <!-- Sağ Panel: Mevcut Kullanıcılar Listesi -->
+        <materialDesign:Card Grid.Column="2" Padding="20" Background="White" MinWidth="480">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*" MinHeight="280"/>
+                </Grid.RowDefinitions>
                 
-                <!-- Kaydet Butonu -->
-                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                    <Button Content="İPTAL" 
-                          Command="{Binding CancelCommand}" 
-                          Style="{StaticResource MaterialDesignOutlinedButton}"
-                          Margin="0,0,10,0"
-                          Width="120"/>
-                    <Button Content="KAYDET" 
-                          Command="{Binding SaveCommand}" 
-                          materialDesign:ButtonProgressAssist.IsIndeterminate="{Binding IsBusy}"
-                          materialDesign:ButtonProgressAssist.IsIndicatorVisible="{Binding IsBusy}"
-                          Width="120"/>
-                </StackPanel>
+                <Grid Grid.Row="0" Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Mevcut Kullanıcılar" 
+                             Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                             Foreground="{StaticResource BulkaDarkBlue}"
+                             FontWeight="Bold"
+                             VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" Content="Yenile" 
+                          Command="{Binding LoadUsersCommand}"
+                          Style="{StaticResource MaterialDesignFlatButton}"
+                          Margin="0,0,0,0"/>
+                </Grid>
+                
+                <DataGrid Grid.Row="1"
+                        ItemsSource="{Binding Users}"
+                        AutoGenerateColumns="False"
+                        CanUserAddRows="False"
+                        IsReadOnly="True"
+                        SelectionMode="Single"
+                        SelectionUnit="FullRow"
+                        GridLinesVisibility="Horizontal"
+                        HeadersVisibility="Column"
+                        RowHeight="36"
+                        MinHeight="260"
+                        Style="{StaticResource MaterialDesignDataGrid}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Ad Soyad" Binding="{Binding FullName}" Width="140" MinWidth="100"/>
+                        <DataGridTextColumn Header="E-posta" Binding="{Binding Email}" Width="*" MinWidth="120"/>
+                        <DataGridTextColumn Header="Rol" Binding="{Binding RoleDisplay}" Width="90" MinWidth="70"/>
+                        <DataGridTextColumn Header="Telefon" Binding="{Binding Phone}" Width="110" MinWidth="90"/>
+                        <DataGridTextColumn Header="TC No" Binding="{Binding TCNo}" Width="100" MinWidth="80"/>
+                        <DataGridTextColumn Header="Kayıt" Binding="{Binding CreatedAtDisplay}" Width="120" MinWidth="100"/>
+                        <DataGridTextColumn Header="Son Giriş" Binding="{Binding LastLoginAtDisplay}" Width="120" MinWidth="100"/>
+                        <DataGridCheckBoxColumn Header="E-posta ✓" Binding="{Binding EmailVerified}" Width="75"/>
+                    </DataGrid.Columns>
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Background" Value="White"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#E3F2FD"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+                </DataGrid>
             </Grid>
         </materialDesign:Card>
+        </Grid>
 
         <ProgressBar Grid.Row="1" Style="{StaticResource MaterialDesignCircularProgressBar}" 
                      IsIndeterminate="True" 

@@ -74,9 +74,10 @@ async function login(req, res, next) {
       );
     }
 
-    // Get user from database
+    // Get user from database (include profile fields from users table)
     const result = await query(
-      `SELECT id, email, password_hash, roles, email_verified, deleted_at, last_login_at 
+      `SELECT id, email, password_hash, roles, email_verified, deleted_at, last_login_at,
+              first_name, last_name, phone, tc_no, created_at
        FROM users WHERE email = $1`,
       [email],
     );
@@ -178,6 +179,11 @@ async function login(req, res, next) {
         roles,
         emailVerified: user.email_verified || false,
         lastLoginAt: user.last_login_at || null,
+        firstName: user.first_name || '',
+        lastName: user.last_name || '',
+        phone: user.phone || '',
+        tcNo: user.tc_no || '',
+        createdAt: user.created_at || null,
       },
     });
   } catch (err) {

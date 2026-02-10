@@ -208,18 +208,18 @@ async function processPayment(req, res, next) {
             ],
         );
 
-        // Update patient debt
+        // Update patient debt - properly calculate remaining debt after adding new payment
         await query(
             `INSERT INTO patient_debts (patient_id, total_debt, paid_amount, remaining_debt, updated_at)
             VALUES ($1, 
                 COALESCE((SELECT total_debt FROM patient_debts WHERE patient_id = $1), 0),
                 COALESCE((SELECT paid_amount FROM patient_debts WHERE patient_id = $1), 0) + $2,
                 GREATEST(0, COALESCE((SELECT total_debt FROM patient_debts WHERE patient_id = $1), 0) - 
-                           COALESCE((SELECT paid_amount FROM patient_debts WHERE patient_id = $1), 0) - $2),
+                           (COALESCE((SELECT paid_amount FROM patient_debts WHERE patient_id = $1), 0) + $2)),
                 NOW())
             ON CONFLICT (patient_id) DO UPDATE SET
                 paid_amount = patient_debts.paid_amount + $2,
-                remaining_debt = GREATEST(0, patient_debts.total_debt - patient_debts.paid_amount - $2),
+                remaining_debt = GREATEST(0, patient_debts.total_debt - (patient_debts.paid_amount + $2)),
                 updated_at = NOW()`,
             [patientId, amount],
         );
@@ -381,10 +381,71 @@ async function getPatientDebt(req, res, next) {
     }
 }
 
+/**
+ * Get total receivables (sum of all remaining_debt)
+ */
+async function getTotalReceivables(req, res, next) {
+    try {
+        const result = await query(
+            'SELECT COALESCE(SUM(remaining_debt), 0) as total_receivables FROM patient_debts',
+        );
+
+        return res.status(200).json({
+            totalReceivables: parseFloat(result.rows[0].total_receivables || 0),
+        });
+    } catch (err) {
+        logger.error({ err }, 'Failed to fetch total receivables');
+        return next(new AppError('Failed to fetch total receivables', 500));
+    }
+}
+
+/**
+ * Get total income (sum of all payments)
+ */
+async function getTotalIncome(req, res, next) {
+    try {
+        const result = await query(
+            'SELECT COALESCE(SUM(amount), 0) as total_income FROM payments',
+        );
+
+        return res.status(200).json({
+            totalIncome: parseFloat(result.rows[0].total_income || 0),
+        });
+    } catch (err) {
+        logger.error({ err }, 'Failed to fetch total income');
+        return next(new AppError('Failed to fetch total income', 500));
+    }
+}
+
+/**
+ * Get patient payment history
+ */
+async function getPatientPayments(req, res, next) {
+    try {
+        const patientId = parseInt(req.params.patientId, 10);
+
+        const result = await query(
+            `SELECT id, amount, payment_method, created_at, notes 
+             FROM payments 
+             WHERE patient_id = $1 
+             ORDER BY created_at DESC`,
+            [patientId],
+        );
+
+        return res.status(200).json({ payments: result.rows });
+    } catch (err) {
+        logger.error({ err }, 'Failed to fetch patient payments');
+        return next(new AppError('Failed to fetch patient payments', 500));
+    }
+}
+
 module.exports = {
     applyDiscount,
     processPayment,
     getPendingTreatmentPlans,
     approveTreatmentPlan,
     getPatientDebt,
+    getTotalReceivables,
+    getTotalIncome,
+    getPatientPayments,
 };

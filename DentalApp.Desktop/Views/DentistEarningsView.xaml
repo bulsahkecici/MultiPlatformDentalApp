@@ -40,12 +40,14 @@
                                            HorizontalAlignment="Center" 
                                            Margin="0,0,0,15"
                                            Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="{Binding TotalTurnover, StringFormat='{}{0:N2} TRY'}" 
-                             Style="{StaticResource MaterialDesignHeadline3TextBlock}" 
+                    <TextBlock Text="{Binding TotalTurnover, StringFormat='{}{0:N2} ₺'}" 
+                             Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
+                             FontSize="24"
                              HorizontalAlignment="Center"
-                             TextAlignment="Center"/>
+                             TextAlignment="Center"
+                             TextWrapping="Wrap"/>
                     <TextBlock Text="Ciro" 
                              Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
                              Foreground="{StaticResource BulkaMediumBlue}"
@@ -69,12 +71,14 @@
                                            HorizontalAlignment="Center" 
                                            Margin="0,0,0,15"
                                            Foreground="{StaticResource BulkaLightGreen}"/>
-                    <TextBlock Text="{Binding PaidTurnoverShare, StringFormat='{}{0:N2} TRY'}" 
-                             Style="{StaticResource MaterialDesignHeadline3TextBlock}" 
+                    <TextBlock Text="{Binding PaidTurnoverShare, StringFormat='{}{0:N2} ₺'}" 
+                             Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
+                             FontSize="24"
                              HorizontalAlignment="Center"
-                             TextAlignment="Center"/>
+                             TextAlignment="Center"
+                             TextWrapping="Wrap"/>
                     <TextBlock Text="Ödenen Ciro Payı" 
                              Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
                              Foreground="{StaticResource BulkaMediumBlue}"
@@ -97,18 +101,20 @@
                                            HorizontalAlignment="Center" 
                                            Margin="0,0,0,15"
                                            Foreground="{StaticResource BulkaDarkBlue}"/>
-                    <TextBlock Text="{Binding TotalEarnings, StringFormat='{}{0:N2} TRY'}" 
-                             Style="{StaticResource MaterialDesignHeadline3TextBlock}" 
+                    <TextBlock Text="{Binding TotalEarnings, StringFormat='{}{0:N2} ₺'}" 
+                             Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
+                             FontSize="24"
                              HorizontalAlignment="Center"
-                             TextAlignment="Center"/>
+                             TextAlignment="Center"
+                             TextWrapping="Wrap"/>
                     <TextBlock Text="Toplam Kazanç" 
                              Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              HorizontalAlignment="Center"
                              Margin="0,10,0,0"/>
-                    <TextBlock Text="{Binding Salary, StringFormat='Maaş: {0:N2} TRY'}" 
+                    <TextBlock Text="{Binding Salary, StringFormat='Maaş: {0:N2} ₺'}" 
                              Style="{StaticResource MaterialDesignBody2TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              HorizontalAlignment="Center"

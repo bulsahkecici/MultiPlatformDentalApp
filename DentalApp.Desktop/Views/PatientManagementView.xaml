@@ -80,7 +80,24 @@
                           IsReadOnly="True"
                           SelectionMode="Single"
                           SelectionUnit="FullRow"
+                          GridLinesVisibility="Horizontal"
+                          HeadersVisibility="Column"
                           Style="{StaticResource MaterialDesignDataGrid}">
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Cursor" Value="Hand"/>
+                            <Setter Property="Background" Value="White"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#E3F2FD"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#BBDEFB"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Ad" Binding="{Binding FirstName}" Width="*"/>
                         <DataGridTextColumn Header="Soyad" Binding="{Binding LastName}" Width="*"/>
