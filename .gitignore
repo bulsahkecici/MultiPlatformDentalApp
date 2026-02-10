@@ -33,3 +33,11 @@ build/
 
 # Temporary files
 tmp/
+
+# Angular build cache (do not commit)
+dental-app-web/.angular/
+**/.angular/
+
+# Crash / app logs
+crash_log.txt
+DentalApp.Desktop/crash_log.txt
