@@ -116,20 +116,19 @@
                                  Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
                                  Foreground="{StaticResource BulkaDarkBlue}"
                                  FontWeight="Bold"
-                                 Margin="0,0,0,15"
-                                 Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}"/>
+                                 Margin="0,0,0,15"/>
                         
                         <TextBlock Text="Hasta seçin" 
                                  Style="{StaticResource MaterialDesignBody1TextBlock}"
                                  Foreground="Gray"
                                  Margin="0,20,0,0"
-                                 Visibility="{Binding SelectedPatient, Converter={StaticResource InverseBooleanConverter}}"/>
+                                 Visibility="{Binding HasSelectedPatient, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
                         
                         <!-- Hasta Bilgileri -->
                         <Expander Header="Hasta Bilgileri" 
                                 IsExpanded="True"
                                 Margin="0,0,0,10"
-                                Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}">
+                                Visibility="{Binding HasSelectedPatient, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <StackPanel Margin="10,10,0,10">
                                 <TextBlock Margin="0,5,0,5">
                                     <Run Text="Ad Soyad: " FontWeight="Bold"/>
@@ -174,7 +173,7 @@
                         <Expander Header="Geçmiş Randevular" 
                                 IsExpanded="True"
                                 Margin="0,0,0,10"
-                                Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}">
+                                Visibility="{Binding HasSelectedPatient, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <DataGrid ItemsSource="{Binding PatientAppointments}"
                                     AutoGenerateColumns="False"
                                     CanUserAddRows="False"
@@ -193,7 +192,7 @@
                         <Expander Header="Yapılan Tedaviler" 
                                 IsExpanded="True"
                                 Margin="0,0,0,10"
-                                Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}">
+                                Visibility="{Binding HasSelectedPatient, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <DataGrid ItemsSource="{Binding PatientTreatments}"
                                     AutoGenerateColumns="False"
                                     CanUserAddRows="False"
@@ -212,23 +211,25 @@
             </materialDesign:Card>
         </Grid>
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+        <!-- Sayfalama Kontrolleri -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
             <Button Command="{Binding PreviousPageCommand}" 
                     Style="{StaticResource MaterialDesignFlatButton}"
-                    Margin="0,0,10,0">
-                <materialDesign:PackIcon Kind="ChevronLeft"/>
+                    Padding="10,0">
+                <materialDesign:PackIcon Kind="ChevronLeft" />
             </Button>
-            <TextBlock Text="{Binding PageInfo}" VerticalAlignment="Center" Margin="10,0"/>
+            
+            <TextBlock Text="{Binding PageInfo}" 
+                       VerticalAlignment="Center" 
+                       Margin="15,0"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource BulkaDarkBlue}"/>
+            
             <Button Command="{Binding NextPageCommand}" 
                     Style="{StaticResource MaterialDesignFlatButton}"
-                    Margin="10,0,0,0">
-                <materialDesign:PackIcon Kind="ChevronRight"/>
+                    Padding="10,0">
+                <materialDesign:PackIcon Kind="ChevronRight" />
             </Button>
         </StackPanel>
-
-        <ProgressBar Grid.Row="2" Style="{StaticResource MaterialDesignCircularProgressBar}" 
-                     IsIndeterminate="True" 
-                     Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
-                     HorizontalAlignment="Center" VerticalAlignment="Center" Width="60" Height="60"/>
     </Grid>
 </UserControl>

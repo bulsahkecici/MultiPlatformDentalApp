@@ -182,10 +182,10 @@
                                                 <Setter Property="IsEnabled" Value="True"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding Status}" Value="Occupied">
-                                                <Setter Property="Background" Value="#DC2626"/>
+                                                <Setter Property="Background" Value="#3B82F6"/>
                                                 <Setter Property="Foreground" Value="White"/>
                                                 <Setter Property="BorderThickness" Value="1"/>
-                                                <Setter Property="BorderBrush" Value="#B91C1C"/>
+                                                <Setter Property="BorderBrush" Value="#2563EB"/>
                                                 <Setter Property="IsEnabled" Value="True"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding Status}" Value="Unavailable">

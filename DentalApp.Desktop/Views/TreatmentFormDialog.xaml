@@ -205,7 +205,7 @@
                                  SelectedItem="{Binding SelectedCategory}"
                                  DisplayMemberPath="Name"
                                  materialDesign:HintAssist.Hint="Kategori Seçin"
-                                 IsEnabled="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}"
+                                 IsEnabled="{Binding HasSelectedTeeth}"
                                  Margin="0,0,0,10"/>
 
                         <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
@@ -229,7 +229,7 @@
                                 <GridViewColumn Header="Fiyat (KDV Dahil)" Width="120">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding PriceInclVat, StringFormat='{}{0:F2} ₺'}"
+                                            <TextBlock Text="{Binding PriceInclVat, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}"
                                                        Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
@@ -301,7 +301,7 @@
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock Text="{Binding Name}" Grid.Column="0"/>
-                                                    <TextBlock Text="{Binding Price, StringFormat='{}{0:F2} ₺'}" 
+                                                    <TextBlock Text="{Binding Price, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                                              Grid.Column="1"
                                                              Margin="10,0,0,0"
                                                              Foreground="{StaticResource BulkaMediumBlue}"
@@ -323,7 +323,7 @@
                         <TextBlock Text="Toplam Tutar" 
                                  Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
                                  Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding TotalCost, StringFormat='{}{0:F2} ₺'}" 
+                        <TextBlock Text="{Binding TotalCost, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                  Style="{StaticResource MaterialDesignHeadline6TextBlock}" 
                                  Foreground="{StaticResource BulkaDarkBlue}"
                                  FontWeight="Bold"

@@ -38,6 +38,9 @@
             <helpers:DateToColorConverter x:Key="DateToColorConverter"/>
             <helpers:BooleanToBrushConverter x:Key="BooleanToBrushConverter"/>
             <helpers:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
+            <helpers:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+            <helpers:StatusToColorConverter x:Key="StatusToColorConverter"/>
+            <helpers:DecimalToTurkishStringConverter x:Key="DecimalToTurkishStringConverter"/>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             
             <!-- Global DatePicker Style for Turkish -->

@@ -46,6 +46,8 @@ namespace DentalApp.Desktop.ViewModels
         public ICommand NavigateToSMSCommand { get; }
         public ICommand LogoutCommand { get; }
 
+        private readonly FinancialService _financialService;
+
         public MainViewModel()
         {
             _apiService = new ApiService();
@@ -55,6 +57,7 @@ namespace DentalApp.Desktop.ViewModels
             _appointmentService = new AppointmentService(_apiService);
             _treatmentService = new TreatmentService(_apiService);
             _institutionAgreementService = new InstitutionAgreementService(_apiService);
+            _financialService = new FinancialService(_apiService);
 
             NavigateToDashboardCommand = new RelayCommand(_ => ShowDashboard());
             NavigateToPatientsCommand = new RelayCommand(_ => ShowPatients());
@@ -110,7 +113,7 @@ namespace DentalApp.Desktop.ViewModels
         {
             try
             {
-                var dashboardVM = new DashboardViewModel(_patientService, _appointmentService, _treatmentService, _apiService, IsPatron, IsSecretary, IsDentist);
+                var dashboardVM = new DashboardViewModel(_patientService, _appointmentService, _treatmentService, _apiService, _financialService, IsPatron, IsSecretary, IsDentist);
                 // Randevu kartına tıklandığında tedavi detaylarını aç
                 dashboardVM.AppointmentCardClicked += async (appointment) =>
                 {
@@ -186,7 +189,13 @@ namespace DentalApp.Desktop.ViewModels
 
         private void ShowAppointments()
         {
-            var appointmentsVM = new AppointmentsViewModel(_appointmentService, _patientService, _apiService);
+            var appointmentsVM = new AppointmentsViewModel(
+                _appointmentService, 
+                _patientService, 
+                _apiService,
+                CurrentUser,
+                IsSecretary,
+                IsDentist);
             appointmentsVM.AddAppointmentRequested += (appointment) => ShowAppointmentForm(appointment);
             appointmentsVM.EditAppointmentRequested += (appointment) => ShowAppointmentForm(appointment);
             _ = appointmentsVM.LoadAppointmentsAsync();
@@ -231,7 +240,13 @@ namespace DentalApp.Desktop.ViewModels
             {
                 System.Diagnostics.Debug.WriteLine($"[ShowAppointmentForm] Opening appointment form. IsEditMode: {appointment != null && appointment.Id > 0}");
                 
-                var formVM = new AppointmentFormViewModel(_appointmentService, _patientService, appointment);
+                var formVM = new AppointmentFormViewModel(
+                    _appointmentService,
+                    _patientService,
+                    appointment,
+                    _apiService,
+                    CurrentUser,
+                    IsDentist);
                 var dialog = new AppointmentFormDialog(formVM);
                 dialog.Owner = Application.Current.MainWindow;
                 var result = dialog.ShowDialog();
@@ -295,7 +310,7 @@ namespace DentalApp.Desktop.ViewModels
         private void ShowDentistEarnings()
         {
             if (!IsDentist) return;
-            var earningsVM = new DentistEarningsViewModel(_apiService);
+            var earningsVM = new DentistEarningsViewModel(_apiService, _financialService, _authService);
             CurrentView = earningsVM;
             _ = earningsVM.LoadEarningsAsync();
         }

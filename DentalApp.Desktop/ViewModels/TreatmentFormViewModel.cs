@@ -81,6 +81,7 @@ namespace DentalApp.Desktop.ViewModels
         
         // Multi-tooth selection
         public ObservableCollection<int> SelectedTeeth { get; } = new();
+        public bool HasSelectedTeeth => SelectedTeeth.Count > 0;
         
         // Multi-procedure support: Dictionary<ToothNumber, List<ProcedureItem>>
         public Dictionary<int, ObservableCollection<ProcedureItem>> ToothPlans { get; } = new();
@@ -275,11 +276,11 @@ namespace DentalApp.Desktop.ViewModels
                 // Will be set after patients are loaded
             }
 
-            SaveCommand = new RelayCommand(async _ => await SaveTreatmentAsync(), _ => !IsBusy && IsValid());
+            SaveCommand = new RelayCommand(async _ => await SaveAsync(), _ => !IsBusy && CanSave());
             CancelCommand = new RelayCommand(_ => SaveCompleted?.Invoke(false));
             AddTariffItemCommand = new RelayCommand(_ => AddSelectedTariffItemToTreatment(), _ => SelectedTariffItem != null);
             SelectToothCommand = new RelayCommand(OnSelectTooth);
-            AddProcedureCommand = new RelayCommand<object>(OnAddProcedure, _ => SelectedTariffItem != null);
+            AddProcedureCommand = new RelayCommand<object>(OnAddProcedure, _ => SelectedTariffItem != null && HasSelectedTeeth);
             RemoveProcedureCommand = new RelayCommand<ProcedureItem>(OnRemoveProcedure);
             SavePlanCommand = new RelayCommand(async _ => await SavePlanAsync(), _ => !IsBusy && ToothPlans.Count > 0);
 
@@ -521,6 +522,33 @@ namespace DentalApp.Desktop.ViewModels
                    !string.IsNullOrWhiteSpace(Treatment.TreatmentType);
         }
 
+        private bool HasPlanItems()
+        {
+            return ToothPlans.Any(tp => tp.Value != null && tp.Value.Count > 0);
+        }
+
+        private bool CanSave()
+        {
+            // If user built a tooth-based plan, save as plan. Otherwise save as single treatment.
+            if (HasPlanItems())
+            {
+                return Treatment.PatientId > 0;
+            }
+
+            return IsValid();
+        }
+
+        private async Task SaveAsync()
+        {
+            if (HasPlanItems())
+            {
+                await SavePlanAsync();
+                return;
+            }
+
+            await SaveTreatmentAsync();
+        }
+
         private async Task SaveTreatmentAsync()
         {
             IsBusy = true;
@@ -630,6 +658,13 @@ namespace DentalApp.Desktop.ViewModels
                     ToothPlans[toothNumber] = new ObservableCollection<ProcedureItem>();
                 }
             }
+
+            if (!HasSelectedTeeth)
+            {
+                SelectedCategory = null;
+                SelectedTariffItem = null;
+                AvailableProcedures.Clear();
+            }
             
             // Update selected tooth number for display
             if (SelectedTeeth.Count > 0)
@@ -642,6 +677,8 @@ namespace DentalApp.Desktop.ViewModels
             }
             
             UpdateSelectedProcedures();
+            OnPropertyChanged(nameof(HasSelectedTeeth));
+            System.Windows.Input.CommandManager.InvalidateRequerySuggested();
         }
         
         private void UpdateSelectedProcedures()
@@ -798,11 +835,18 @@ namespace DentalApp.Desktop.ViewModels
     
     public class ProcedureItem : ObservableObject
     {
+        private int _id;
         private string _code = string.Empty;
         private string _name = string.Empty;
         private decimal _price;
         private string _category = string.Empty;
         private bool _isSelected;
+
+        public int Id
+        {
+            get => _id;
+            set => SetProperty(ref _id, value);
+        }
         
         public string Code
         {

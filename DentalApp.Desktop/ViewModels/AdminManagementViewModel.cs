@@ -238,8 +238,8 @@ namespace DentalApp.Desktop.ViewModels
         
         public async Task LoadStatisticsAsync()
         {
-            // Placeholder for statistics loading
-            await Task.CompletedTask;
+            // Currently no statistics UI, so we just refresh the user list
+            await LoadUsersAsync();
         }
         
         private async Task LoadUsersAsync()

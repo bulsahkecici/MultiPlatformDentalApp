@@ -40,7 +40,7 @@
                                            HorizontalAlignment="Center" 
                                            Margin="0,0,0,15"
                                            Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="{Binding TotalTurnover, StringFormat='{}{0:N2} ₺'}" 
+                    <TextBlock Text="{Binding TotalTurnover, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                              Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
@@ -71,7 +71,7 @@
                                            HorizontalAlignment="Center" 
                                            Margin="0,0,0,15"
                                            Foreground="{StaticResource BulkaLightGreen}"/>
-                    <TextBlock Text="{Binding PaidTurnoverShare, StringFormat='{}{0:N2} ₺'}" 
+                    <TextBlock Text="{Binding PaidTurnoverShare, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                              Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
@@ -101,7 +101,7 @@
                                            HorizontalAlignment="Center" 
                                            Margin="0,0,0,15"
                                            Foreground="{StaticResource BulkaDarkBlue}"/>
-                    <TextBlock Text="{Binding TotalEarnings, StringFormat='{}{0:N2} ₺'}" 
+                    <TextBlock Text="{Binding TotalEarnings, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                              Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"

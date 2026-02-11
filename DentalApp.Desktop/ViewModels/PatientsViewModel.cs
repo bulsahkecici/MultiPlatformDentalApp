@@ -2,9 +2,9 @@ using DentalApp.Desktop.Helpers;
 using DentalApp.Desktop.Models;
 using DentalApp.Desktop.Services;
 using System.Collections.ObjectModel;
-using System.Windows;
 using System.Windows.Input;
 using System.Linq;
+using System.Windows;
 
 namespace DentalApp.Desktop.ViewModels
 {
@@ -20,6 +20,7 @@ namespace DentalApp.Desktop.ViewModels
         private int _totalPages = 1;
         private PaginationInfo? _pagination;
         private bool _canEdit;
+        private bool _isDetailsLoading;
 
         public ObservableCollection<Patient> Patients { get; } = new();
         public ObservableCollection<Appointment> PatientAppointments { get; } = new();
@@ -38,7 +39,6 @@ namespace DentalApp.Desktop.ViewModels
             {
                 if (SetProperty(ref _searchQuery, value))
                 {
-                    _currentPage = 1;
                     _ = LoadPatientsAsync();
                 }
             }
@@ -51,17 +51,26 @@ namespace DentalApp.Desktop.ViewModels
             {
                 if (SetProperty(ref _selectedPatient, value))
                 {
-                    if (value != null)
-                    {
-                        _ = LoadPatientDetailsAsync();
-                    }
-                    else
+                    if (value == null)
                     {
                         PatientAppointments.Clear();
                         PatientTreatments.Clear();
                     }
+                    else
+                    {
+                        _ = LoadPatientDetailsAsync(value);
+                    }
+
+                    OnPropertyChanged(nameof(HasSelectedPatient));
                 }
             }
+        }
+
+        public bool HasSelectedPatient => SelectedPatient != null;
+        public bool IsDetailsLoading
+        {
+            get => _isDetailsLoading;
+            set => SetProperty(ref _isDetailsLoading, value);
         }
         
         public bool CanEdit
@@ -156,6 +165,50 @@ namespace DentalApp.Desktop.ViewModels
             }
         }
 
+        private async Task LoadPatientDetailsAsync(Patient patient)
+        {
+            if (patient == null) return;
+            IsDetailsLoading = true;
+            try
+            {
+                // Randevular
+                if (_appointmentService != null)
+                {
+                    var (appointments, _) = await _appointmentService.GetAppointmentsAsync(
+                        page: 1,
+                        limit: 50,
+                        patientId: patient.Id);
+                    PatientAppointments.Clear();
+                    foreach (var a in appointments.OrderByDescending(a => a.AppointmentDate))
+                    {
+                        PatientAppointments.Add(a);
+                    }
+                }
+
+                // Tedaviler
+                if (_treatmentService != null)
+                {
+                    var (treatments, _) = await _treatmentService.GetTreatmentsAsync(
+                        page: 1,
+                        limit: 50,
+                        patientId: patient.Id);
+                    PatientTreatments.Clear();
+                    foreach (var t in treatments.OrderByDescending(t => t.TreatmentDate))
+                    {
+                        PatientTreatments.Add(t);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Hasta detayları yüklenirken hata: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsDetailsLoading = false;
+            }
+        }
+
         private async Task DeleteSelectedPatientAsync()
         {
             if (SelectedPatient == null) return;
@@ -186,45 +239,5 @@ namespace DentalApp.Desktop.ViewModels
             }
         }
         
-        private async Task LoadPatientDetailsAsync()
-        {
-            if (SelectedPatient == null || _appointmentService == null || _treatmentService == null)
-            {
-                PatientAppointments.Clear();
-                PatientTreatments.Clear();
-                return;
-            }
-            
-            try
-            {
-                // Load appointments
-                var (appointments, _) = await _appointmentService.GetAppointmentsAsync(
-                    page: 1,
-                    limit: 1000,
-                    patientId: SelectedPatient.Id);
-                
-                PatientAppointments.Clear();
-                foreach (var apt in appointments.OrderByDescending(a => a.AppointmentDate))
-                {
-                    PatientAppointments.Add(apt);
-                }
-                
-                // Load treatments
-                var (treatments, _) = await _treatmentService.GetTreatmentsAsync(
-                    page: 1,
-                    limit: 1000,
-                    patientId: SelectedPatient.Id);
-                
-                PatientTreatments.Clear();
-                foreach (var treatment in treatments.OrderByDescending(t => t.TreatmentDate))
-                {
-                    PatientTreatments.Add(treatment);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Hasta detayları yüklenirken hata: {ex.Message}");
-            }
-        }
     }
 }

@@ -12,6 +12,7 @@ namespace DentalApp.Desktop.ViewModels
         private readonly AppointmentService _appointmentService;
         private readonly TreatmentService _treatmentService;
         private readonly ApiService _apiService;
+        private readonly FinancialService _financialService;
         private readonly bool _isPatron;
         private readonly bool _isSecretary;
         private readonly bool _isDentist;
@@ -117,12 +118,21 @@ namespace DentalApp.Desktop.ViewModels
         // Event for opening treatment details
         public event Action<Appointment>? AppointmentCardClicked;
 
-        public DashboardViewModel(PatientService patientService, AppointmentService appointmentService, TreatmentService treatmentService, ApiService apiService, bool isPatron, bool isSecretary, bool isDentist)
+        public DashboardViewModel(
+            PatientService patientService, 
+            AppointmentService appointmentService, 
+            TreatmentService treatmentService, 
+            ApiService apiService, 
+            FinancialService financialService,
+            bool isPatron, 
+            bool isSecretary, 
+            bool isDentist)
         {
             _patientService = patientService;
             _appointmentService = appointmentService;
             _treatmentService = treatmentService;
             _apiService = apiService;
+            _financialService = financialService;
             _isPatron = isPatron;
             _isSecretary = isSecretary;
             _isDentist = isDentist;
@@ -253,8 +263,9 @@ namespace DentalApp.Desktop.ViewModels
                     endDate: lastMonthEnd);
                 LastMonthTransactions = lastMonthTreatments.Count;
                 
-                // Calculate last month financial (placeholder - needs payment API)
-                LastMonthFinancial = 0m; // TODO: Load from payments API
+                // Calculate last month financial
+                var stats = await _financialService.GetDashboardStatsAsync();
+                LastMonthFinancial = stats.LastMonthFinancial;
                 
                 // Load this month data
                 var thisMonthStart = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
@@ -264,8 +275,8 @@ namespace DentalApp.Desktop.ViewModels
                     endDate: DateTime.Today);
                 ThisMonthPatients = thisMonthAppts.Count;
                 
-                // Calculate this month financial (placeholder - needs payment API)
-                ThisMonthFinancial = 0m; // TODO: Load from payments API
+                // Calculate this month financial
+                ThisMonthFinancial = stats.ThisMonthFinancial;
                 
                 // Load upcoming appointments
                 var (upcomingAppts, _) = await _appointmentService.GetAppointmentsAsync(
@@ -275,14 +286,14 @@ namespace DentalApp.Desktop.ViewModels
                 UpcomingAppointmentsCount = upcomingAppts.Count;
                 
                 // Load financial data
-                TotalAmount = 150000m; // Placeholder - TODO: Load from API
-                PaidAmount = 95000m; // Placeholder - TODO: Load from API
+                TotalAmount = stats.TotalAmount;
+                PaidAmount = stats.PaidAmount;
                 
-                // Placeholder dentist turnovers
+                // Load dentist turnovers (Assuming this endpoint is part of the stats or needs a separate call)
+                // For now, keep mock data but it should ideally come from backend
                 DentistTurnovers.Clear();
-                DentistTurnovers.Add(new DentistTurnover { DentistName = "Dr. Ahmet Yılmaz", Turnover = 50000m, TurnoverPercentage = 33.33m });
-                DentistTurnovers.Add(new DentistTurnover { DentistName = "Dr. Ayşe Demir", Turnover = 45000m, TurnoverPercentage = 30.00m });
-                DentistTurnovers.Add(new DentistTurnover { DentistName = "Dr. Mehmet Kaya", Turnover = 55000m, TurnoverPercentage = 36.67m });
+                // TODO: Backend should provide dentist turnover stats
+                // Mocking dynamic updates if possible from stats API in future
                 
                 OnPropertyChanged(nameof(RemainingAmount));
                 OnPropertyChanged(nameof(PaidPercentage));

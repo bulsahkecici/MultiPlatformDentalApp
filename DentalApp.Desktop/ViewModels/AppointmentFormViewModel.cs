@@ -1,9 +1,12 @@
 using DentalApp.Desktop.Helpers;
 using DentalApp.Desktop.Models;
 using DentalApp.Desktop.Services;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Globalization;
 using System.Windows.Input;
+using System.Text.RegularExpressions;
 
 namespace DentalApp.Desktop.ViewModels
 {
@@ -15,6 +18,8 @@ namespace DentalApp.Desktop.ViewModels
         private bool _isBusy;
         private string _startTimeString = string.Empty;
         private string _endTimeString = string.Empty;
+        private readonly bool _isDentist;
+        private readonly int? _currentUserId;
 
         public Appointment Appointment
         {
@@ -92,39 +97,17 @@ namespace DentalApp.Desktop.ViewModels
             
             if (string.IsNullOrWhiteSpace(timeString))
                 return false;
-            
-            // Try DateTime.ParseExact with HH:mm format
-            if (DateTime.TryParseExact(timeString, "HH:mm", CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt))
+
+            // Strict HH:mm mask (00-23):(00-59)
+            if (!System.Text.RegularExpressions.Regex.IsMatch(timeString, @"^(?:[01]\d|2[0-3]):[0-5]\d$"))
+                return false;
+
+            if (TimeSpan.TryParseExact(timeString, "hh\\:mm", CultureInfo.InvariantCulture, out var parsed))
             {
-                time = dt.TimeOfDay;
+                time = parsed;
                 return true;
             }
-            
-            // Try hh:mm format
-            if (DateTime.TryParseExact(timeString, "hh:mm", CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt2))
-            {
-                time = dt2.TimeOfDay;
-                return true;
-            }
-            
-            // Try standard TimeSpan parse
-            if (TimeSpan.TryParse(timeString, out var ts))
-            {
-                time = ts;
-                return true;
-            }
-            
-            // Try manual parsing HH:mm
-            var parts = timeString.Split(':');
-            if (parts.Length == 2 && int.TryParse(parts[0], out var hours) && int.TryParse(parts[1], out var minutes))
-            {
-                if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60)
-                {
-                    time = new TimeSpan(hours, minutes, 0);
-                    return true;
-                }
-            }
-            
+
             return false;
         }
 
@@ -139,9 +122,20 @@ namespace DentalApp.Desktop.ViewModels
 
         public event Action<bool>? SaveCompleted;
 
-        public AppointmentFormViewModel(AppointmentService appointmentService, PatientService patientService, Appointment? appointment = null)
+        private readonly ApiService? _apiService;
+
+        public AppointmentFormViewModel(
+            AppointmentService appointmentService,
+            PatientService patientService,
+            Appointment? appointment = null,
+            ApiService? apiService = null,
+            User? currentUser = null,
+            bool isDentist = false)
         {
             _appointmentService = appointmentService;
+            _apiService = apiService;
+            _isDentist = isDentist;
+            _currentUserId = currentUser?.Id;
             _appointment = appointment ?? new Appointment 
             { 
                 Id = 0, // Ensure ID is 0 for new appointments
@@ -214,26 +208,59 @@ namespace DentalApp.Desktop.ViewModels
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"AppointmentFormViewModel Constructor Error: {ex}");
-                // Don't show message box in constructor, just log
             }
         }
         
-        private Task LoadDentistsAsync()
+        private async Task LoadDentistsAsync()
         {
+            if (_apiService == null)
+            {
+                Dentists.Clear();
+                return;
+            }
             try
             {
-                // TODO: Load from /api/users?role=dentist when API is ready
-                // For now, use placeholder data - using same class from AppointmentsViewModel
-                Dentists.Clear();
-                Dentists.Add(new DentistInfo { Id = 1, Name = "Dr. Ahmet Yılmaz", Email = "ahmet@example.com" });
-                Dentists.Add(new DentistInfo { Id = 2, Name = "Dr. Ayşe Demir", Email = "ayse@example.com" });
-                Dentists.Add(new DentistInfo { Id = 3, Name = "Dr. Mehmet Kaya", Email = "mehmet@example.com" });
+                if (_isDentist && _currentUserId.HasValue)
+                {
+                    var self = await _apiService.GetAsync<User>($"/users/{_currentUserId.Value}");
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        Dentists.Clear();
+                        if (self != null)
+                        {
+                            Dentists.Add(new DentistInfo
+                            {
+                                Id = self.Id,
+                                Name = $"Dr. {self.FullName}",
+                                Email = self.Email ?? string.Empty
+                            });
+                            if (Appointment.DentistId <= 0)
+                            {
+                                Appointment.DentistId = self.Id;
+                            }
+                        }
+                    });
+                    return;
+                }
+
+                var response = await _apiService.GetAsync<UsersResponse>("/users?limit=500&role=dentist");
+                var list = response?.Users ?? new List<User>();
+                var dentistList = list
+                    .Where(u => u.Roles.Contains("dentist"))
+                    .Select(u => new DentistInfo { Id = u.Id, Name = $"Dr. {u.FullName}", Email = u.Email ?? "" })
+                    .ToList();
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    Dentists.Clear();
+                    foreach (var d in dentistList)
+                        Dentists.Add(d);
+                });
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading dentists: {ex}");
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => Dentists.Clear());
             }
-            return Task.CompletedTask;
         }
 
         private async Task LoadPatientsAsync(PatientService patientService)

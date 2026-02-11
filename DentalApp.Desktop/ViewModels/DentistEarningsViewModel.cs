@@ -9,6 +9,8 @@ namespace DentalApp.Desktop.ViewModels
     public class DentistEarningsViewModel : ObservableObject
     {
         private readonly ApiService _apiService;
+        private readonly FinancialService _financialService;
+        private readonly AuthService _authService;
         private bool _isBusy;
         private decimal _salary;
         private decimal _totalTurnover; // Ciro: toplam yaptığı işlerin maliyeti
@@ -79,28 +81,42 @@ namespace DentalApp.Desktop.ViewModels
 
         public ICommand RefreshCommand { get; }
 
-        public DentistEarningsViewModel(ApiService apiService)
+        public DentistEarningsViewModel(ApiService apiService, FinancialService financialService, AuthService authService)
         {
             _apiService = apiService;
+            _financialService = financialService;
+            _authService = authService;
             RefreshCommand = new RelayCommand(async _ => await LoadEarningsAsync(), _ => !IsBusy);
         }
 
-        public Task LoadEarningsAsync()
+        public async Task LoadEarningsAsync()
         {
             IsBusy = true;
             try
             {
-                // TODO: Load from backend when API is ready
-                // Placeholder data
-                Salary = 15000m; // Placeholder
-                TotalTurnover = 50000m; // Placeholder - toplam yaptığı işlerin maliyeti
-                CommissionRate = 30m; // Placeholder - %30
-                PaidTurnoverShare = 15000m; // Placeholder - ödenen ciro payı (TotalTurnover * CommissionRate / 100)
+                var dentistId = _authService.CurrentUser?.Id ?? 0;
+                if (dentistId == 0)
+                {
+                    // If not authenticated or not found
+                    return;
+                }
+
+                // Load earnings for current month by default
+                var startDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                var endDate = startDate.AddMonths(1).AddDays(-1);
+
+                var data = await _financialService.GetDentistEarningsAsync(dentistId, startDate, endDate);
+                
+                Salary = data.Salary;
+                TotalTurnover = data.TotalTurnover;
+                CommissionRate = data.CommissionRate;
+                PaidTurnoverShare = data.PaidTurnoverShare;
                 
                 // Calculate total earnings
                 CalculateTotalEarnings();
                 
-                // TODO: Load treatments from API
+                // TODO: Load treatments from API (if endpoint available separately or include in FinancialService)
+                // For now clearing mock treatments or keeping list empty until endpoint is ready
                 Treatments.Clear();
             }
             catch (Exception ex)
@@ -112,7 +128,7 @@ namespace DentalApp.Desktop.ViewModels
             {
                 IsBusy = false;
             }
-            return Task.CompletedTask;
+            // return Task.CompletedTask;
         }
     }
 
