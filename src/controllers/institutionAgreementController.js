@@ -262,6 +262,44 @@ async function updateInstitutionAgreement(req, res, next) {
 }
 
 /**
+ * Soft delete institution agreement
+ */
+async function deleteInstitutionAgreement(req, res, next) {
+    try {
+        const agreementId = parseInt(req.params.id, 10);
+        if (Number.isNaN(agreementId)) {
+            return next(new AppError('Invalid institution agreement id', 400));
+        }
+
+        const result = await query(
+            `UPDATE institution_agreements
+       SET is_active = false, updated_at = NOW()
+       WHERE id = $1
+       RETURNING id`,
+            [agreementId],
+        );
+
+        if (result.rows.length === 0) {
+            return next(new AppError('Institution agreement not found', 404));
+        }
+
+        await logDataEvent({
+            eventType: AuditEventType.DATA_MODIFIED,
+            userId: req.user.sub,
+            ipAddress: getClientIp(req),
+            userAgent: req.headers['user-agent'] || '',
+            resourceType: 'institution_agreement',
+            resourceId: agreementId,
+            changes: { isActive: false },
+        });
+
+        return res.status(200).json({ message: 'Institution agreement deleted successfully' });
+    } catch (err) {
+        return next(new AppError('Failed to delete institution agreement', 500));
+    }
+}
+
+/**
  * Get all discount reasons
  */
 async function getDiscountReasons(req, res, next) {
@@ -289,5 +327,6 @@ module.exports = {
     getInstitutionAgreements,
     createInstitutionAgreement,
     updateInstitutionAgreement,
+    deleteInstitutionAgreement,
     getDiscountReasons,
 };

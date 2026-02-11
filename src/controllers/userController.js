@@ -162,6 +162,13 @@ async function createUser(req, res, next) {
 async function getUsers(req, res, next) {
     try {
         const { page = 1, limit = 20, search = '', role = '' } = req.query;
+        const isAdmin = req.user.roles && req.user.roles.includes('admin');
+        const isSecretary = req.user.roles && req.user.roles.includes('secretary');
+
+        // Secretary can only query dentist list for appointment screens.
+        if (!isAdmin && isSecretary && role !== 'dentist') {
+            return next(new AppError('Forbidden', 403));
+        }
 
         const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
         const conditions = ['deleted_at IS NULL'];
@@ -211,8 +218,8 @@ async function getUsers(req, res, next) {
             updatedAt: user.updated_at,
             firstName: user.first_name || '',
             lastName: user.last_name || '',
-            phone: user.phone || '',
-            tcNo: user.tc_no || '',
+            phone: isAdmin ? (user.phone || '') : '',
+            tcNo: isAdmin ? (user.tc_no || '') : '',
         }));
 
         return res.status(200).json({

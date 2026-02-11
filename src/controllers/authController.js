@@ -8,7 +8,7 @@ const {
   generateAccessToken,
   generateRefreshToken,
   storeRefreshToken,
-  verifyRefreshToken,
+  rotateRefreshToken,
   revokeRefreshToken,
   generateEmailVerificationToken,
   generatePasswordResetToken,
@@ -202,11 +202,16 @@ async function refreshToken(req, res, next) {
       return next(new AppError('Refresh token is required', 400));
     }
 
-    // Verify refresh token
-    const tokenData = await verifyRefreshToken(refreshToken);
-    if (!tokenData) {
+    const ipAddress = getClientIp(req);
+    const userAgent = req.headers['user-agent'] || '';
+
+    // Verify and rotate refresh token (revokes old, stores new)
+    const rotationResult = await rotateRefreshToken(refreshToken, userAgent, ipAddress);
+    if (!rotationResult) {
       return next(new AppError('Invalid or expired refresh token', 401));
     }
+
+    const { tokenData, newRefreshToken } = rotationResult;
 
     // Generate new access token
     const roles = parseRolesCsv(tokenData.roles);
@@ -217,9 +222,6 @@ async function refreshToken(req, res, next) {
     };
 
     const newAccessToken = generateAccessToken(tokenPayload);
-
-    const ipAddress = getClientIp(req);
-    const userAgent = req.headers['user-agent'] || '';
 
     // Log token refresh
     await logAuthEvent({
@@ -233,6 +235,7 @@ async function refreshToken(req, res, next) {
 
     return res.status(200).json({
       accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
     });
   } catch (err) {
     return next(new AppError('Token refresh failed', 401));

@@ -113,6 +113,34 @@ async function revokeRefreshToken(token) {
 }
 
 /**
+ * Rotate a refresh token: revoke the old one and issue/store a new one.
+ * @param {string} currentToken - Refresh token provided by client
+ * @param {string} userAgent - User agent string
+ * @param {string} ipAddress - Client IP
+ * @returns {Promise<{tokenData: object, newRefreshToken: string}|null>}
+ */
+async function rotateRefreshToken(currentToken, userAgent, ipAddress) {
+    const tokenData = await verifyRefreshToken(currentToken);
+    if (!tokenData) {
+        return null;
+    }
+
+    // Revoke the old token to prevent reuse
+    await revokeRefreshToken(currentToken);
+
+    const payload = {
+        id: tokenData.user_id || tokenData.id,
+        email: tokenData.email,
+        roles: tokenData.roles,
+    };
+
+    const newRefreshToken = generateRefreshToken(payload);
+    await storeRefreshToken(tokenData.user_id || tokenData.id, newRefreshToken, userAgent, ipAddress);
+
+    return { tokenData, newRefreshToken };
+}
+
+/**
  * Revoke all refresh tokens for a user
  * @param {number} userId - User ID
  * @returns {Promise<void>}
@@ -214,6 +242,7 @@ module.exports = {
     generateSecureToken,
     storeRefreshToken,
     verifyRefreshToken,
+    rotateRefreshToken,
     revokeRefreshToken,
     revokeAllUserTokens,
     cleanupExpiredTokens,

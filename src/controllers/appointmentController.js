@@ -316,6 +316,8 @@ async function updateAppointment(req, res, next) {
     try {
         const appointmentId = parseInt(req.params.id, 10);
         const {
+            patientId,
+            dentistId,
             appointmentDate,
             startTime,
             endTime,
@@ -333,6 +335,20 @@ async function updateAppointment(req, res, next) {
         if (appointmentDate) {
             setClauses.push(`appointment_date = $${paramIndex++}`);
             params.push(appointmentDate);
+        }
+
+        if (patientId) {
+            setClauses.push(`patient_id = $${paramIndex++}`);
+            params.push(patientId);
+        }
+
+        if (dentistId) {
+            // Dentist user cannot reassign appointments to another dentist.
+            if (isDentist(req) && dentistId !== req.user.sub) {
+                return next(new AppError('Forbidden', 403));
+            }
+            setClauses.push(`dentist_id = $${paramIndex++}`);
+            params.push(dentistId);
         }
 
         if (startTime) {

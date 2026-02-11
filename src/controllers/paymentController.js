@@ -257,7 +257,8 @@ async function getPendingTreatmentPlans(req, res, next) {
             FROM treatment_plans tp
             LEFT JOIN patients p ON tp.patient_id = p.id
             LEFT JOIN users u ON tp.dentist_id = u.id
-            WHERE tp.status = 'pending'
+            -- Backward-compatible: some plans may still be stored as "planned"
+            WHERE LOWER(tp.status) IN ('pending', 'planned')
             ORDER BY tp.created_at DESC`,
         );
 

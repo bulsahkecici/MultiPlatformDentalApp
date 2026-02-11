@@ -263,7 +263,7 @@ async function updateTreatment(req, res, next) {
         const result = await query(
             `UPDATE treatments 
        SET ${setClauses.join(', ')}
-       WHERE id = $${paramIndex} AND deleted_at IS NULL
+       WHERE id = $${paramIndex}
        RETURNING *`,
             params,
         );
@@ -288,6 +288,57 @@ async function updateTreatment(req, res, next) {
         return res.status(200).json({ treatment: result.rows[0] });
     } catch (err) {
         return next(new AppError('Failed to update treatment', 500));
+    }
+}
+
+/**
+ * Delete treatment
+ * Dentist can only delete own treatments; others can delete by ID.
+ */
+async function deleteTreatment(req, res, next) {
+    try {
+        const treatmentId = parseInt(req.params.id, 10);
+        if (Number.isNaN(treatmentId)) {
+            return next(new AppError('Invalid treatment id', 400));
+        }
+
+        const canDeleteOwnOnly = isDentist(req);
+        const params = [treatmentId];
+        let whereClause = 'id = $1';
+
+        if (canDeleteOwnOnly) {
+            whereClause += ' AND dentist_id = $2';
+            params.push(req.user.sub);
+        }
+
+        const result = await query(
+            `DELETE FROM treatments
+       WHERE ${whereClause}
+       RETURNING id`,
+            params,
+        );
+
+        if (result.rows.length === 0) {
+            return next(new AppError('Treatment not found', 404));
+        }
+
+        const ipAddress = getClientIp(req);
+        const userAgent = req.headers['user-agent'] || '';
+
+        await logDataEvent({
+            eventType: AuditEventType.DATA_MODIFIED,
+            userId: req.user.sub,
+            ipAddress,
+            userAgent,
+            resourceType: 'treatment',
+            resourceId: treatmentId,
+            changes: { action: 'deleted' },
+        });
+
+        return res.status(200).json({ message: 'Treatment deleted successfully' });
+    } catch (err) {
+        logger.error({ err }, 'Failed to delete treatment');
+        return next(new AppError('Failed to delete treatment', 500));
     }
 }
 
@@ -455,6 +506,7 @@ module.exports = {
     getTreatments,
     getTreatmentById,
     updateTreatment,
+    deleteTreatment,
     createTreatmentPlan,
     getTreatmentPlans,
 };

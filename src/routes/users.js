@@ -11,6 +11,7 @@ const {
 const {
     requireAuth,
     requireRole,
+    requireAnyRole,
     requireSelf,
     requireSelfOrAdmin,
 } = require('../middlewares/auth');
@@ -19,7 +20,7 @@ const { mutateLimiter } = require('../middlewares/rateLimit');
 const router = express.Router();
 
 // User CRUD operations
-router.get('/api/users', requireAuth, requireRole('admin'), getUsers);
+router.get('/api/users', requireAuth, requireAnyRole('admin', 'secretary'), getUsers);
 router.post('/api/users', requireAuth, requireRole('admin'), mutateLimiter, createUser);
 router.get('/api/users/:id', requireAuth, requireSelfOrAdmin, getUserById);
 router.put('/api/users/:id', requireAuth, requireSelfOrAdmin, mutateLimiter, updateUser);
