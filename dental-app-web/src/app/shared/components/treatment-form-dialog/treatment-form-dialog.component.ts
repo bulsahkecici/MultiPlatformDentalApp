@@ -226,6 +226,7 @@ export class TreatmentFormDialogComponent implements OnInit {
   patients: Patient[] = [];
   isLoading = false;
   canViewPrices = false;
+  private currentUser: any = null;
 
   // Advanced features
   activeTab = 0;
@@ -245,6 +246,7 @@ export class TreatmentFormDialogComponent implements OnInit {
   ) {
     this.authService.currentUser$.subscribe(user => {
       if (user) {
+        this.currentUser = user;
         this.canViewPrices = user.roles.includes('admin') || user.roles.includes('secretary');
       }
     });
@@ -332,8 +334,8 @@ export class TreatmentFormDialogComponent implements OnInit {
   }
 
   isFormValid(): boolean {
-    if (this.isPlanMode) {
-      return this.treatmentForm.get('patientId')?.valid && this.plannedProcedures.length > 0;
+    if (this.plannedProcedures.length > 0 || this.isPlanMode) {
+      return !!this.treatmentForm.get('patientId')?.valid && this.plannedProcedures.length > 0;
     }
     return this.treatmentForm.valid;
   }
@@ -343,10 +345,10 @@ export class TreatmentFormDialogComponent implements OnInit {
       this.isLoading = true;
       const formValue = this.treatmentForm.value;
 
-      if (this.isPlanMode) {
+      if (this.plannedProcedures.length > 0 || this.isPlanMode) {
         const planRequest = {
           patientId: formValue.patientId,
-          dentistId: null, // Current user id can be added if needed
+          dentistId: this.currentUser?.roles?.includes('dentist') ? this.currentUser.id : null,
           title: formValue.diagnosis || `Tedavi Planı - ${new Date().toLocaleDateString('tr-TR')}`,
           description: formValue.procedureNotes || '',
           items: this.plannedProcedures

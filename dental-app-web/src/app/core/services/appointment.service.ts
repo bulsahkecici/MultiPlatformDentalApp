@@ -40,6 +40,6 @@ export class AppointmentService {
   }
 
   cancelAppointment(id: number, reason?: string): Observable<void> {
-    return this.apiService.put<void>(`/api/appointments/${id}/cancel`, { reason });
+    return this.apiService.delete<void>(`/api/appointments/${id}`);
   }
 }

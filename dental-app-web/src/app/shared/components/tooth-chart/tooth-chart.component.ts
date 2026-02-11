@@ -87,54 +87,48 @@ export class ToothChartComponent {
     @Input() selectedTeeth: number[] = [];
     @Output() teethChanged = new EventEmitter<number[]>();
 
-    // FDI numbering system coordinates (matched from Desktop app)
+    // Full FDI chart hotspot coordinates used by web mouth chart image.
     hotspots: ToothHotspot[] = [
-        // Upper Right (11-18)
-        { toothNumber: 11, x: 200, y: 50, width: 40, height: 50 },
-        { toothNumber: 12, x: 250, y: 50, width: 40, height: 50 },
-        { toothNumber: 13, x: 300, y: 50, width: 40, height: 50 },
-        { toothNumber: 14, x: 350, y: 50, width: 40, height: 50 },
-        { toothNumber: 15, x: 400, y: 50, width: 40, height: 50 },
-        { toothNumber: 16, x: 450, y: 50, width: 40, height: 50 },
-        { toothNumber: 17, x: 500, y: 50, width: 40, height: 50 },
-        { toothNumber: 18, x: 550, y: 50, width: 40, height: 50 },
-        // Upper Left (21-28)
-        { toothNumber: 21, x: 160, y: 50, width: 40, height: 50 },
-        { toothNumber: 22, x: 120, y: 50, width: 40, height: 50 },
-        { toothNumber: 23, x: 80, y: 50, width: 40, height: 50 },
-        { toothNumber: 24, x: 40, y: 50, width: 40, height: 50 },
-        { toothNumber: 25, x: 0, y: 50, width: 40, height: 50 },
-        // Add more coordinates as needed. For now using placeholder logic.
+        // Upper right quadrant (18-11)
+        { toothNumber: 18, x: 300, y: 50, width: 30, height: 45 },
+        { toothNumber: 17, x: 335, y: 50, width: 30, height: 45 },
+        { toothNumber: 16, x: 370, y: 50, width: 30, height: 45 },
+        { toothNumber: 15, x: 405, y: 50, width: 30, height: 45 },
+        { toothNumber: 14, x: 440, y: 50, width: 30, height: 45 },
+        { toothNumber: 13, x: 475, y: 50, width: 30, height: 45 },
+        { toothNumber: 12, x: 510, y: 50, width: 30, height: 45 },
+        { toothNumber: 11, x: 545, y: 50, width: 30, height: 45 },
+        // Upper left quadrant (21-28)
+        { toothNumber: 21, x: 270, y: 50, width: 30, height: 45 },
+        { toothNumber: 22, x: 235, y: 50, width: 30, height: 45 },
+        { toothNumber: 23, x: 200, y: 50, width: 30, height: 45 },
+        { toothNumber: 24, x: 165, y: 50, width: 30, height: 45 },
+        { toothNumber: 25, x: 130, y: 50, width: 30, height: 45 },
+        { toothNumber: 26, x: 95, y: 50, width: 30, height: 45 },
+        { toothNumber: 27, x: 60, y: 50, width: 30, height: 45 },
+        { toothNumber: 28, x: 25, y: 50, width: 30, height: 45 },
+        // Lower left quadrant (38-31)
+        { toothNumber: 38, x: 25, y: 150, width: 30, height: 45 },
+        { toothNumber: 37, x: 60, y: 150, width: 30, height: 45 },
+        { toothNumber: 36, x: 95, y: 150, width: 30, height: 45 },
+        { toothNumber: 35, x: 130, y: 150, width: 30, height: 45 },
+        { toothNumber: 34, x: 165, y: 150, width: 30, height: 45 },
+        { toothNumber: 33, x: 200, y: 150, width: 30, height: 45 },
+        { toothNumber: 32, x: 235, y: 150, width: 30, height: 45 },
+        { toothNumber: 31, x: 270, y: 150, width: 30, height: 45 },
+        // Lower right quadrant (41-48)
+        { toothNumber: 41, x: 545, y: 150, width: 30, height: 45 },
+        { toothNumber: 42, x: 510, y: 150, width: 30, height: 45 },
+        { toothNumber: 43, x: 475, y: 150, width: 30, height: 45 },
+        { toothNumber: 44, x: 440, y: 150, width: 30, height: 45 },
+        { toothNumber: 45, x: 405, y: 150, width: 30, height: 45 },
+        { toothNumber: 46, x: 370, y: 150, width: 30, height: 45 },
+        { toothNumber: 47, x: 335, y: 150, width: 30, height: 45 },
+        { toothNumber: 48, x: 300, y: 150, width: 30, height: 45 }
     ];
 
-    // Note: These coordinates need adjustment to match the PNG dimensions.
-    // In WPF they were relative to the image size.
     containerWidth = 600;
     containerHeight = 400;
-
-    constructor() {
-        this.initializeHotspots();
-    }
-
-    initializeHotspots() {
-        this.hotspots = [];
-        // Upper Right (18-11)
-        for (let i = 8; i >= 1; i--) {
-            this.hotspots.push({ toothNumber: 10 + i, x: 300 + (8 - i) * 35, y: 50, width: 30, height: 45 });
-        }
-        // Upper Left (21-28)
-        for (let i = 1; i <= 8; i++) {
-            this.hotspots.push({ toothNumber: 20 + i, x: 270 - (i - 1) * 35, y: 50, width: 30, height: 45 });
-        }
-        // Lower Left (38-31)
-        for (let i = 8; i >= 1; i--) {
-            this.hotspots.push({ toothNumber: 30 + i, x: 270 - (i - 1) * 35, y: 150, width: 30, height: 45 });
-        }
-        // Lower Right (41-48)
-        for (let i = 1; i <= 8; i++) {
-            this.hotspots.push({ toothNumber: 40 + i, x: 300 + (8 - i) * 35, y: 150, width: 30, height: 45 });
-        }
-    }
 
     toggleTooth(toothNumber: number) {
         const index = this.selectedTeeth.indexOf(toothNumber);

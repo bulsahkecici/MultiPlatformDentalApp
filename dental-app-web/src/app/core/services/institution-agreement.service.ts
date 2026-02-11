@@ -10,6 +10,7 @@ export interface InstitutionAgreement {
   contact_email?: string;
   contact_phone?: string;
   discount_percentage: number;
+  category_discounts?: Record<string, number>;
   is_active: boolean;
   notes?: string;
 }
@@ -36,5 +37,9 @@ export class InstitutionAgreementService {
     return this.apiService.put<{ agreement: InstitutionAgreement }>(`/api/institution-agreements/${id}`, agreement).pipe(
       map(response => response.agreement)
     );
+  }
+
+  deleteAgreement(id: number): Observable<{ message: string }> {
+    return this.apiService.delete<{ message: string }>(`/api/institution-agreements/${id}`);
   }
 }

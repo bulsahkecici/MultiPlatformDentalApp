@@ -3,6 +3,10 @@ export interface User {
     email: string;
     roles: string[];
     emailVerified: boolean;
+    firstName?: string;
+    lastName?: string;
+    first_name?: string;
+    last_name?: string;
     lastLoginAt?: string;
 }
 
