@@ -35,7 +35,7 @@ A secure, full-featured dental practice management system built with Node.js, Ex
 ## Environment
 
 1. Copy `.env.example` to `.env`
-2. Adjust the configuration:
+2. Adjust the configuration (set strong `JWT_SECRET`, valid SMTP creds, and frontend origins):
 
 ```env
 # Server
@@ -51,11 +51,12 @@ DB_PASS=StrongPass123!
 
 # Security
 JWT_SECRET=your-secret-key-change-in-production
+CORS_ORIGINS=http://localhost:3000,http://localhost:4200
 MAX_FAILED_ATTEMPTS=5
 LOCKOUT_DURATION_MINUTES=15
 
 # Email (optional - set EMAIL_ENABLED=true to activate)
-EMAIL_ENABLED=false
+EMAIL_ENABLED=true
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USER=your-email@gmail.com
