@@ -1,0 +1,15 @@
+**/node_modules/**
+**/dist/**
+**/build/**
+**/coverage/**
+**/bin/**
+**/obj/**
+
+dental-app-web/**
+dental_app_mobile/**
+DentalApp.Desktop/**
+DentalApp.Desktop.Tests/**
+
+.git/**
+.vs/**
+*.log

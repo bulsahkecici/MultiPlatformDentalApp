@@ -16,7 +16,7 @@ import { TreatmentService } from '../../core/services/treatment.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PatientService } from '../../core/services/patient.service';
 import { Patient, Treatment } from '../../core/models/models';
-import { TreatmentFormDialogComponent } from '../../shared/components/treatment-form-dialog/treatment-form-dialog.component';
+import { TreatmentFormDialogComponent, TreatmentFormDialogData } from '../../shared/components/treatment-form-dialog/treatment-form-dialog.component';
 import { DataMapper } from '../../core/utils/data-mapper';
 
 interface PatientTreatmentGroup {
@@ -81,10 +81,6 @@ interface PatientTreatmentGroup {
             </button>
           </div>
         </mat-card-content>
-      </mat-card>
-
-      <mat-card class="query-note" *ngIf="dashboardContextNote">
-        <mat-card-content>{{ dashboardContextNote }}</mat-card-content>
       </mat-card>
 
       <div *ngIf="isLoading" class="loading">
@@ -156,7 +152,6 @@ interface PatientTreatmentGroup {
     .treatments-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
     .filters-card { margin-bottom: 12px; }
     .filters-grid { display: grid; grid-template-columns: repeat(4, minmax(180px, 1fr)); gap: 12px; align-items: center; }
-    .query-note { margin-bottom: 12px; background: #eff6ff; }
     .treatments-table { width: 100%; }
     .loading { display: flex; justify-content: center; align-items: center; height: 240px; }
   `]
@@ -172,7 +167,7 @@ export class TreatmentsComponent implements OnInit {
   selectedPatientId: number | null = null;
   startDate = '';
   endDate = '';
-  dashboardContextNote = '';
+  private formOpenedFromQuery = false;
 
   constructor(
     private treatmentService: TreatmentService,
@@ -198,16 +193,15 @@ export class TreatmentsComponent implements OnInit {
       const patientIdParam = params.get('patientId');
       const appointmentIdParam = params.get('appointmentId');
       this.selectedPatientId = patientIdParam ? Number(patientIdParam) : null;
-
-      if (this.selectedPatientId && appointmentIdParam) {
-        this.dashboardContextNote = `Dashboard yonlendirmesi: Hasta #${this.selectedPatientId}, Randevu #${appointmentIdParam}`;
-      } else if (this.selectedPatientId) {
-        this.dashboardContextNote = `Dashboard yonlendirmesi: Hasta #${this.selectedPatientId}`;
-      } else {
-        this.dashboardContextNote = '';
-      }
-
       this.loadTreatments();
+
+      if ((patientIdParam || appointmentIdParam) && !this.formOpenedFromQuery) {
+        this.formOpenedFromQuery = true;
+        this.openTreatmentForm(
+          patientIdParam ? Number(patientIdParam) : undefined,
+          appointmentIdParam ? Number(appointmentIdParam) : undefined
+        );
+      }
     });
   }
 
@@ -272,15 +266,20 @@ export class TreatmentsComponent implements OnInit {
     this.selectedPatientId = null;
     this.startDate = '';
     this.endDate = '';
-    this.dashboardContextNote = '';
     this.loadTreatments();
   }
 
-  openTreatmentForm(): void {
+  openTreatmentForm(patientId?: number, appointmentId?: number): void {
+    const dialogData: TreatmentFormDialogData = {
+      treatment: null,
+      patientId,
+      appointmentId
+    };
+
     const dialogRef = this.dialog.open(TreatmentFormDialogComponent, {
       width: '900px',
       maxWidth: '95vw',
-      data: null
+      data: dialogData
     });
 
     dialogRef.afterClosed().subscribe(result => {
@@ -294,7 +293,7 @@ export class TreatmentsComponent implements OnInit {
         const dialogRef = this.dialog.open(TreatmentFormDialogComponent, {
           width: '900px',
           maxWidth: '95vw',
-          data: response.treatment
+          data: { treatment: response.treatment }
         });
 
         dialogRef.afterClosed().subscribe(result => {

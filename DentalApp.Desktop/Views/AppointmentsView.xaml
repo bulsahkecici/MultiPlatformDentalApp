@@ -86,7 +86,7 @@
             </Button>
         </StackPanel>
 
-        <!-- SCHEDULER GRID -->
+        <!-- TAKVİM IZGARASI -->
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
             <Grid>
                 <Grid.RowDefinitions>
@@ -98,7 +98,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 
-                <!-- Time column header -->
+                <!-- Saat sütunu başlığı -->
                 <Border Grid.Row="0" Grid.Column="0" 
                         Background="{StaticResource BulkaMediumBlue}" 
                         Padding="10"
@@ -110,7 +110,7 @@
                              HorizontalAlignment="Center"/>
                 </Border>
                 
-                <!-- Dentist headers -->
+                <!-- Hekim başlıkları -->
                 <ItemsControl Grid.Row="0" Grid.Column="1" 
                             ItemsSource="{Binding Dentists}">
                     <ItemsControl.ItemsPanel>
@@ -134,7 +134,7 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
                 
-                <!-- Time slots and appointment slots -->
+                <!-- Saat dilimleri ve randevu hücreleri -->
                 <ItemsControl Grid.Row="1" Grid.Column="0" 
                             ItemsSource="{Binding TimeSlots}">
                     <ItemsControl.ItemTemplate>
@@ -153,7 +153,7 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
                 
-                <!-- Appointment slots grid -->
+                <!-- Randevu hücreleri ızgarası -->
                 <ItemsControl Grid.Row="1" Grid.Column="1" 
                             ItemsSource="{Binding AppointmentSlots}">
                     <ItemsControl.ItemsPanel>
@@ -173,7 +173,7 @@
                                         <Setter Property="Padding" Value="5"/>
                                         <Setter Property="Cursor" Value="Hand"/>
                                         <Style.Triggers>
-                                            <!-- Status-based styling -->
+                                            <!-- Duruma göre stillendirme -->
                                             <DataTrigger Binding="{Binding Status}" Value="Available">
                                                 <Setter Property="Background" Value="#90EE90"/>
                                                 <Setter Property="Foreground" Value="Black"/>

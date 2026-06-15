@@ -16,6 +16,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
 import { Appointment, Patient, User } from '../../../core/models/models';
 import { DataMapper } from '../../../core/utils/data-mapper';
+import { formatLocalDate } from '../../../core/utils/date.util';
 
 interface DentistOption {
   id: number;
@@ -39,9 +40,10 @@ interface DentistOption {
     MatSnackBarModule
   ],
   template: `
-    <h2 mat-dialog-title>{{ data ? 'Randevu Düzenle' : 'Yeni Randevu' }}</h2>
-    <mat-dialog-content>
-      <form [formGroup]="appointmentForm">
+    <h2 mat-dialog-title class="dialog-title">{{ data ? 'Randevu Duzenle' : 'Yeni Randevu' }}</h2>
+    <p class="dialog-subtitle">Saat, hekim ve hasta bilgilerini tek adimda planlayin.</p>
+    <mat-dialog-content class="dialog-content">
+      <form [formGroup]="appointmentForm" class="form-grid">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Hasta</mat-label>
           <mat-select formControlName="patientId" required>
@@ -67,13 +69,13 @@ interface DentistOption {
           <mat-datepicker #picker></mat-datepicker>
         </mat-form-field>
 
-        <div class="form-row">
+        <div class="form-row full-width">
           <mat-form-field appearance="outline">
-            <mat-label>Başlangıç Saati</mat-label>
+            <mat-label>Baslangic Saati</mat-label>
             <input matInput type="time" formControlName="startTime" required>
           </mat-form-field>
           <mat-form-field appearance="outline">
-            <mat-label>Bitiş Saati</mat-label>
+            <mat-label>Bitis Saati</mat-label>
             <input matInput type="time" formControlName="endTime" required>
           </mat-form-field>
         </div>
@@ -95,7 +97,7 @@ interface DentistOption {
           <mat-select formControlName="status">
             <mat-option value="scheduled">Planlandi</mat-option>
             <mat-option value="completed">Tamamlandi</mat-option>
-            <mat-option value="cancelled">Iptal Edildi</mat-option>
+            <mat-option value="cancelled">Iptal</mat-option>
             <mat-option value="no_show">Gelmedi</mat-option>
           </mat-select>
         </mat-form-field>
@@ -106,33 +108,69 @@ interface DentistOption {
         </mat-form-field>
       </form>
     </mat-dialog-content>
-    <mat-dialog-actions>
-      <button mat-button (click)="onCancel()">İptal</button>
-      <button mat-raised-button color="primary" (click)="onSave()" [disabled]="!appointmentForm.valid || isLoading">
+    <mat-dialog-actions align="end" class="dialog-actions">
+      <button mat-button (click)="onCancel()">Iptal</button>
+      <button mat-raised-button color="primary" class="save-btn" (click)="onSave()" [disabled]="!appointmentForm.valid || isLoading">
         <mat-spinner *ngIf="isLoading" diameter="20" class="inline-spinner"></mat-spinner>
         <span *ngIf="!isLoading">Kaydet</span>
       </button>
     </mat-dialog-actions>
   `,
   styles: [`
+    .dialog-title {
+      margin-bottom: 2px;
+    }
+    .dialog-subtitle {
+      margin: 0 24px 10px;
+      color: #5a6986;
+      font-size: 0.88rem;
+    }
+    .dialog-content {
+      min-width: 520px;
+      max-height: 66vh;
+      overflow-y: auto;
+      padding-top: 4px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(180px, 1fr));
+      gap: 0 14px;
+    }
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
+      gap: 14px;
     }
     .full-width {
-      width: 100%;
-      margin-bottom: 16px;
+      grid-column: span 2;
     }
     .inline-spinner {
       display: inline-block;
       margin-right: 8px;
     }
-    mat-dialog-content {
-      min-width: 500px;
-      max-height: 600px;
-      overflow-y: auto;
+    .dialog-actions {
+      border-top: 1px solid #e5edf8;
+      margin-top: 10px;
+      padding: 14px 24px 16px;
+      gap: 10px;
+    }
+    .save-btn {
+      min-width: 112px;
+      font-weight: 700;
+    }
+    @media (max-width: 720px) {
+      .dialog-content {
+        min-width: 0;
+      }
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .full-width {
+        grid-column: span 1;
+      }
+      .form-row {
+        grid-template-columns: 1fr;
+      }
     }
   `]
 })
@@ -201,7 +239,7 @@ export class AppointmentFormDialogComponent implements OnInit {
   loadPatients(): void {
     this.patientService.getPatients(1, 1000).subscribe({
       next: (response) => {
-        this.patients = response.patients || [];
+        this.patients = (response.patients || []).map((p: any) => DataMapper.mapPatient(p));
       }
     });
   }
@@ -247,7 +285,7 @@ export class AppointmentFormDialogComponent implements OnInit {
       const appointmentData: Partial<Appointment> = {
         patientId: formValue.patientId,
         dentistId: this.isDentist && this.currentUser?.id ? this.currentUser.id : formValue.dentistId,
-        appointmentDate: formValue.appointmentDate.toISOString().split('T')[0],
+        appointmentDate: formatLocalDate(formValue.appointmentDate),
         startTime: `${formValue.startTime}:00`,
         endTime: `${formValue.endTime}:00`,
         appointmentType: formValue.appointmentType,
@@ -255,7 +293,7 @@ export class AppointmentFormDialogComponent implements OnInit {
         notes: formValue.notes,
       };
 
-      // Convert to backend format
+      // Backend formatına dönüştür
       const backendData = DataMapper.mapAppointmentToBackend(appointmentData);
 
       const request = this.data

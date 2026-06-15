@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
-import { MatTabsModule } from '@angular/material/tabs';
+import { MatTabsModule, MatTabChangeEvent } from '@angular/material/tabs';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -54,7 +54,7 @@ import { DataMapper } from '../../core/utils/data-mapper';
         </mat-card>
       </div>
 
-      <mat-tab-group>
+      <mat-tab-group (selectedTabChange)="onTabChange($event)">
         <mat-tab label="Anlasmali Kurumlar">
           <div class="agreements-layout">
             <mat-card class="agreements-list">
@@ -147,6 +147,9 @@ import { DataMapper } from '../../core/utils/data-mapper';
                 <button mat-raised-button color="primary" (click)="loadPendingPlans()">Planlari Yukle</button>
                 <button mat-raised-button color="accent" (click)="approveSelectedPlans()" [disabled]="selectedPlanIds.size === 0">
                   Secilenleri Onayla
+                </button>
+                <button mat-raised-button color="warn" (click)="rejectSelectedPlans()" [disabled]="selectedPlanIds.size === 0">
+                  Secilenleri Reddet
                 </button>
                 <span class="total-chip">Secili Toplam: {{ selectedPlansTotal | number:'1.2-2' }} TL</span>
               </div>
@@ -492,23 +495,40 @@ export class PaymentsComponent implements OnInit {
   }
 
   approveSelectedPlans(): void {
+    this.processSelectedPlans(true);
+  }
+
+  rejectSelectedPlans(): void {
+    if (!confirm('Secilen planlar reddedilecek. Devam edilsin mi?')) return;
+    this.processSelectedPlans(false);
+  }
+
+  onTabChange(event: MatTabChangeEvent): void {
+    if (event.tab.textLabel === 'Tedavi Plani Onaylama') {
+      this.loadPendingPlans();
+    }
+  }
+
+  private processSelectedPlans(approved: boolean): void {
     const ids = Array.from(this.selectedPlanIds.values());
     if (ids.length === 0) return;
 
     let completed = 0;
+    const actionLabel = approved ? 'onaylandi' : 'reddedildi';
+
     ids.forEach(id => {
-      this.paymentService.approvePlan(id, true).subscribe({
+      this.paymentService.approvePlan(id, approved).subscribe({
         next: () => {
           completed += 1;
           if (completed === ids.length) {
-            this.snackBar.open(`${completed} plan onaylandi`, 'Kapat', { duration: 2500 });
+            this.snackBar.open(`${completed} plan ${actionLabel}`, 'Kapat', { duration: 2500 });
             this.loadPendingPlans();
             this.loadIncomeExpense();
           }
         },
         error: (err) => {
-          console.error(`Error approving plan ${id}:`, err);
-          this.snackBar.open(`Plan onaylanamadi (ID: ${id})`, 'Kapat', { duration: 3000 });
+          console.error(`Error processing plan ${id}:`, err);
+          this.snackBar.open(`Plan islenemedi (ID: ${id})`, 'Kapat', { duration: 3000 });
         }
       });
     });

@@ -5,7 +5,7 @@ A secure, full-featured dental practice management system built with Node.js, Ex
 ## Features
 
 ### Security
-- ✅ JWT authentication with refresh tokens (15min access, 7 day refresh)
+- ✅ JWT authentication with refresh tokens (1 hour access, 7 day refresh)
 - ✅ Account lockout after failed login attempts (5 attempts, 15min lockout)
 - ✅ Password strength validation and history tracking
 - ✅ Email verification and password reset
@@ -15,9 +15,10 @@ A secure, full-featured dental practice management system built with Node.js, Ex
 
 ### User Management
 - ✅ User CRUD operations
-- ✅ Role management (admin, user)
+- ✅ Role management (`admin`, `secretary`, `dentist`)
 - ✅ Password change functionality
 - ✅ Email verification workflow
+- ✅ Full profile fields (name, phone, commission, etc.)
 
 ### Dental Features
 - ✅ Patient management (CRUD with medical history)

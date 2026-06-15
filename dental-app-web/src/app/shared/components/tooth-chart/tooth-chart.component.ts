@@ -9,8 +9,21 @@ import { ToothHotspot } from '../../../core/models/models';
     template: `
     <div class="tooth-chart-wrapper">
       <div class="tooth-chart-container">
-        <img src="assets/mouth_chart.png" alt="Mouth Chart" class="chart-image" #chartImg>
-        <svg class="chart-overlay" [attr.viewBox]="'0 0 ' + containerWidth + ' ' + containerHeight">
+        <svg class="chart-svg" [attr.viewBox]="'0 0 ' + containerWidth + ' ' + containerHeight">
+          <!-- Gum background -->
+          <ellipse cx="300" cy="125" rx="270" ry="55" class="gum-upper" />
+          <ellipse cx="300" cy="275" rx="270" ry="55" class="gum-lower" />
+          <rect x="20" y="95" width="560" height="210" rx="12" class="mouth-bg" />
+
+          <!-- Upper arch label -->
+          <text x="300" y="30" text-anchor="middle" class="arch-label">Üst Çene</text>
+          <!-- Lower arch label -->
+          <text x="300" y="385" text-anchor="middle" class="arch-label">Alt Çene</text>
+
+          <!-- Midline -->
+          <line x1="300" y1="55" x2="300" y2="345" class="midline" />
+
+          <!-- Clickable tooth hotspots -->
           <rect *ngFor="let hotspot of hotspots"
                 class="hotspot"
                 [class.selected]="isSelected(hotspot.toothNumber)"
@@ -18,10 +31,21 @@ import { ToothHotspot } from '../../../core/models/models';
                 [attr.y]="hotspot.y"
                 [attr.width]="hotspot.width"
                 [attr.height]="hotspot.height"
+                [attr.rx]="4"
                 (click)="toggleTooth(hotspot.toothNumber)"
                 [attr.data-tooth]="hotspot.toothNumber">
             <title>Diş {{ hotspot.toothNumber }}</title>
           </rect>
+
+          <!-- Tooth number labels -->
+          <text *ngFor="let hotspot of hotspots"
+                [attr.x]="hotspot.x + hotspot.width / 2"
+                [attr.y]="hotspot.y + hotspot.height / 2 + 4"
+                text-anchor="middle"
+                class="tooth-label"
+                pointer-events="none">
+            {{ hotspot.toothNumber }}
+          </text>
         </svg>
       </div>
       <div class="selection-info" *ngIf="selectedTeeth.length > 0">
@@ -38,41 +62,63 @@ import { ToothHotspot } from '../../../core/models/models';
       margin-bottom: 24px;
     }
     .tooth-chart-container {
-      position: relative;
       width: fit-content;
       border: 1px solid #e0e0e0;
       border-radius: 8px;
       padding: 10px;
-      background: white;
+      background: #fafbfc;
     }
-    .chart-image {
+    .chart-svg {
       display: block;
       max-width: 100%;
       height: auto;
+      width: 600px;
     }
-    .chart-overlay {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      width: calc(100% - 20px);
-      height: calc(100% - 20px);
-      pointer-events: none;
+    .mouth-bg {
+      fill: #f8fafc;
+      stroke: #d1d5db;
+      stroke-width: 1;
+    }
+    .gum-upper, .gum-lower {
+      fill: #fca5a5;
+      opacity: 0.35;
+      stroke: #f87171;
+      stroke-width: 1;
+    }
+    .arch-label {
+      font-size: 11px;
+      fill: #64748b;
+      font-weight: 600;
+    }
+    .midline {
+      stroke: #cbd5e1;
+      stroke-width: 1;
+      stroke-dasharray: 4 4;
     }
     .hotspot {
-      fill: rgba(59, 130, 246, 0.1);
-      stroke: rgba(59, 130, 246, 0.3);
+      fill: rgba(59, 130, 246, 0.12);
+      stroke: rgba(59, 130, 246, 0.4);
       stroke-width: 1;
       cursor: pointer;
-      pointer-events: all;
-      transition: all 0.2s;
+      transition: fill 0.2s, stroke 0.2s;
     }
     .hotspot:hover {
       fill: rgba(59, 130, 246, 0.3);
     }
     .hotspot.selected {
-      fill: rgba(59, 130, 246, 0.6);
+      fill: rgba(59, 130, 246, 0.65);
       stroke: #2563eb;
       stroke-width: 2;
+    }
+    .tooth-label {
+      font-size: 9px;
+      fill: #475569;
+      font-weight: 600;
+      user-select: none;
+    }
+    .hotspot.selected + .tooth-label,
+    .hotspot.selected ~ .tooth-label {
+      fill: #fff;
     }
     .selection-info {
       font-weight: 500;
@@ -87,7 +133,6 @@ export class ToothChartComponent {
     @Input() selectedTeeth: number[] = [];
     @Output() teethChanged = new EventEmitter<number[]>();
 
-    // Full FDI chart hotspot coordinates used by web mouth chart image.
     hotspots: ToothHotspot[] = [
         // Upper right quadrant (18-11)
         { toothNumber: 18, x: 300, y: 50, width: 30, height: 45 },

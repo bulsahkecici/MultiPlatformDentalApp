@@ -120,16 +120,25 @@
                                          Style="{StaticResource MaterialDesignDataGrid}">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Kurum Adı" Binding="{Binding Name}" Width="*"/>
-                                        <DataGridTextColumn Header="Ort. İndirim" Binding="{Binding AverageDiscount, StringFormat='{}{0:F1}%'}" Width="100"/>
-                                        <DataGridTemplateColumn Header="İşlemler" Width="100">
+                                        <DataGridTextColumn Header="Ort. İndirim" Binding="{Binding AverageDiscountPercentage, StringFormat='{}{0:F1}%'}" Width="100"/>
+                                        <DataGridTemplateColumn Header="İşlemler" Width="120">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <StackPanel Orientation="Horizontal">
                                                         <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                                ToolTip="Düzenle"
+                                                                Foreground="{StaticResource BulkaMediumBlue}"
+                                                                Command="{Binding DataContext.EditAgreementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                                CommandParameter="{Binding}"
+                                                                Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                            <materialDesign:PackIcon Kind="Pencil" />
+                                                        </Button>
+                                                        <Button Style="{StaticResource MaterialDesignIconButton}"
                                                                 ToolTip="Sil"
                                                                 Foreground="Red"
                                                                 Command="{Binding DataContext.DeleteAgreementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                                CommandParameter="{Binding}">
+                                                                CommandParameter="{Binding}"
+                                                                Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BooleanToVisibilityConverter}}">
                                                             <materialDesign:PackIcon Kind="Delete" />
                                                         </Button>
                                                     </StackPanel>
@@ -196,7 +205,7 @@
                                          TextAlignment="Center"
                                          Visibility="{Binding ShowNoCategoryDiscountsMessage, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                 
-                                <!-- Secretary için read-only uyarı -->
+                                <!-- Sekreter için salt-okunur uyarı -->
                                 <TextBlock Text="Not: Sekreter kullanıcıları anlaşmaları sadece görüntüleyebilir, düzenleyemez." 
                                          Style="{StaticResource MaterialDesignBody2TextBlock}" 
                                          Foreground="Gray"

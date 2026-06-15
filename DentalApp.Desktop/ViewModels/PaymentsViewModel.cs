@@ -1,6 +1,7 @@
 ﻿using DentalApp.Desktop.Helpers;
 using DentalApp.Desktop.Models;
 using DentalApp.Desktop.Services;
+using DentalApp.Desktop.Views;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
@@ -143,7 +144,7 @@ namespace DentalApp.Desktop.ViewModels
             {
                 if (SetProperty(ref _selectedPatientTreatmentPlan, value))
                 {
-                    // Prefill payment amount with known price; user can override
+                    // Ödeme tutarını bilinen fiyatla önceden doldur; kullanıcı değiştirebilir
                     if (value != null && value.Price > 0)
                     {
                         PaymentAmount = value.Price;
@@ -182,7 +183,7 @@ namespace DentalApp.Desktop.ViewModels
                 {
                     foreach (var plan in response.plans)
                     {
-                        // Each plan may have multiple items; flatten into ProcedureItem list with cost
+                        // Her plan birden çok kalem içerebilir; maliyetiyle birlikte ProcedureItem listesine düzleştir
                         decimal totalCost = Convert.ToDecimal(plan.total_estimated_cost ?? 0m);
                         var items = plan.items as IEnumerable<dynamic>;
                         if (items != null)
@@ -199,7 +200,7 @@ namespace DentalApp.Desktop.ViewModels
                                 });
                             }
                         }
-                        // If there are no items, still add a summary row for the plan total
+                        // Kalem yoksa, plan toplamı için yine de bir özet satırı ekle
                         if (items == null || !items.Any())
                         {
                             PatientTreatmentPlans.Add(new ProcedureItem
@@ -210,7 +211,7 @@ namespace DentalApp.Desktop.ViewModels
                                 Price = totalCost
                             });
                         }
-                        // Prefill totals based on debt endpoint
+                        // Toplamları borç uç noktasına göre önceden doldur
                         SelectedPaymentPatientTotal = totalCost;
                         OnPropertyChanged(nameof(SelectedPaymentPatientTotal));
                     }
@@ -269,6 +270,7 @@ namespace DentalApp.Desktop.ViewModels
 
         public ICommand AddAgreementCommand { get; }
         public ICommand EditAgreementCommand { get; }
+        public ICommand DeleteAgreementCommand { get; }
         public ICommand LoadAgreementsCommand { get; }
         public ICommand LoadPendingPlansCommand { get; }
         public ICommand ApprovePlansCommand { get; }
@@ -282,7 +284,8 @@ namespace DentalApp.Desktop.ViewModels
             _tariffService = tariffService ?? new TariffService();
             
             AddAgreementCommand = new RelayCommand(async _ => await AddAgreementAsync(), _ => !IsBusy && !string.IsNullOrWhiteSpace(NewAgreementName));
-            EditAgreementCommand = new RelayCommand<InstitutionAgreement>(async a => await EditAgreementAsync(a));
+            EditAgreementCommand = new RelayCommand<InstitutionAgreement>(async a => await EditAgreementAsync(a), _ => !IsBusy && CanViewPrices);
+            DeleteAgreementCommand = new RelayCommand<InstitutionAgreement>(async a => await DeleteAgreementAsync(a), _ => !IsBusy && CanViewPrices);
             LoadAgreementsCommand = new RelayCommand(async _ => await LoadAgreementsAsync(), _ => !IsBusy);
             LoadPendingPlansCommand = new RelayCommand(async _ => await LoadPendingPlansAsync(), _ => !IsBusy);
             ApprovePlansCommand = new RelayCommand(async _ => await ApprovePlansAsync(), _ => !IsBusy && PendingTreatmentPlans.Any(p => p.IsSelected));
@@ -302,7 +305,7 @@ namespace DentalApp.Desktop.ViewModels
         {
             try
             {
-                // Load total receivables (sum of all remaining_debt from patient_debts)
+                // Toplam alacakları yükle (patient_debts'teki tüm remaining_debt toplamı)
                 var receivablesResponse = await _apiService.GetAsync<dynamic>("/payments/total-receivables");
                 if (receivablesResponse != null)
                 {
@@ -312,7 +315,7 @@ namespace DentalApp.Desktop.ViewModels
                     OnPropertyChanged(nameof(TotalReceivables));
                 }
                 
-                // Load total income (sum of all payments)
+                // Toplam geliri yükle (tüm ödemelerin toplamı)
                 var incomeResponse = await _apiService.GetAsync<dynamic>("/payments/total-income");
                 if (incomeResponse != null)
                 {
@@ -344,7 +347,7 @@ namespace DentalApp.Desktop.ViewModels
             
             try
             {
-                // Load patient debt
+                // Hasta borcunu yükle
                 var debtResponse = await _apiService.GetAsync<dynamic>($"/payments/patient-debt/{SelectedIncomePatient.Id}");
                 var debtObj = debtResponse?.debt;
                 if (debtObj != null)
@@ -576,7 +579,7 @@ namespace DentalApp.Desktop.ViewModels
                 var agreementObj = response?.agreement;
                 if (response != null && agreementObj != null)
                 {
-                    // Reload agreements to get the new one with proper ID
+                    // Doğru ID'ye sahip yeni anlaşmayı almak için anlaşmaları yeniden yükle
                     await LoadAgreementsAsync();
                     
                     NewAgreementName = string.Empty;
@@ -604,20 +607,78 @@ namespace DentalApp.Desktop.ViewModels
             }
         }
 
-        private Task EditAgreementAsync(InstitutionAgreement? agreement)
+        private async Task EditAgreementAsync(InstitutionAgreement? agreement)
         {
-            if (agreement == null) return Task.CompletedTask;
-            
-            // TODO: Create a proper dialog for editing. For now, we just show a message.
-            // Logic would be:
-            // 1. Open dialog with agreement details
-            // 2. On save:
-            //    var response = await _apiService.PutAsync<dynamic>($"/institution-agreements/{agreement.Id}", updatedData);
-            //    await LoadAgreementsAsync();
+            if (agreement == null) return;
 
-            System.Windows.MessageBox.Show($"'{agreement.Name}' düzenleme özelliği için arayüz hazırlanıyor.\nBackend güncelleme mantığı hazır.", "Bilgi",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
-            return Task.CompletedTask;
+            var dialog = new EditInstitutionAgreementDialog(agreement, CategoryDiscounts.Select(c => c.CategoryName).ToList());
+            dialog.Owner = Application.Current.MainWindow;
+            if (dialog.ShowDialog() != true || dialog.ResultAgreement == null)
+                return;
+
+            IsBusy = true;
+            try
+            {
+                var updated = dialog.ResultAgreement;
+                var categoryDiscounts = updated.CategoryDiscounts
+                    .Where(kvp => kvp.Value > 0)
+                    .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+                var request = new
+                {
+                    institutionName = updated.Name,
+                    discountPercentage = updated.DiscountPercentage,
+                    categoryDiscounts
+                };
+
+                await _apiService.PutAsync<dynamic>($"/institution-agreements/{agreement.Id}", request);
+                await LoadAgreementsAsync();
+
+                System.Windows.MessageBox.Show("Anlaşma başarıyla güncellendi.", "Başarılı",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Anlaşma güncellenirken hata: {ex.Message}", "Hata",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private async Task DeleteAgreementAsync(InstitutionAgreement? agreement)
+        {
+            if (agreement == null) return;
+
+            var confirm = System.Windows.MessageBox.Show(
+                $"'{agreement.Name}' anlaşmasını silmek istediğinize emin misiniz?",
+                "Anlaşmayı Sil",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Warning);
+
+            if (confirm != System.Windows.MessageBoxResult.Yes)
+                return;
+
+            IsBusy = true;
+            try
+            {
+                await _apiService.DeleteAsync($"/institution-agreements/{agreement.Id}");
+                await LoadAgreementsAsync();
+
+                System.Windows.MessageBox.Show("Anlaşma başarıyla silindi.", "Başarılı",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Anlaşma silinirken hata: {ex.Message}", "Hata",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
         
         private async Task LoadPendingPlansAsync()
@@ -748,7 +809,7 @@ namespace DentalApp.Desktop.ViewModels
                 return;
             }
             
-            // Load patient debt from API
+            // Hasta borcunu API'den yükle
             _ = LoadPatientDebtAsync(SelectedPaymentPatient.Id);
         }
         
@@ -764,10 +825,10 @@ namespace DentalApp.Desktop.ViewModels
                     var paidAmount = Convert.ToDecimal(debt?.paid_amount ?? 0m);
                     var currentRemainingDebt = Convert.ToDecimal(debt?.remaining_debt ?? 0m);
                     
-                    // Calculate remaining debt after current payment
+                    // Mevcut ödeme sonrası kalan borcu hesapla
                     RemainingDebt = Math.Max(0, currentRemainingDebt - PaymentAmount);
 
-                    // Commission will be returned by payment API; reset placeholders here
+                    // Komisyon ödeme API'sinden dönecek; yer tutucuları burada sıfırla
                     DentistCommissionPercentage = 0m;
                     DentistCommission = 0m;
                     
@@ -780,7 +841,7 @@ namespace DentalApp.Desktop.ViewModels
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Hasta borç bilgileri yüklenirken hata: {ex.Message}");
-                // Fallback to placeholder
+                // Yer tutucu değerlere geri dön
                 SelectedPaymentPatientTotal = 0m;
                 RemainingDebt = 0m;
                 DentistCommission = 0m;
@@ -915,7 +976,7 @@ namespace DentalApp.Desktop.ViewModels
             {
                 if (SetProperty(ref _isSelected, value))
                 {
-                    // Notify parent view model to refresh total
+                    // Toplamı yenilemesi için üst görünüm modeline bildir
                     ParentViewModel?.RefreshSelectedPlansTotal();
                 }
             }

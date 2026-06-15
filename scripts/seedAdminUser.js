@@ -20,8 +20,8 @@ async function ensureAdminUser() {
   const passwordHash = await bcrypt.hash(password, 10);
   await pool.query(
     `
-      INSERT INTO users (email, password_hash, roles, created_at, updated_at)
-      VALUES ($1, $2, $3, NOW(), NOW())
+      INSERT INTO users (email, password_hash, roles, email_verified, created_at, updated_at)
+      VALUES ($1, $2, $3, true, NOW(), NOW())
     `,
     [email, passwordHash, rolesCsv],
   );
@@ -36,4 +36,3 @@ ensureAdminUser()
   .finally(async () => {
     await pool.end().catch(() => {});
   });
-

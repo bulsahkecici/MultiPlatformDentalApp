@@ -30,7 +30,7 @@ function requireRole(role) {
 }
 
 /**
- * Require user to access their own resource only
+ * Kullanıcının yalnızca kendi kaynağına erişmesini zorunlu kılar
  */
 function requireSelf(req, res, next) {
   if (!req.user) {
@@ -46,7 +46,7 @@ function requireSelf(req, res, next) {
 }
 
 /**
- * Require user to access their own resource OR be an admin
+ * Kullanıcının yalnızca kendi kaynağına erişmesini VEYA admin olmasını zorunlu kılar
  */
 function requireSelfOrAdmin(req, res, next) {
   if (!req.user) {
@@ -65,14 +65,14 @@ function requireSelfOrAdmin(req, res, next) {
 }
 
 /**
- * Require any of the specified roles
+ * Belirtilen rollerden herhangi birine sahip olmayı zorunlu kılar
  */
 function requireAnyRole(...roles) {
   return (req, res, next) => {
     if (!req.user || !req.user.roles || !Array.isArray(req.user.roles)) {
       return next(new AppError('Forbidden', 403));
     }
-    const hasRole = roles.some(role => req.user.roles.includes(role));
+    const hasRole = roles.some((role) => req.user.roles.includes(role));
     if (!hasRole) {
       return next(new AppError('Forbidden', 403));
     }
@@ -81,18 +81,20 @@ function requireAnyRole(...roles) {
 }
 
 /**
- * Check if user has permission to view prices
- * Only admin and secretary can see prices
+ * Kullanıcının fiyatları görme yetkisi olup olmadığını kontrol eder
+ * Yalnızca admin ve sekreter fiyatları görebilir
  */
 function canViewPrices(req) {
   if (!req.user || !req.user.roles || !Array.isArray(req.user.roles)) {
     return false;
   }
-  return req.user.roles.includes('admin') || req.user.roles.includes('secretary');
+  return (
+    req.user.roles.includes('admin') || req.user.roles.includes('secretary')
+  );
 }
 
 /**
- * Check if user is dentist (can only see own appointments)
+ * Kullanıcının hekim olup olmadığını kontrol eder (yalnızca kendi randevularını görebilir)
  */
 function isDentist(req) {
   if (!req.user || !req.user.roles || !Array.isArray(req.user.roles)) {
@@ -101,12 +103,12 @@ function isDentist(req) {
   return req.user.roles.includes('dentist');
 }
 
-module.exports = { 
-  requireAuth, 
-  requireRole, 
-  requireSelf, 
+module.exports = {
+  requireAuth,
+  requireRole,
+  requireSelf,
   requireSelfOrAdmin,
   requireAnyRole,
   canViewPrices,
-  isDentist
+  isDentist,
 };

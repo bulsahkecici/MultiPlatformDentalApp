@@ -33,6 +33,13 @@ export interface PatientPaymentHistory {
   notes?: string;
 }
 
+export interface DiscountReason {
+  id: number;
+  name: string;
+  description?: string;
+  is_active: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -75,5 +82,19 @@ export class PaymentService {
     notes?: string | null;
   }): Observable<any> {
     return this.apiService.post<any>('/api/payments/process', payload);
+  }
+
+  applyDiscount(payload: {
+    treatmentPlanId?: number;
+    invoiceId?: number;
+    discountId?: number;
+    discountAmount?: number;
+    discountPercentage?: number;
+  }): Observable<any> {
+    return this.apiService.post<any>('/api/payments/discount', payload);
+  }
+
+  getDiscountReasons(isActive = true): Observable<{ reasons: DiscountReason[] }> {
+    return this.apiService.get<{ reasons: DiscountReason[] }>('/api/discount-reasons', { isActive });
   }
 }

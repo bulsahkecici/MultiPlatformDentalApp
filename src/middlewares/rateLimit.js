@@ -2,9 +2,9 @@ const rateLimit = require('express-rate-limit');
 const slowDown = require('express-slow-down');
 
 /**
- * Get client IP address from request (trust proxy headers)
- * @param {Object} req - Express request
- * @returns {string} IP address
+ * İstekten istemci IP adresini alır (proxy başlıklarına güvenir)
+ * @param {Object} req - Express isteği
+ * @returns {string} IP adresi
  */
 function getClientIp(req) {
   return (
@@ -17,11 +17,11 @@ function getClientIp(req) {
 }
 
 /**
- * General rate limiter for all endpoints
- * 300 requests per 15 minutes per IP
+ * Tüm uç noktalar için genel hız sınırlayıcı
+ * IP başına 15 dakikada 300 istek
  */
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000, // 15 dakika
   max: 300,
   standardHeaders: true,
   legacyHeaders: false,
@@ -36,32 +36,31 @@ const generalLimiter = rateLimit({
 });
 
 /**
- * Strict rate limiter for authentication endpoints
- * 10 requests per 15 minutes per IP
+ * Kimlik doğrulama uç noktaları için katı hız sınırlayıcı
+ * IP başına 15 dakikada 10 istek
  */
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000, // 15 dakika
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: getClientIp,
-  skipSuccessfulRequests: false, // Count all requests
+  skipSuccessfulRequests: false, // Tüm istekleri say
   handler: (req, res) => {
     res.status(429).json({
       error: {
-        message:
-          'Too many authentication attempts, please try again later.',
+        message: 'Too many authentication attempts, please try again later.',
       },
     });
   },
 });
 
 /**
- * Rate limiter for mutation endpoints (create, update, delete)
- * 60 requests per 15 minutes per IP
+ * Veri değiştiren uç noktalar için hız sınırlayıcı (oluşturma, güncelleme, silme)
+ * IP başına 15 dakikada 60 istek
  */
 const mutateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000, // 15 dakika
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
@@ -76,23 +75,23 @@ const mutateLimiter = rateLimit({
 });
 
 /**
- * Progressive slow-down for repeated requests
- * Slows down responses after 5 requests in 1 minute
+ * Tekrarlanan istekler için kademeli yavaşlatma
+ * 1 dakikada 5 istekten sonra yanıtları yavaşlatır
  */
 const speedLimiter = slowDown({
-  windowMs: 60 * 1000, // 1 minute
-  delayAfter: 5, // Allow 5 requests per minute at full speed
-  delayMs: (hits) => hits * 100, // Add 100ms delay per request after delayAfter
-  maxDelayMs: 2000, // Maximum delay of 2 seconds
+  windowMs: 60 * 1000, // 1 dakika
+  delayAfter: 5, // Dakikada 5 isteğe tam hızda izin ver
+  delayMs: (hits) => hits * 100, // delayAfter sonrası her istek için 100ms gecikme ekle
+  maxDelayMs: 2000, // Maksimum 2 saniye gecikme
   keyGenerator: getClientIp,
 });
 
 /**
- * Strict limiter for password reset requests
- * 3 requests per hour per IP
+ * Parola sıfırlama istekleri için katı sınırlayıcı
+ * IP başına saatte 3 istek
  */
 const passwordResetLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: 60 * 60 * 1000, // 1 saat
   max: 3,
   standardHeaders: true,
   legacyHeaders: false,
@@ -101,19 +100,18 @@ const passwordResetLimiter = rateLimit({
   handler: (req, res) => {
     res.status(429).json({
       error: {
-        message:
-          'Too many password reset requests, please try again later.',
+        message: 'Too many password reset requests, please try again later.',
       },
     });
   },
 });
 
 /**
- * Limiter for email verification requests
- * 5 requests per hour per IP
+ * E-posta doğrulama istekleri için sınırlayıcı
+ * IP başına saatte 5 istek
  */
 const emailVerificationLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: 60 * 60 * 1000, // 1 saat
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
@@ -121,8 +119,7 @@ const emailVerificationLimiter = rateLimit({
   handler: (req, res) => {
     res.status(429).json({
       error: {
-        message:
-          'Too many verification requests, please try again later.',
+        message: 'Too many verification requests, please try again later.',
       },
     });
   },

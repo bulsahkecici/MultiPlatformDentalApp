@@ -14,6 +14,7 @@
     "test": "jest --runInBand",
     "db:migrate": "node scripts/dbMigrate.js",
     "db:seed:admin": "node scripts/seedAdminUser.js",
+    "db:seed:users": "node scripts/seedUsers.js",
     "db:seed:demo": "node scripts/seedDemoData.js"
   },
   "repository": {

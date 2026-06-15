@@ -194,10 +194,10 @@ namespace DentalApp.Desktop.ViewModels
             System.Diagnostics.Debug.WriteLine($"[RefreshSlotsAsync] Dentists count: {Dentists.Count}");
             System.Diagnostics.Debug.WriteLine($"[RefreshSlotsAsync] TimeSlots count: {TimeSlots.Count}");
             
-            // Clear existing slots
+            // Mevcut hücreleri temizle
             AppointmentSlots.Clear();
             
-            // Create slots for each time and dentist combination
+            // Her saat ve hekim kombinasyonu için hücre oluştur
             foreach (var timeSlot in TimeSlots)
             {
                 foreach (var dentist in Dentists)
@@ -210,8 +210,8 @@ namespace DentalApp.Desktop.ViewModels
                         Date = SelectedDate
                     };
                     
-                    // Check if there's an appointment for this slot
-                    // Match by date, dentist, and time overlap
+                    // Bu hücre için bir randevu olup olmadığını kontrol et
+                    // Tarih, hekim ve saat çakışmasına göre eşleştir
                     var appointment = Appointments.FirstOrDefault(a => 
                         a.AppointmentDate.Date == SelectedDate.Date &&
                         a.DentistId == dentist.Id &&
@@ -237,7 +237,7 @@ namespace DentalApp.Desktop.ViewModels
             
             System.Diagnostics.Debug.WriteLine($"[RefreshSlotsAsync] Created {AppointmentSlots.Count} slots, Occupied: {AppointmentSlots.Count(s => s.Status == SlotStatus.Occupied)}");
             
-            // Force UI update
+            // Arayüz güncellemesini zorla
             OnPropertyChanged(nameof(AppointmentSlots));
             return Task.CompletedTask;
         }
@@ -286,14 +286,14 @@ namespace DentalApp.Desktop.ViewModels
             {
                 var detailsViewModel = new AppointmentDetailsViewModel(appointment);
                 
-                // Edit requested handler
+                // Düzenleme isteği yöneticisi
                 detailsViewModel.EditRequested += () =>
                 {
                     MaterialDesignThemes.Wpf.DialogHost.CloseDialogCommand.Execute(null, null);
                     EditAppointmentRequested?.Invoke(appointment);
                 };
                 
-                // Close requested handler
+                // Kapatma isteği yöneticisi
                 detailsViewModel.CloseRequested += () =>
                 {
                     MaterialDesignThemes.Wpf.DialogHost.CloseDialogCommand.Execute(null, null);
@@ -352,7 +352,7 @@ namespace DentalApp.Desktop.ViewModels
                 TotalPages = pagination.Pages;
                 OnPropertyChanged(nameof(PageInfo));
                 
-                // Refresh slots after loading appointments
+                // Randevular yüklendikten sonra hücreleri yenile
                 await RefreshSlotsAsync();
             }
             catch (Exception ex)

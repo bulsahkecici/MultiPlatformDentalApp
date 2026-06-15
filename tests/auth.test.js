@@ -62,4 +62,3 @@ describe('Auth login', () => {
     expect(res.body.user).toBeDefined();
   });
 });
-

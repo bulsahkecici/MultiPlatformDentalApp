@@ -12,7 +12,7 @@ using System.Windows.Shapes;
 namespace DentalApp.Desktop;
 
 /// <summary>
-/// Interaction logic for MainWindow.xaml
+/// MainWindow.xaml için etkileşim mantığı
 /// </summary>
 public partial class MainWindow : Window
 {

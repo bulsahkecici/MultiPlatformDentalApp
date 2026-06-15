@@ -12,7 +12,10 @@ process.env.JWT_SECRET = 'test-secret';
 const { app } = require('../src/server');
 
 function tokenFor(roles, sub = 1) {
-  return jwt.sign({ sub, email: 'user@test.com', roles }, process.env.JWT_SECRET);
+  return jwt.sign(
+    { sub, email: 'user@test.com', roles },
+    process.env.JWT_SECRET,
+  );
 }
 
 describe('Role matrix', () => {

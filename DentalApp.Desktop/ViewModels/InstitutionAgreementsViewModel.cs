@@ -116,19 +116,19 @@ namespace DentalApp.Desktop.ViewModels
             IsBusy = true;
             try
             {
-                // Initialize CategoryDiscounts if null
+                // CategoryDiscounts null ise başlat
                 if (SelectedAgreement.CategoryDiscounts == null)
                 {
                     SelectedAgreement.CategoryDiscounts = new Dictionary<string, decimal>();
                 }
 
-                // Add or update category discount
+                // Kategori indirimini ekle veya güncelle
                 SelectedAgreement.CategoryDiscounts[NewCategoryName] = NewCategoryDiscount;
 
-                // Update on server
+                // Sunucuda güncelle
                 var updated = await _service.UpdateInstitutionAgreementAsync(SelectedAgreement.Id, SelectedAgreement);
                 
-                // Update local copy
+                // Yerel kopyayı güncelle
                 var index = Agreements.IndexOf(SelectedAgreement);
                 if (index >= 0)
                 {
@@ -136,7 +136,7 @@ namespace DentalApp.Desktop.ViewModels
                     SelectedAgreement = updated;
                 }
 
-                // Clear inputs
+                // Girişleri temizle
                 NewCategoryName = string.Empty;
                 NewCategoryDiscount = 0;
 
@@ -172,10 +172,10 @@ namespace DentalApp.Desktop.ViewModels
                 {
                     await _service.DeleteCategoryDiscountAsync(SelectedAgreement.Id, categoryDiscount.CategoryName);
                     
-                    // Reload agreements to get updated data
+                    // Güncellenmiş veriyi almak için anlaşmaları yeniden yükle
                     await LoadAgreementsAsync();
                     
-                    // Reselect the same agreement
+                    // Aynı anlaşmayı yeniden seç
                     SelectedAgreement = Agreements.FirstOrDefault(a => a.Id == SelectedAgreement.Id);
 
                     MessageBox.Show("Kategori indirimi başarıyla silindi.", "Başarılı", 

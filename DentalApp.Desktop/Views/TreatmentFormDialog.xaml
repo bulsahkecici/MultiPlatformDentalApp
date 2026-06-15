@@ -72,15 +72,18 @@
                         CornerRadius="5"
                         Padding="10"
                         Margin="0,0,0,10">
-                    <Grid Height="350">
-                        <!-- Arka plan resmi -->
-                        <Image Source="pack://application:,,,/Assets/mouth_chart.png" 
-                               Stretch="Uniform"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"/>
-                        
-                        <!-- Hotspot'lar için Canvas -->
-                        <Canvas>
+                    <Viewbox Stretch="Uniform" MaxHeight="350">
+                        <Canvas Width="600" Height="400">
+                            <!-- SVG-style mouth chart background -->
+                            <Ellipse Canvas.Left="40" Canvas.Top="70" Width="520" Height="260"
+                                     Fill="#E8F4FD" Stroke="#94A3B8" StrokeThickness="2"/>
+                            <Line X1="60" Y1="200" X2="540" Y2="200"
+                                  Stroke="#94A3B8" StrokeThickness="1" StrokeDashArray="4 3"/>
+                            <TextBlock Canvas.Left="280" Canvas.Top="88" Text="Üst"
+                                       FontSize="11" Foreground="#64748B"/>
+                            <TextBlock Canvas.Left="280" Canvas.Top="310" Text="Alt"
+                                       FontSize="11" Foreground="#64748B"/>
+
                             <ItemsControl ItemsSource="{Binding ToothHotspots}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
@@ -89,41 +92,52 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Button Command="{Binding DataContext.SelectToothCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                CommandParameter="{Binding ToothNumber}"
-                                                Width="{Binding Width}" 
-                                                Height="{Binding Height}"
-                                                Background="Transparent"
-                                                BorderThickness="0"
-                                                Padding="0"
-                                                Cursor="Hand"
-                                                ToolTip="{Binding ToothNumber, StringFormat='Diş {0}'}">
-                                            <Button.Style>
-                                                <Style TargetType="Button">
-                                                    <Setter Property="Background" Value="Transparent"/>
-                                                    <Setter Property="BorderBrush" Value="Transparent"/>
-                                                    <Setter Property="BorderThickness" Value="0"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Value="True">
-                                                            <DataTrigger.Binding>
-                                                                <MultiBinding Converter="{StaticResource ToothNumberEqualityConverter}">
-                                                                    <Binding Path="DataContext.SelectedTeeth" RelativeSource="{RelativeSource AncestorType=Window}"/>
-                                                                    <Binding Path="ToothNumber"/>
-                                                                </MultiBinding>
-                                                            </DataTrigger.Binding>
-                                                            <Setter Property="Background" Value="#40FF6B6B"/>
-                                                            <Setter Property="BorderBrush" Value="#FFFF6B6B"/>
-                                                            <Setter Property="BorderThickness" Value="3"/>
-                                                        </DataTrigger>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter Property="Background" Value="#20FF6B6B"/>
-                                                            <Setter Property="BorderBrush" Value="#FFFF6B6B"/>
-                                                            <Setter Property="BorderThickness" Value="2"/>
-                                                        </Trigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                        </Button>
+                                        <Grid Width="{Binding Width}" Height="{Binding Height}">
+                                            <Rectangle RadiusX="5" RadiusY="5"
+                                                       Fill="White"
+                                                       Stroke="#64748B"
+                                                       StrokeThickness="1.5"/>
+                                            <TextBlock Text="{Binding ToothNumber}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       FontSize="10"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="#334155"
+                                                       IsHitTestVisible="False"/>
+                                            <Button Command="{Binding DataContext.SelectToothCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding ToothNumber}"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Padding="0"
+                                                    Cursor="Hand"
+                                                    ToolTip="{Binding ToothNumber, StringFormat='Diş {0}'}">
+                                                <Button.Style>
+                                                    <Style TargetType="Button">
+                                                        <Setter Property="Background" Value="Transparent"/>
+                                                        <Setter Property="BorderBrush" Value="Transparent"/>
+                                                        <Setter Property="BorderThickness" Value="0"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Value="True">
+                                                                <DataTrigger.Binding>
+                                                                    <MultiBinding Converter="{StaticResource ToothNumberEqualityConverter}">
+                                                                        <Binding Path="DataContext.SelectedTeeth" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                                        <Binding Path="ToothNumber"/>
+                                                                    </MultiBinding>
+                                                                </DataTrigger.Binding>
+                                                                <Setter Property="Background" Value="#993B82F6"/>
+                                                                <Setter Property="BorderBrush" Value="#2563EB"/>
+                                                                <Setter Property="BorderThickness" Value="2"/>
+                                                            </DataTrigger>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="Background" Value="#4D3B82F6"/>
+                                                                <Setter Property="BorderBrush" Value="#2563EB"/>
+                                                                <Setter Property="BorderThickness" Value="1"/>
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                        </Grid>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                                 <ItemsControl.ItemContainerStyle>
@@ -134,7 +148,7 @@
                                 </ItemsControl.ItemContainerStyle>
                             </ItemsControl>
                         </Canvas>
-                    </Grid>
+                    </Viewbox>
                 </Border>
 
                 <TextBox Text="{Binding Treatment.Description, UpdateSourceTrigger=PropertyChanged}" 

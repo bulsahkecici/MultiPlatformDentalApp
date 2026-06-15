@@ -34,8 +34,8 @@ class _LoginScreenState extends State<LoginScreen> {
           );
 
       if (success && mounted) {
-        // Navigation is handled by the main wrapper based on auth state
-        // or we can push manually if preferred, but reactive is better.
+        // Yönlendirme, oturum durumuna göre ana sarmalayıcı tarafından yönetilir
+        // (istenirse manuel push da yapılabilir, ancak reaktif yaklaşım tercih edilir).
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Giriş başarısız. Lütfen bilgilerinizi kontrol edin.')),

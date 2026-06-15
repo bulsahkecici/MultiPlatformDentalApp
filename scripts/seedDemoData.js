@@ -16,24 +16,103 @@ const { serializeRolesCsv } = require('../src/utils/roles');
 const TRY = 'TRY';
 
 const FIRST_NAMES = [
-  'Ahmet', 'Mehmet', 'Ali', 'Mustafa', 'Hüseyin', 'Hasan', 'İbrahim', 'İsmail', 'Osman', 'Yusuf',
-  'Emre', 'Burak', 'Can', 'Eren', 'Kerem', 'Onur', 'Serkan', 'Tolga', 'Volkan', 'Barış',
-  'Ayşe', 'Fatma', 'Emine', 'Hatice', 'Zeynep', 'Elif', 'Merve', 'Selin', 'Deniz', 'Ceren',
-  'Esra', 'Gamze', 'Özlem', 'Pınar', 'Seda', 'Tuğba', 'Yeliz', 'Derya', 'Burcu', 'Aslı',
+  'Ahmet',
+  'Mehmet',
+  'Ali',
+  'Mustafa',
+  'Hüseyin',
+  'Hasan',
+  'İbrahim',
+  'İsmail',
+  'Osman',
+  'Yusuf',
+  'Emre',
+  'Burak',
+  'Can',
+  'Eren',
+  'Kerem',
+  'Onur',
+  'Serkan',
+  'Tolga',
+  'Volkan',
+  'Barış',
+  'Ayşe',
+  'Fatma',
+  'Emine',
+  'Hatice',
+  'Zeynep',
+  'Elif',
+  'Merve',
+  'Selin',
+  'Deniz',
+  'Ceren',
+  'Esra',
+  'Gamze',
+  'Özlem',
+  'Pınar',
+  'Seda',
+  'Tuğba',
+  'Yeliz',
+  'Derya',
+  'Burcu',
+  'Aslı',
 ];
 
 const LAST_NAMES = [
-  'Yılmaz', 'Kaya', 'Demir', 'Çelik', 'Şahin', 'Yıldız', 'Yıldırım', 'Öztürk', 'Aydın', 'Özdemir',
-  'Arslan', 'Doğan', 'Kılıç', 'Aslan', 'Çetin', 'Kara', 'Koç', 'Kurt', 'Özkan', 'Şimşek',
-  'Polat', 'Korkmaz', 'Güneş', 'Bozkurt', 'Tekin', 'Erdoğan', 'Aksoy', 'Güler', 'Acar', 'Bulut',
+  'Yılmaz',
+  'Kaya',
+  'Demir',
+  'Çelik',
+  'Şahin',
+  'Yıldız',
+  'Yıldırım',
+  'Öztürk',
+  'Aydın',
+  'Özdemir',
+  'Arslan',
+  'Doğan',
+  'Kılıç',
+  'Aslan',
+  'Çetin',
+  'Kara',
+  'Koç',
+  'Kurt',
+  'Özkan',
+  'Şimşek',
+  'Polat',
+  'Korkmaz',
+  'Güneş',
+  'Bozkurt',
+  'Tekin',
+  'Erdoğan',
+  'Aksoy',
+  'Güler',
+  'Acar',
+  'Bulut',
 ];
 
 const TREATMENT_TYPES = [
-  'Dolgu', 'Kanal Tedavisi', 'Diş Çekimi', 'Temizlik', 'İmplant', 'Kuron', 'Köprü',
-  'Ortodonti', 'Diş Beyazlatma', 'Apse Tedavisi', 'Gingivektomi', 'Kemik Grefti',
+  'Dolgu',
+  'Kanal Tedavisi',
+  'Diş Çekimi',
+  'Temizlik',
+  'İmplant',
+  'Kuron',
+  'Köprü',
+  'Ortodonti',
+  'Diş Beyazlatma',
+  'Apse Tedavisi',
+  'Gingivektomi',
+  'Kemik Grefti',
 ];
 
-const SPECIALIZATIONS = ['Genel', 'İmplantoloji', 'Ortodonti', 'Periodontoloji', 'Endodonti'];
+const SPECIALIZATIONS = [
+  'Genel',
+  'İmplantoloji',
+  'Ortodonti',
+  'Periodontoloji',
+  'Endodonti',
+];
 
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -66,17 +145,45 @@ async function run() {
     const rolesCsv = serializeRolesCsv(['dentist']);
 
     const newDoctors = [
-      { email: 'dr.genel@demo.com', firstName: 'Selim', lastName: 'Genel', spec: 'Genel' },
-      { email: 'dr.implant@demo.com', firstName: 'Cem', lastName: 'Implant', spec: 'İmplantoloji' },
-      { email: 'dr.ortodonti@demo.com', firstName: 'Ece', lastName: 'Ortodonti', spec: 'Ortodonti' },
-      { email: 'dr.periodont@demo.com', firstName: 'Berk', lastName: 'Periodont', spec: 'Periodontoloji' },
-      { email: 'dr.endodont@demo.com', firstName: 'Selin', lastName: 'Endodont', spec: 'Endodonti' },
+      {
+        email: 'dr.genel@demo.com',
+        firstName: 'Selim',
+        lastName: 'Genel',
+        spec: 'Genel',
+      },
+      {
+        email: 'dr.implant@demo.com',
+        firstName: 'Cem',
+        lastName: 'Implant',
+        spec: 'İmplantoloji',
+      },
+      {
+        email: 'dr.ortodonti@demo.com',
+        firstName: 'Ece',
+        lastName: 'Ortodonti',
+        spec: 'Ortodonti',
+      },
+      {
+        email: 'dr.periodont@demo.com',
+        firstName: 'Berk',
+        lastName: 'Periodont',
+        spec: 'Periodontoloji',
+      },
+      {
+        email: 'dr.endodont@demo.com',
+        firstName: 'Selin',
+        lastName: 'Endodont',
+        spec: 'Endodonti',
+      },
     ];
 
     const dentistIds = [];
 
     for (const d of newDoctors) {
-      const existing = await client.query('SELECT id FROM users WHERE email = $1', [d.email]);
+      const existing = await client.query(
+        'SELECT id FROM users WHERE email = $1',
+        [d.email],
+      );
       if (existing.rows.length > 0) {
         dentistIds.push(existing.rows[0].id);
         continue;
@@ -92,7 +199,9 @@ async function run() {
     const existingDentists = await client.query(
       "SELECT id FROM users WHERE roles LIKE '%dentist%' AND deleted_at IS NULL",
     );
-    const allDentistIds = [...new Set(existingDentists.rows.map((r) => r.id).concat(dentistIds))];
+    const allDentistIds = [
+      ...new Set(existingDentists.rows.map((r) => r.id).concat(dentistIds)),
+    ];
     if (allDentistIds.length === 0) {
       throw new Error('En az bir doktor olmalı');
     }
@@ -148,7 +257,9 @@ async function run() {
       }
 
       const status = isCompleted ? 'completed' : 'active';
-      const actualCompletionDate = isCompleted ? randomDate(startDate, now) : null;
+      const actualCompletionDate = isCompleted
+        ? randomDate(startDate, now)
+        : null;
 
       const planResult = await client.query(
         `INSERT INTO treatment_plans (patient_id, dentist_id, title, description, status, total_estimated_cost, currency, start_date, actual_completion_date, created_at, updated_at)
@@ -169,9 +280,24 @@ async function run() {
       );
       const planId = planResult.rows[0].id;
 
-      const toothNumbers = ['11', '12', '21', '22', '16', '26', '31', '32', '36', '46'];
+      const toothNumbers = [
+        '11',
+        '12',
+        '21',
+        '22',
+        '16',
+        '26',
+        '31',
+        '32',
+        '36',
+        '46',
+      ];
       for (let k = 0; k < numItems; k++) {
-        const itemStatus = isCompleted ? 'completed' : (k < numItems - 1 ? 'completed' : 'in_progress');
+        const itemStatus = isCompleted
+          ? 'completed'
+          : k < numItems - 1
+            ? 'completed'
+            : 'in_progress';
         await client.query(
           `INSERT INTO treatment_plan_items (treatment_plan_id, tooth_number, treatment_type, cost, currency, status, created_at, updated_at)
            VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())`,
@@ -190,7 +316,10 @@ async function run() {
         ? 0.9 + Math.random() * 0.1
         : Math.random() * 0.8;
       const paidAmount = Math.round(totalCost * paidRatio * 100) / 100;
-      const remainingDebt = Math.max(0, Math.round((totalCost - paidAmount) * 100) / 100);
+      const remainingDebt = Math.max(
+        0,
+        Math.round((totalCost - paidAmount) * 100) / 100,
+      );
 
       await client.query(
         `INSERT INTO patient_debts (patient_id, total_debt, paid_amount, remaining_debt, updated_at)
@@ -260,7 +389,10 @@ async function run() {
         ],
       );
     }
-    logger.info({ count: appointmentPatientIndices.size }, 'Randevular oluşturuldu');
+    logger.info(
+      { count: appointmentPatientIndices.size },
+      'Randevular oluşturuldu',
+    );
 
     logger.info('Demo veri seed tamamlandı.');
   } catch (err) {

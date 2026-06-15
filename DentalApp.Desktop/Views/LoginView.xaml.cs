@@ -37,7 +37,7 @@ namespace DentalApp.Desktop.Views
 
             if (_isPasswordVisible)
             {
-                // Show password
+                // Şifreyi göster
                 PasswordTextBox.Text = PasswordBox.Password;
                 PasswordTextBox.Visibility = Visibility.Visible;
                 PasswordBox.Visibility = Visibility.Collapsed;
@@ -45,7 +45,7 @@ namespace DentalApp.Desktop.Views
             }
             else
             {
-                // Hide password
+                // Şifreyi gizle
                 PasswordBox.Password = PasswordTextBox.Text;
                 PasswordBox.Visibility = Visibility.Visible;
                 PasswordTextBox.Visibility = Visibility.Collapsed;

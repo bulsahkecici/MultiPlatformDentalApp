@@ -22,11 +22,17 @@ import { AuthService } from '../../../core/services/auth.service';
     MatProgressSpinnerModule
   ],
   template: `
-    <div class="login-container">
+    <div class="login-page">
+      <div class="bg-shape shape-a"></div>
+      <div class="bg-shape shape-b"></div>
+
       <mat-card class="login-card">
-        <mat-card-header>
-          <mat-card-title>BULKA DENTAL - Giriş</mat-card-title>
-        </mat-card-header>
+        <div class="hero">
+          <span class="hero-chip">BULKA DENTAL</span>
+          <h1>Klinik Yönetim Paneli</h1>
+          <p>Randevu, hasta, tedavi ve finans süreçlerini tek panelden yönetin.</p>
+        </div>
+
         <mat-card-content>
           <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
             <mat-form-field appearance="outline" class="full-width">
@@ -52,7 +58,7 @@ import { AuthService } from '../../../core/services/auth.service';
               {{ errorMessage }}
             </div>
 
-            <button mat-raised-button color="primary" type="submit" class="full-width" [disabled]="isLoading || !loginForm.valid">
+            <button mat-raised-button color="primary" type="submit" class="full-width login-btn" [disabled]="isLoading || !loginForm.valid">
               <mat-spinner *ngIf="isLoading" diameter="20" class="inline-spinner"></mat-spinner>
               <span *ngIf="!isLoading">Giriş Yap</span>
             </button>
@@ -62,35 +68,115 @@ import { AuthService } from '../../../core/services/auth.service';
     </div>
   `,
   styles: [`
-    .login-container {
+    .login-page {
+      position: relative;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      background: linear-gradient(135deg, #E6F2FF 0%, #FFFFFF 50%, #E6F2FF 100%);
+      min-height: 100vh;
+      overflow: hidden;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 8% 20%, rgba(58, 123, 213, 0.18), transparent 45%),
+        radial-gradient(circle at 90% 80%, rgba(22, 186, 153, 0.16), transparent 40%),
+        linear-gradient(180deg, #f7faff 0%, #f1f6ff 100%);
     }
+
+    .bg-shape {
+      position: absolute;
+      border-radius: 999px;
+      filter: blur(2px);
+      z-index: 0;
+    }
+
+    .shape-a {
+      width: 360px;
+      height: 360px;
+      right: -90px;
+      top: -120px;
+      background: linear-gradient(145deg, rgba(46, 122, 255, 0.38), rgba(124, 181, 255, 0.18));
+    }
+
+    .shape-b {
+      width: 260px;
+      height: 260px;
+      left: -60px;
+      bottom: -110px;
+      background: linear-gradient(145deg, rgba(25, 163, 132, 0.3), rgba(140, 229, 205, 0.16));
+    }
+
     .login-card {
+      position: relative;
+      z-index: 1;
       width: 100%;
-      max-width: 400px;
-      padding: 20px;
+      max-width: 460px;
+      padding: 12px;
+      border-radius: 22px;
     }
+
+    .hero {
+      border-radius: 14px;
+      padding: 18px;
+      margin: 8px 8px 4px;
+      color: #f4f8ff;
+      background: linear-gradient(132deg, #123363, #1f4f95);
+      box-shadow: 0 14px 28px rgba(16, 34, 69, 0.25);
+    }
+
+    .hero-chip {
+      display: inline-block;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      letter-spacing: 0.4px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.18);
+      margin-bottom: 8px;
+    }
+
+    .hero h1 {
+      margin: 0 0 6px;
+      font-size: 1.45rem;
+      line-height: 1.15;
+      font-weight: 700;
+    }
+
+    .hero p {
+      margin: 0;
+      font-size: 0.9rem;
+      opacity: 0.95;
+    }
+
     .full-width {
       width: 100%;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
+
     .error-message {
-      color: #f44336;
-      margin-bottom: 16px;
-      font-size: 14px;
+      color: #c62828;
+      margin-bottom: 12px;
+      font-size: 13px;
+      font-weight: 600;
     }
+
+    .login-btn {
+      height: 44px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
     .inline-spinner {
       display: inline-block;
       margin-right: 8px;
     }
-    mat-card-title {
-      text-align: center;
-      color: #1E3A8A;
-      font-weight: bold;
+
+    @media (max-width: 600px) {
+      .login-page {
+        padding: 12px;
+      }
+      .hero h1 {
+        font-size: 1.22rem;
+      }
     }
   `]
 })

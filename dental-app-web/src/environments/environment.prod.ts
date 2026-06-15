@@ -1,5 +1,5 @@
 export const environment = {
     production: true,
-    apiUrl: 'https://your-production-api.com',
-    socketUrl: 'https://your-production-api.com'
+    apiUrl: 'https://api.bulkadental.com',
+    socketUrl: 'https://api.bulkadental.com'
 };

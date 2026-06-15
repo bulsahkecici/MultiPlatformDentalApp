@@ -267,7 +267,7 @@ namespace DentalApp.Desktop.Models
         public decimal? Cost { get; set; }
         
         [JsonProperty("currency")]
-        public string Currency { get; set; } = "USD";
+        public string Currency { get; set; } = "TRY";
         
         [JsonProperty("status")]
         public string Status { get; set; } = "completed";

@@ -14,20 +14,22 @@ async function checkTables() {
       WHERE t.table_schema = 'public'
       ORDER BY t.table_name;
     `);
-    
+
     console.log('Tables found:');
-    result.rows.forEach(row => {
+    result.rows.forEach((row) => {
       console.log(`  - ${row.table_name} (owner: ${row.owner})`);
     });
-    
+
     // Check if users table has any data
     const userCount = await pool.query('SELECT COUNT(*) as count FROM users');
     console.log(`\nUsers table has ${userCount.rows[0].count} users`);
-    
+
     if (userCount.rows[0].count > 0) {
-      const users = await pool.query('SELECT id, email, roles FROM users LIMIT 5');
+      const users = await pool.query(
+        'SELECT id, email, roles FROM users LIMIT 5',
+      );
       console.log('\nSample users:');
-      users.rows.forEach(user => {
+      users.rows.forEach((user) => {
         console.log(`  - ${user.email} (roles: ${user.roles})`);
       });
     }

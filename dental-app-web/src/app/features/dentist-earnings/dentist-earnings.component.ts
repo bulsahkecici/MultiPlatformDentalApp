@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { formatLocalDate } from '../../core/utils/date.util';
 
 @Component({
   selector: 'app-dentist-earnings',
@@ -109,8 +110,8 @@ export class DentistEarningsComponent implements OnInit {
   ngOnInit(): void {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    this.startDate = firstDay.toISOString().split('T')[0];
-    this.endDate = now.toISOString().split('T')[0];
+    this.startDate = formatLocalDate(firstDay);
+    this.endDate = formatLocalDate(now);
     this.loadEarnings();
   }
 

@@ -12,6 +12,7 @@ import { AppointmentService } from '../../core/services/appointment.service';
 import { DashboardService, DashboardStats } from '../../core/services/dashboard.service';
 import { User, Appointment } from '../../core/models/models';
 import { DataMapper } from '../../core/utils/data-mapper';
+import { formatLocalDate } from '../../core/utils/date.util';
 
 @Component({
   selector: 'app-dashboard',
@@ -28,21 +29,20 @@ import { DataMapper } from '../../core/utils/data-mapper';
   template: `
     <div class="dashboard-container">
       <div class="clock-bar" *ngIf="isSecretary || isDentist">
+        <mat-icon>schedule</mat-icon>
         <span>{{ now | date:'dd.MM.yyyy HH:mm:ss' }}</span>
       </div>
 
       <div *ngIf="isAdmin" class="admin-dashboard">
         <h1>Admin Kontrol Paneli</h1>
-        <mat-grid-list cols="4" rowHeight="150px" gutterSize="16px">
-          <mat-grid-tile *ngFor="let c of adminCards">
-            <mat-card class="stat-card">
-              <mat-card-content>
-                <div class="stat-value">{{ c.value }}</div>
-                <div class="stat-label">{{ c.label }}</div>
-              </mat-card-content>
-            </mat-card>
-          </mat-grid-tile>
-        </mat-grid-list>
+        <div class="stats-grid">
+          <mat-card class="stat-card" *ngFor="let c of adminCards">
+            <mat-card-content>
+              <div class="stat-value">{{ c.value }}</div>
+              <div class="stat-label">{{ c.label }}</div>
+            </mat-card-content>
+          </mat-card>
+        </div>
       </div>
 
       <div *ngIf="isDentist || isSecretary" class="ops-dashboard">
@@ -89,16 +89,36 @@ import { DataMapper } from '../../core/utils/data-mapper';
   `,
   styles: [`
     .dashboard-container { padding: 20px; }
-    .clock-bar { margin-bottom: 12px; color: #1e3a8a; font-weight: 600; }
-    h1 { color: #1E3A8A; margin-bottom: 20px; }
+    .clock-bar {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      color: #1e3a8a;
+      background: #e7f0ff;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+    h1 { color: #15366a; margin-bottom: 16px; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+    }
     .summary-row { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px; }
-    .stat-card { height: 100%; text-align: center; }
-    .stat-value { font-size: 30px; font-weight: bold; color: #3B82F6; }
-    .stat-label { font-size: 14px; color: #666; margin-top: 8px; }
+    .summary-row mat-card { background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%); }
+    .stat-card { text-align: left; border-left: 4px solid #1976d2; }
+    .stat-value { font-size: 1.8rem; font-weight: 800; color: #1253a2; }
+    .stat-label { font-size: 0.9rem; color: #576380; margin-top: 8px; }
     .appointments-card { margin-top: 12px; }
-    .appointment-item { cursor: pointer; }
-    .appointment-item:hover { background-color: #f5f5f5; }
+    .appointment-item { cursor: pointer; border-radius: 10px; margin-bottom: 4px; }
+    .appointment-item:hover { background-color: #eff5ff; }
     .loading { display: flex; justify-content: center; align-items: center; height: 200px; }
+    @media (max-width: 768px) {
+      .summary-row { grid-template-columns: 1fr; }
+    }
   `]
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -166,10 +186,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     const today = new Date();
-    const start = today.toISOString().split('T')[0];
+    const start = formatLocalDate(today);
     const endDate = new Date(today);
     endDate.setDate(endDate.getDate() + (this.isSecretary ? 1 : 7));
-    const end = endDate.toISOString().split('T')[0];
+    const end = formatLocalDate(endDate);
 
     this.appointmentService.getAppointments(1, 100, undefined, undefined, start, end).subscribe({
       next: (response) => {
@@ -180,7 +200,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           return aDate - bDate;
         });
 
-        const todayStr = today.toISOString().split('T')[0];
+        const todayStr = formatLocalDate(today);
         this.todayCount = this.upcomingAppointments.filter(a => (a.appointmentDate || a.appointment_date || '').split('T')[0] === todayStr).length;
         this.isLoading = false;
       },

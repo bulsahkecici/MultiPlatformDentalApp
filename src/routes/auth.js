@@ -1,18 +1,18 @@
 const express = require('express');
 const {
-    login,
-    refreshToken,
-    logout,
-    getMe,
-    requestPasswordReset,
-    resetPassword,
-    verifyEmail,
-    resendVerification,
+  login,
+  refreshToken,
+  logout,
+  getMe,
+  requestPasswordReset,
+  resetPassword,
+  verifyEmail,
+  resendVerification,
 } = require('../controllers/authController');
 const {
-    authLimiter,
-    passwordResetLimiter,
-    emailVerificationLimiter,
+  authLimiter,
+  passwordResetLimiter,
+  emailVerificationLimiter,
 } = require('../middlewares/rateLimit');
 const { requireAuth } = require('../middlewares/auth');
 
@@ -25,11 +25,23 @@ router.post('/api/auth/logout', requireAuth, logout);
 router.get('/api/auth/me', requireAuth, getMe);
 
 // Password reset
-router.post('/api/auth/request-reset', passwordResetLimiter, requestPasswordReset);
+router.post(
+  '/api/auth/request-reset',
+  passwordResetLimiter,
+  requestPasswordReset,
+);
 router.post('/api/auth/reset-password', passwordResetLimiter, resetPassword);
 
 // Email verification
-router.get('/api/auth/verify-email/:token', emailVerificationLimiter, verifyEmail);
-router.post('/api/auth/resend-verification', emailVerificationLimiter, resendVerification);
+router.get(
+  '/api/auth/verify-email/:token',
+  emailVerificationLimiter,
+  verifyEmail,
+);
+router.post(
+  '/api/auth/resend-verification',
+  emailVerificationLimiter,
+  resendVerification,
+);
 
 module.exports = router;

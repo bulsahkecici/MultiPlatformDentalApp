@@ -34,8 +34,12 @@ async function login(e) {
 
 async function getAdminStatus() {
   try {
-    const data = await fetchJson('/admin/status');
-    document.getElementById('status').textContent = JSON.stringify(data, null, 2);
+    const data = await fetchJson('/api/admin/status');
+    document.getElementById('status').textContent = JSON.stringify(
+      data,
+      null,
+      2,
+    );
   } catch (err) {
     document.getElementById('status').textContent = err.message;
   }

@@ -38,7 +38,7 @@ import { AuthService } from '../../core/services/auth.service';
     <div class="patients-container">
       <div class="patients-header">
         <h1>Hasta Yönetimi</h1>
-        <button mat-raised-button color="primary" (click)="openPatientForm()">
+        <button mat-raised-button color="primary" (click)="openPatientForm()" *ngIf="canEditPatients">
           <mat-icon>add</mat-icon>
           Yeni Hasta
         </button>
@@ -210,7 +210,7 @@ export class PatientsComponent implements OnInit {
     this.isLoading = true;
     this.patientService.getPatients(1, 100, this.searchTerm).subscribe({
       next: (response) => {
-        // Map backend data to frontend format
+        // Backend verisini ön yüz formatına dönüştür
         this.patients = (response.patients || []).map((p: any) => DataMapper.mapPatient(p));
         this.isLoading = false;
       },
@@ -233,14 +233,14 @@ export class PatientsComponent implements OnInit {
   loadPatientDetails(): void {
     if (!this.selectedPatient) return;
 
-    // Load appointments
+    // Randevuları yükle
     this.appointmentService.getAppointments(1, 100, this.selectedPatient.id).subscribe({
       next: (response) => {
         this.patientAppointments = (response.appointments || []).map((a: any) => DataMapper.mapAppointment(a));
       }
     });
 
-    // Load treatments
+    // Tedavileri yükle
     this.treatmentService.getTreatments(1, 100, this.selectedPatient.id).subscribe({
       next: (response) => {
         this.patientTreatments = (response.treatments || []).map((t: any) => DataMapper.mapTreatment(t));
@@ -277,7 +277,7 @@ export class PatientsComponent implements OnInit {
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         this.loadPatients();
-        // Reload selected patient details
+        // Seçili hasta detaylarını yeniden yükle
         if (this.selectedPatient) {
           this.selectPatient(this.selectedPatient);
         }

@@ -1,0 +1,69 @@
+<Window x:Class="DentalApp.Desktop.Views.EditInstitutionAgreementDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Anlaşmayı Düzenle"
+        Height="520"
+        Width="480"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Kurum Anlaşması"
+                   Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                   Foreground="{StaticResource BulkaDarkBlue}"
+                   Margin="0,0,0,16"/>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBox x:Name="NameTextBox"
+                         materialDesign:HintAssist.Hint="Kurum Adı *"
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,16"/>
+
+                <TextBlock Text="Kategori Bazlı İndirimler (%)"
+                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                           Foreground="{StaticResource BulkaDarkBlue}"
+                           Margin="0,0,0,8"/>
+
+                <ItemsControl x:Name="CategoryDiscountsList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="120"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding CategoryName}"
+                                           VerticalAlignment="Center"/>
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding DiscountPercentage, UpdateSourceTrigger=PropertyChanged, StringFormat='{}{0:F1}'}"
+                                         materialDesign:HintAssist.Hint="%"
+                                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="İPTAL"
+                    Click="CancelButton_Click"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Margin="0,0,10,0"
+                    Width="100"/>
+            <Button Content="KAYDET"
+                    Click="SaveButton_Click"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    Background="{StaticResource BulkaMediumBlue}"
+                    Foreground="White"
+                    Width="100"/>
+        </StackPanel>
+    </Grid>
+</Window>

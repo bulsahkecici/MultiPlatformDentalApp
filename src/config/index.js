@@ -1,7 +1,7 @@
 const dotenv = require('dotenv');
 const path = require('path');
 
-// Load environment variables if .env exists (repo only ships .env.example)
+// .env varsa ortam değişkenlerini yükle (repoda yalnızca .env.example bulunur)
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 function parseBoolean(value, defaultValue = false) {
@@ -24,17 +24,18 @@ const config = {
   port: Number(process.env.PORT) || 3000,
   appUrl: process.env.APP_URL || 'http://localhost:3000',
   cors: {
-    origins: parseList(process.env.CORS_ORIGINS).length > 0 
-      ? parseList(process.env.CORS_ORIGINS)
-      : ['http://localhost:4200', 'http://localhost:3000'], // Default for development
+    origins:
+      parseList(process.env.CORS_ORIGINS).length > 0
+        ? parseList(process.env.CORS_ORIGINS)
+        : ['http://localhost:4200', 'http://localhost:3000'], // Geliştirme için varsayılan
   },
   security: {
     jwtSecret: process.env.JWT_SECRET || 'dev-secret',
     enableDemoAuth: parseBoolean(process.env.ENABLE_DEMO_AUTH, false),
-    // Account lockout settings
+    // Hesap kilitleme ayarları
     maxFailedAttempts: Number(process.env.MAX_FAILED_ATTEMPTS) || 5,
     lockoutDurationMinutes: Number(process.env.LOCKOUT_DURATION_MINUTES) || 15,
-    // Password policy
+    // Parola politikası
     passwordMinLength: Number(process.env.PASSWORD_MIN_LENGTH) || 8,
     requirePasswordComplexity: parseBoolean(
       process.env.REQUIRE_PASSWORD_COMPLEXITY,

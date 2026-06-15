@@ -10,7 +10,7 @@ namespace DentalApp.Desktop
     {
         protected override void OnStartup(StartupEventArgs e)
         {
-            // Set Turkish culture for DatePicker and other UI elements
+            // DatePicker ve diğer arayüz öğeleri için Türkçe kültürü ayarla
             var turkishCulture = new CultureInfo("tr-TR");
             Thread.CurrentThread.CurrentCulture = turkishCulture;
             Thread.CurrentThread.CurrentUICulture = turkishCulture;
@@ -48,7 +48,7 @@ namespace DentalApp.Desktop
                 args.Handled = true; // Uygulamanın kapanmasını önle
             };
             
-            // TaskScheduler exception handler for async operations
+            // Asenkron işlemler için TaskScheduler istisna yöneticisi
             TaskScheduler.UnobservedTaskException += (s, args) =>
             {
                 try

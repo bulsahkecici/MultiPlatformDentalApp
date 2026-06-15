@@ -5,11 +5,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormsModule } from '@angular/forms';
 import { UserService } from '../../core/services/user.service';
 
@@ -23,12 +25,14 @@ import { UserService } from '../../core/services/user.service';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
+    MatIconModule,
     MatRadioModule,
     MatSelectModule,
     FormsModule,
     MatSnackBarModule,
     MatTableModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    MatTooltipModule
   ],
   template: `
     <div class="admin-container">
@@ -154,6 +158,37 @@ import { UserService } from '../../core/services/user.service';
                 <th mat-header-cell *matHeaderCellDef>Telefon</th>
                 <td mat-cell *matCellDef="let u">{{ u.phone || '-' }}</td>
               </ng-container>
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>Islemler</th>
+                <td mat-cell *matCellDef="let u" class="actions-cell">
+                  <ng-container *ngIf="editingRoleUserId !== u.id; else roleEditRow">
+                    <button mat-icon-button color="primary" (click)="startRoleEdit(u)" matTooltip="Rolu duzenle">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="deleteUser(u)" matTooltip="Kullaniciyi sil">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </ng-container>
+                  <ng-template #roleEditRow>
+                    <div class="role-edit-inline">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Rol</mat-label>
+                        <mat-select [(ngModel)]="editingRoleValue">
+                          <mat-option value="dentist">Dis Hekimi</mat-option>
+                          <mat-option value="secretary">Sekreter</mat-option>
+                          <mat-option value="admin">Patron</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                      <button mat-icon-button color="primary" (click)="saveRoleEdit(u)">
+                        <mat-icon>check</mat-icon>
+                      </button>
+                      <button mat-icon-button (click)="cancelRoleEdit()">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </div>
+                  </ng-template>
+                </td>
+              </ng-container>
               <tr mat-header-row *matHeaderRowDef="userColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: userColumns"></tr>
             </table>
@@ -173,15 +208,26 @@ import { UserService } from '../../core/services/user.service';
     .row-actions { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
     .search-field { flex: 1; }
     .users-table { width: 100%; margin-top: 12px; }
+    .actions-cell { min-width: 240px; }
+    .role-edit-inline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .role-edit-inline .mat-mdc-form-field {
+      width: 150px;
+    }
   `]
 })
 export class AdminManagementComponent implements OnInit {
   selectedUserType = '';
   userForm: FormGroup;
   users: any[] = [];
-  userColumns: string[] = ['name', 'email', 'roles', 'phone'];
+  userColumns: string[] = ['name', 'email', 'roles', 'phone', 'actions'];
   search = '';
   selectedSpecializations = new Set<string>();
+  editingRoleUserId: number | null = null;
+  editingRoleValue: 'dentist' | 'secretary' | 'admin' = 'dentist';
 
   specializationOptions = [
     'Dis Tabibi',
@@ -272,6 +318,47 @@ export class AdminManagementComponent implements OnInit {
     const last = user.lastName || user.last_name || '';
     const full = `${first} ${last}`.trim();
     return full || '-';
+  }
+
+  startRoleEdit(user: any): void {
+    this.editingRoleUserId = user.id;
+    const role = Array.isArray(user.roles) && user.roles.length > 0 ? user.roles[0] : 'dentist';
+    this.editingRoleValue = (role === 'admin' || role === 'secretary' || role === 'dentist') ? role : 'dentist';
+  }
+
+  cancelRoleEdit(): void {
+    this.editingRoleUserId = null;
+  }
+
+  saveRoleEdit(user: any): void {
+    if (this.editingRoleUserId !== user.id) return;
+    this.userService.updateUserRoles(user.id, [this.editingRoleValue]).subscribe({
+      next: () => {
+        this.snackBar.open('Kullanici rolu guncellendi', 'Kapat', { duration: 2500 });
+        this.cancelRoleEdit();
+        this.loadUsers();
+      },
+      error: (error) => {
+        const errorMsg = error.error?.message || 'Rol guncellenirken hata olustu';
+        this.snackBar.open(errorMsg, 'Kapat', { duration: 4000 });
+      }
+    });
+  }
+
+  deleteUser(user: any): void {
+    if (!confirm(`${user.email} kullanicisini silmek istiyor musunuz?`)) return;
+
+    this.userService.deleteUser(user.id).subscribe({
+      next: () => {
+        this.snackBar.open('Kullanici silindi', 'Kapat', { duration: 2500 });
+        this.cancelRoleEdit();
+        this.loadUsers();
+      },
+      error: (error) => {
+        const errorMsg = error.error?.message || 'Kullanici silinirken hata olustu';
+        this.snackBar.open(errorMsg, 'Kapat', { duration: 4000 });
+      }
+    });
   }
 
   onSubmit(): void {

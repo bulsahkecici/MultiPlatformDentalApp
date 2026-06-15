@@ -28,6 +28,10 @@ export class UserService {
     return this.apiService.put<{ user: User }>(`/api/users/${id}`, user);
   }
 
+  updateUserRoles(id: number, roles: string[]): Observable<{ user: User }> {
+    return this.apiService.put<{ user: User }>(`/api/users/${id}/roles`, { roles });
+  }
+
   deleteUser(id: number): Observable<void> {
     return this.apiService.delete<void>(`/api/users/${id}`);
   }

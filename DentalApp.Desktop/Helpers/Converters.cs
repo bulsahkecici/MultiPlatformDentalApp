@@ -62,17 +62,17 @@ namespace DentalApp.Desktop.Helpers
     {
         private static readonly Dictionary<string, string> StatusTranslations = new()
         {
-            // Appointment statuses
+            // Randevu durumları
             { "scheduled", "Planlandı" },
             { "confirmed", "Onaylandı" },
             { "completed", "Tamamlandı" },
             { "cancelled", "İptal Edildi" },
             { "no_show", "Gelmedi" },
             
-            // Treatment statuses
+            // Tedavi durumları
             { "planned", "Planlandı" },
             { "in_progress", "Devam Ediyor" }
-            // "completed" and "cancelled" already added above
+            // "completed" ve "cancelled" yukarıda zaten eklendi
         };
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -112,13 +112,13 @@ namespace DentalApp.Desktop.Helpers
             if (values == null || values.Length < 2)
                 return false;
 
-            // Support both single tooth (string) and multiple teeth (collection)
+            // Hem tek diş (string) hem de çoklu diş (koleksiyon) desteği
             var selectedTeeth = values[0];
             var currentTooth = values[1]?.ToString();
 
             if (currentTooth == null) return false;
 
-            // If it's a collection (ObservableCollection<int>)
+            // Eğer bir koleksiyonsa (ObservableCollection<int>)
             if (selectedTeeth is System.Collections.ICollection teethCollection)
             {
                 foreach (var tooth in teethCollection)
@@ -129,12 +129,12 @@ namespace DentalApp.Desktop.Helpers
                 return false;
             }
 
-            // If it's a string (single tooth or comma-separated)
+            // Eğer bir string ise (tek diş veya virgülle ayrılmış)
             var selectedToothStr = selectedTeeth?.ToString();
             if (string.IsNullOrWhiteSpace(selectedToothStr))
                 return false;
 
-            // Check if current tooth is in the comma-separated list
+            // Geçerli dişin virgülle ayrılmış listede olup olmadığını kontrol et
             var teethList = selectedToothStr.Split(',').Select(t => t.Trim());
             return teethList.Contains(currentTooth);
         }

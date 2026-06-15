@@ -20,13 +20,13 @@ namespace DentalApp.Desktop.Views
                     var viewModel = DataContext as ViewModels.TreatmentsViewModel;
                     if (viewModel != null)
                     {
-                        // Set selected treatment from the clicked row
+                        // Tıklanan satırdan seçili tedaviyi ayarla
                         if (element.DataContext is Models.Treatment treatment)
                         {
                             viewModel.SelectedTreatment = treatment;
                         }
                         
-                        // Execute edit command if it can execute
+                        // Çalıştırılabiliyorsa düzenleme komutunu çalıştır
                         if (viewModel.EditTreatmentCommand.CanExecute(null))
                         {
                             viewModel.EditTreatmentCommand.Execute(null);

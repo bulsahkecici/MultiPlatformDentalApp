@@ -87,19 +87,19 @@ namespace DentalApp.Desktop.Services
         {
             try
             {
-                // Get current agreement
+                // Mevcut anlaşmayı al
                 var agreements = await GetInstitutionAgreementsAsync();
                 var agreement = agreements.Find(a => a.Id == agreementId);
                 
                 if (agreement == null)
                     throw new Exception("Agreement not found");
 
-                // Remove category discount
+                // Kategori indirimini kaldır
                 if (agreement.CategoryDiscounts != null && agreement.CategoryDiscounts.ContainsKey(categoryName))
                 {
                     agreement.CategoryDiscounts.Remove(categoryName);
                     
-                    // Update agreement
+                    // Anlaşmayı güncelle
                     await UpdateInstitutionAgreementAsync(agreementId, agreement);
                 }
             }

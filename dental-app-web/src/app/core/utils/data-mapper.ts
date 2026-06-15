@@ -26,7 +26,8 @@ export class DataMapper {
       insuranceProvider: patient.insurance_provider || patient.insuranceProvider,
       insurancePolicyNumber: patient.insurance_policy_number || patient.insurancePolicyNumber,
       notes: patient.notes,
-      createdAt: patient.created_at || patient.createdAt
+      createdAt: patient.created_at || patient.createdAt,
+      institutionAgreementId: patient.institution_agreement_id || patient.institutionAgreementId
     };
   }
 
@@ -89,7 +90,8 @@ export class DataMapper {
       emergency_contact_phone: patient.emergencyContactPhone || patient.emergency_contact_phone,
       insurance_provider: patient.insuranceProvider || patient.insurance_provider,
       insurance_policy_number: patient.insurancePolicyNumber || patient.insurance_policy_number,
-      notes: patient.notes
+      notes: patient.notes,
+      institutionAgreementId: patient.institutionAgreementId || patient.institution_agreement_id
     };
   }
 
