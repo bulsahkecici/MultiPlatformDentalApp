@@ -1,0 +1,14 @@
+/* Test (spec) derlemesi için TypeScript yapılandırması. */
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "outDir": "./dist/out-tsc/spec",
+        "types": [
+            "jasmine"
+        ]
+    },
+    "include": [
+        "src/**/*.spec.ts",
+        "src/**/*.d.ts"
+    ]
+}

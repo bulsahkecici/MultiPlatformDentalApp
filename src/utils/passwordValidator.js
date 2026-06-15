@@ -1,12 +1,12 @@
 const validator = require('validator');
 
 /**
- * Password strength requirements:
- * - Minimum 8 characters
- * - At least one uppercase letter
- * - At least one lowercase letter
- * - At least one number
- * - At least one special character
+ * Parola güçlülük gereksinimleri:
+ * - En az 8 karakter
+ * - En az bir büyük harf
+ * - En az bir küçük harf
+ * - En az bir rakam
+ * - En az bir özel karakter
  */
 
 const PASSWORD_MIN_LENGTH = 8;
@@ -18,7 +18,7 @@ const PASSWORD_REQUIREMENTS = {
   minSymbols: 1,
 };
 
-// Common weak passwords to reject
+// Reddedilecek yaygın zayıf parolalar
 const COMMON_PASSWORDS = new Set([
   'password',
   'password123',
@@ -33,8 +33,8 @@ const COMMON_PASSWORDS = new Set([
 ]);
 
 /**
- * Validate password strength
- * @param {string} password - Password to validate
+ * Parola güçlülüğünü doğrular
+ * @param {string} password - Doğrulanacak parola
  * @returns {Object} { valid: boolean, errors: string[] }
  */
 function validatePasswordStrength(password) {
@@ -44,37 +44,37 @@ function validatePasswordStrength(password) {
     return { valid: false, errors: ['Password is required'] };
   }
 
-  // Check minimum length
+  // Minimum uzunluğu kontrol et
   if (password.length < PASSWORD_MIN_LENGTH) {
     errors.push(`Password must be at least ${PASSWORD_MIN_LENGTH} characters`);
   }
 
-  // Check for uppercase
+  // Büyük harf kontrolü
   if (!/[A-Z]/.test(password)) {
     errors.push('Password must contain at least one uppercase letter');
   }
 
-  // Check for lowercase
+  // Küçük harf kontrolü
   if (!/[a-z]/.test(password)) {
     errors.push('Password must contain at least one lowercase letter');
   }
 
-  // Check for number
+  // Rakam kontrolü
   if (!/\d/.test(password)) {
     errors.push('Password must contain at least one number');
   }
 
-  // Check for special character
+  // Özel karakter kontrolü
   if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
     errors.push('Password must contain at least one special character');
   }
 
-  // Check against common passwords
+  // Yaygın parolalara karşı kontrol et
   if (COMMON_PASSWORDS.has(password.toLowerCase())) {
     errors.push('Password is too common, please choose a stronger password');
   }
 
-  // Use validator library for additional checks
+  // Ek kontroller için validator kütüphanesini kullan
   if (
     !validator.isStrongPassword(password, {
       minLength: PASSWORD_REQUIREMENTS.minLength,
@@ -96,11 +96,11 @@ function validatePasswordStrength(password) {
 }
 
 /**
- * Check if new password matches any of the previous passwords
- * @param {string} newPassword - New password to check
- * @param {string[]} previousHashes - Array of previous password hashes
- * @param {Function} compareFunc - bcrypt compare function
- * @returns {Promise<boolean>} True if password was used before
+ * Yeni parolanın önceki parolalardan herhangi biriyle eşleşip eşleşmediğini kontrol eder
+ * @param {string} newPassword - Kontrol edilecek yeni parola
+ * @param {string[]} previousHashes - Önceki parola hash'lerinin dizisi
+ * @param {Function} compareFunc - bcrypt karşılaştırma fonksiyonu
+ * @returns {Promise<boolean>} Parola daha önce kullanıldıysa true
  */
 async function isPasswordReused(newPassword, previousHashes, compareFunc) {
   if (!Array.isArray(previousHashes) || previousHashes.length === 0) {

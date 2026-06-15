@@ -24,14 +24,14 @@ namespace DentalApp.Desktop.Services
             _accessToken = accessToken;
             _refreshToken = refreshToken;
             
-            // Remove existing Authorization header if any
+            // Varsa mevcut Authorization başlığını kaldır
             _httpClient.DefaultRequestHeaders.Remove("Authorization");
             
-            // Add new Authorization header
+            // Yeni Authorization başlığı ekle
             _httpClient.DefaultRequestHeaders.Authorization = 
                 new AuthenticationHeaderValue("Bearer", accessToken);
             
-            // Debug logging
+            // Hata ayıklama günlüğü
             var tokenPreview = accessToken.Length > 15 
                 ? $"{accessToken.Substring(0, 15)}..." 
                 : "***";
@@ -149,13 +149,13 @@ namespace DentalApp.Desktop.Services
 
         private Task<T?> HandleResponseCoreAsync<T>(HttpResponseMessage response, string endpoint, string method, string content)
         {
-            // Handle 401 Unauthorized
+            // 401 Yetkisiz durumunu işle
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
                 System.Diagnostics.Debug.WriteLine($"[ApiService] 401 Unauthorized for {method} {endpoint}");
                 System.Diagnostics.Debug.WriteLine($"[ApiService] Response: {content}");
                 
-                // Clear tokens and notify
+                // Token'ları temizle ve bildir
                 ClearTokens();
                 OnUnauthorized?.Invoke();
                 
@@ -166,10 +166,10 @@ namespace DentalApp.Desktop.Services
             {
                 System.Diagnostics.Debug.WriteLine($"[ApiService] Error Response ({response.StatusCode}): {content}");
                 
-                // Try to parse error message from backend
+                // Backend'den gelen hata mesajını ayrıştırmayı dene
                 try 
                 {
-                    // Try to parse as dynamic to handle various error formats
+                    // Çeşitli hata formatlarını işlemek için dynamic olarak ayrıştırmayı dene
                     dynamic? errorObj = null;
                     try
                     {
@@ -177,14 +177,14 @@ namespace DentalApp.Desktop.Services
                     }
                     catch
                     {
-                        // If JSON parsing fails, use raw content
+                        // JSON ayrıştırma başarısız olursa ham içeriği kullan
                     }
                     
                     if (errorObj != null)
                     {
                         string errorMsg = "An unexpected error occurred";
                         
-                        // Try to get error.message
+                        // error.message değerini almayı dene
                         try
                         {
                             if (errorObj.error != null && errorObj.error.message != null)
@@ -198,19 +198,19 @@ namespace DentalApp.Desktop.Services
                         }
                         catch { }
                         
-                        // Try to get error.details.originalError or error.details
+                        // error.details.originalError veya error.details almayı dene
                         try
                         {
                             if (errorObj.error != null && errorObj.error.details != null)
                             {
                                 var details = errorObj.error.details;
                                 
-                                // Check if details is an object with originalError
+                                // details'in originalError içeren bir nesne olup olmadığını kontrol et
                                 if (details.originalError != null)
                                 {
                                     errorMsg += $"\n\nDetay: {details.originalError}";
                                 }
-                                // Check if details is a string
+                                // details'in string olup olmadığını kontrol et
                                 else if (details.ToString() != null && details.ToString() != "{}")
                                 {
                                     var detailsStr = details.ToString();
@@ -223,7 +223,7 @@ namespace DentalApp.Desktop.Services
                         }
                         catch { }
                         
-                        // Try to get error.stack for development
+                        // Geliştirme için error.stack almayı dene
                         try
                         {
                             if (errorObj.error != null && errorObj.error.stack != null)
@@ -240,15 +240,15 @@ namespace DentalApp.Desktop.Services
                         throw new Exception(errorMsg);
                     }
                     
-                    // If we couldn't parse, use raw content
+                    // Ayrıştıramazsak ham içeriği kullan
                     throw new Exception($"API Error ({response.StatusCode}): {response.ReasonPhrase}\nResponse: {content}");
                 } 
                 catch (Exception ex) 
                 {
-                    // If it's already our formatted exception, rethrow it
+                    // Zaten bizim biçimlendirdiğimiz istisna ise yeniden fırlat
                     if (ex.Message.Contains("API Error") || ex.Message.Contains("Detay") || ex.Message != "An unexpected error occurred")
                         throw;
-                    // Otherwise, wrap it with full response
+                    // Aksi halde tam yanıtla sarmala
                     throw new Exception($"API Error ({response.StatusCode}): {response.ReasonPhrase}\nResponse: {content}", ex);
                 }
             }

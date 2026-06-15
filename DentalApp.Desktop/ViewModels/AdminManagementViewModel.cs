@@ -3,7 +3,6 @@ using DentalApp.Desktop.Models;
 using DentalApp.Desktop.Services;
 using System.Collections.ObjectModel;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace DentalApp.Desktop.ViewModels
@@ -36,7 +35,7 @@ namespace DentalApp.Desktop.ViewModels
                     OnPropertyChanged(nameof(IsDentistSelected));
                     OnPropertyChanged(nameof(IsSecretarySelected));
                     OnPropertyChanged(nameof(IsPatronSelected));
-                    // Reset form when type changes
+                    // Tip değiştiğinde formu sıfırla
                     User = new UserFormData();
                 }
             }
@@ -67,7 +66,7 @@ namespace DentalApp.Desktop.ViewModels
         {
             _apiService = apiService;
             
-            // Initialize specializations (9 options)
+            // Uzmanlık alanlarını başlat (9 seçenek)
             for (int i = 0; i < 9; i++)
             {
                 Specializations.Add(false);
@@ -87,7 +86,7 @@ namespace DentalApp.Desktop.ViewModels
             });
             LoadUsersCommand = new RelayCommand(async _ => await LoadUsersAsync());
             
-            // Load users on initialization
+            // Başlangıçta kullanıcıları yükle
             _ = LoadUsersAsync();
         }
         
@@ -102,7 +101,7 @@ namespace DentalApp.Desktop.ViewModels
             if (string.IsNullOrWhiteSpace(User.Email) || string.IsNullOrWhiteSpace(Password))
                 return false;
             
-            // Dentist specific validations
+            // Hekime özel doğrulamalar
             if (IsDentistSelected)
             {
                 if (string.IsNullOrWhiteSpace(User.TCNo) || 
@@ -112,14 +111,14 @@ namespace DentalApp.Desktop.ViewModels
                     return false;
             }
             
-            // Secretary specific validations
+            // Sekretere özel doğrulamalar
             if (IsSecretarySelected)
             {
                 if (string.IsNullOrWhiteSpace(User.TCNo) || string.IsNullOrWhiteSpace(User.Phone))
                     return false;
             }
             
-            // Patron specific validations
+            // Patron'a özel doğrulamalar
             if (IsPatronSelected)
             {
                 if (string.IsNullOrWhiteSpace(User.Phone))
@@ -166,7 +165,7 @@ namespace DentalApp.Desktop.ViewModels
                     System.Windows.MessageBoxButton.OK,
                     System.Windows.MessageBoxImage.Information);
                 
-                // Reset form
+                // Formu sıfırla
                 User = new UserFormData();
                 Password = string.Empty;
                 SelectedUserType = string.Empty;
@@ -175,7 +174,7 @@ namespace DentalApp.Desktop.ViewModels
                     Specializations[i] = false;
                 }
                 
-                // Reload users list
+                // Kullanıcı listesini yeniden yükle
                 await LoadUsersAsync();
             }
             catch (Exception ex)
@@ -238,8 +237,27 @@ namespace DentalApp.Desktop.ViewModels
         
         public async Task LoadStatisticsAsync()
         {
-            // Placeholder for statistics loading
-            await Task.CompletedTask;
+            try
+            {
+                var response = await _apiService.GetAsync<AdminStatisticsResponse>("/admin/statistics");
+                if (response?.Statistics != null)
+                {
+                    ClinicStatistics = response.Statistics;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"İstatistikler yüklenirken hata: {ex.Message}");
+            }
+
+            await LoadUsersAsync();
+        }
+
+        private AdminStatistics? _clinicStatistics;
+        public AdminStatistics? ClinicStatistics
+        {
+            get => _clinicStatistics;
+            set => SetProperty(ref _clinicStatistics, value);
         }
         
         private async Task LoadUsersAsync()

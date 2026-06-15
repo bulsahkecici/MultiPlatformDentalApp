@@ -1,6 +1,7 @@
 using DentalApp.Desktop.Helpers;
 using DentalApp.Desktop.Models;
 using DentalApp.Desktop.Services;
+using System.Linq;
 using System.Windows.Input;
 using System.Collections.ObjectModel;
 
@@ -12,6 +13,7 @@ namespace DentalApp.Desktop.ViewModels
         private readonly AppointmentService _appointmentService;
         private readonly TreatmentService _treatmentService;
         private readonly ApiService _apiService;
+        private readonly FinancialService _financialService;
         private readonly bool _isPatron;
         private readonly bool _isSecretary;
         private readonly bool _isDentist;
@@ -22,7 +24,7 @@ namespace DentalApp.Desktop.ViewModels
         private int _upcomingAppointments;
         private int _totalTreatments;
         
-        // Patron Dashboard Properties
+        // Patron Paneli Özellikleri
         private decimal _totalAmount;
         private decimal _paidAmount;
         private ObservableCollection<DentistTurnover> _dentistTurnovers = new();
@@ -57,7 +59,7 @@ namespace DentalApp.Desktop.ViewModels
             set => SetProperty(ref _totalTreatments, value);
         }
 
-        // Patron Dashboard Properties
+        // Patron Paneli Özellikleri
         public bool IsPatron => _isPatron;
         public bool IsSecretary => _isSecretary;
         public bool IsDentist => _isDentist;
@@ -84,7 +86,7 @@ namespace DentalApp.Desktop.ViewModels
             set => SetProperty(ref _dentistTurnovers, value);
         }
         
-        // Secretary/Dentist Dashboard - Upcoming Appointments
+        // Sekreter/Hekim Paneli - Yaklaşan Randevular
         private ObservableCollection<Appointment> _upcomingAppointmentsList = new();
         
         public ObservableCollection<Appointment> UpcomingAppointmentsList
@@ -93,7 +95,7 @@ namespace DentalApp.Desktop.ViewModels
             set => SetProperty(ref _upcomingAppointmentsList, value);
         }
         
-        // Clock and Calendar
+        // Saat ve Takvim
         private DateTime _currentTime = DateTime.Now;
         private DateTime _currentDate = DateTime.Now;
         
@@ -114,15 +116,24 @@ namespace DentalApp.Desktop.ViewModels
         public ICommand RefreshCommand { get; }
         public ICommand AppointmentCardClickCommand { get; }
         
-        // Event for opening treatment details
+        // Tedavi detaylarını açmak için olay
         public event Action<Appointment>? AppointmentCardClicked;
 
-        public DashboardViewModel(PatientService patientService, AppointmentService appointmentService, TreatmentService treatmentService, ApiService apiService, bool isPatron, bool isSecretary, bool isDentist)
+        public DashboardViewModel(
+            PatientService patientService, 
+            AppointmentService appointmentService, 
+            TreatmentService treatmentService, 
+            ApiService apiService, 
+            FinancialService financialService,
+            bool isPatron, 
+            bool isSecretary, 
+            bool isDentist)
         {
             _patientService = patientService;
             _appointmentService = appointmentService;
             _treatmentService = treatmentService;
             _apiService = apiService;
+            _financialService = financialService;
             _isPatron = isPatron;
             _isSecretary = isSecretary;
             _isDentist = isDentist;
@@ -135,7 +146,7 @@ namespace DentalApp.Desktop.ViewModels
                 }
             });
             
-            // Start clock timer for Secretary/Dentist dashboard
+            // Sekreter/Hekim paneli için saat zamanlayıcısını başlat
             if (_isSecretary || _isDentist)
             {
                 _clockTimer = new System.Windows.Threading.DispatcherTimer();
@@ -163,7 +174,7 @@ namespace DentalApp.Desktop.ViewModels
                 }
                 else
                 {
-                    // Default dashboard for other roles
+                    // Diğer roller için varsayılan panel
                     await LoadDefaultDashboardAsync();
                 }
             }
@@ -178,7 +189,7 @@ namespace DentalApp.Desktop.ViewModels
             }
         }
         
-        // Admin Dashboard Statistics
+        // Yönetici Paneli İstatistikleri
         private int _totalRegisteredPatients;
         private decimal _lastMonthFinancial;
         private int _lastMonthPatients;
@@ -233,57 +244,32 @@ namespace DentalApp.Desktop.ViewModels
         {
             try
             {
-                // Load total patients
-                var (_, patientsPagination) = await _patientService.GetPatientsAsync(page: 1, limit: 1);
-                TotalRegisteredPatients = patientsPagination.Total;
-                
-                // Load last month data
-                var lastMonthStart = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-1);
-                var lastMonthEnd = lastMonthStart.AddMonths(1).AddDays(-1);
-                
-                var (lastMonthAppts, _) = await _appointmentService.GetAppointmentsAsync(
-                    page: 1, limit: 1, 
-                    startDate: lastMonthStart, 
-                    endDate: lastMonthEnd);
-                LastMonthPatients = lastMonthAppts.Count;
-                
-                var (lastMonthTreatments, _) = await _treatmentService.GetTreatmentsAsync(
-                    page: 1, limit: 1,
-                    startDate: lastMonthStart,
-                    endDate: lastMonthEnd);
-                LastMonthTransactions = lastMonthTreatments.Count;
-                
-                // Calculate last month financial (placeholder - needs payment API)
-                LastMonthFinancial = 0m; // TODO: Load from payments API
-                
-                // Load this month data
-                var thisMonthStart = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-                var (thisMonthAppts, _) = await _appointmentService.GetAppointmentsAsync(
-                    page: 1, limit: 1,
-                    startDate: thisMonthStart,
-                    endDate: DateTime.Today);
-                ThisMonthPatients = thisMonthAppts.Count;
-                
-                // Calculate this month financial (placeholder - needs payment API)
-                ThisMonthFinancial = 0m; // TODO: Load from payments API
-                
-                // Load upcoming appointments
-                var (upcomingAppts, _) = await _appointmentService.GetAppointmentsAsync(
-                    page: 1, limit: 1,
-                    startDate: DateTime.Today,
-                    endDate: DateTime.Today.AddDays(30));
-                UpcomingAppointmentsCount = upcomingAppts.Count;
-                
-                // Load financial data
-                TotalAmount = 150000m; // Placeholder - TODO: Load from API
-                PaidAmount = 95000m; // Placeholder - TODO: Load from API
-                
-                // Placeholder dentist turnovers
+                var stats = await _financialService.GetDashboardStatsAsync();
+
+                TotalRegisteredPatients = stats.TotalPatients;
+                LastMonthPatients = stats.LastMonthPatients;
+                LastMonthTransactions = stats.LastMonthTransactions;
+                LastMonthFinancial = stats.LastMonthFinancial;
+                ThisMonthPatients = stats.ThisMonthPatients;
+                ThisMonthFinancial = stats.ThisMonthFinancial;
+                UpcomingAppointmentsCount = stats.UpcomingAppointmentsCount;
+                TotalAmount = stats.TotalAmount;
+                PaidAmount = stats.PaidAmount;
+
                 DentistTurnovers.Clear();
-                DentistTurnovers.Add(new DentistTurnover { DentistName = "Dr. Ahmet Yılmaz", Turnover = 50000m, TurnoverPercentage = 33.33m });
-                DentistTurnovers.Add(new DentistTurnover { DentistName = "Dr. Ayşe Demir", Turnover = 45000m, TurnoverPercentage = 30.00m });
-                DentistTurnovers.Add(new DentistTurnover { DentistName = "Dr. Mehmet Kaya", Turnover = 55000m, TurnoverPercentage = 36.67m });
-                
+                var totalTurnover = stats.DentistTurnovers.Sum(d => d.Turnover);
+                foreach (var item in stats.DentistTurnovers)
+                {
+                    DentistTurnovers.Add(new DentistTurnover
+                    {
+                        DentistName = item.DisplayName,
+                        Turnover = item.Turnover,
+                        TurnoverPercentage = totalTurnover > 0
+                            ? (decimal)(item.Turnover / totalTurnover * 100)
+                            : 0,
+                    });
+                }
+
                 OnPropertyChanged(nameof(RemainingAmount));
                 OnPropertyChanged(nameof(PaidPercentage));
             }
@@ -335,11 +321,11 @@ namespace DentalApp.Desktop.ViewModels
                 // Secretary için bugünkü randevu sayısını yükle
                 if (_isSecretary)
                 {
-                    var (todayAppts, _) = await _appointmentService.GetAppointmentsAsync(
+                    var (_, todayApptsPagination) = await _appointmentService.GetAppointmentsAsync(
                         page: 1, limit: 1, 
                         startDate: DateTime.Today, 
                         endDate: DateTime.Today);
-                    TodayAppointments = todayAppts.Count;
+                    TodayAppointments = todayApptsPagination.Total;
                     
                     // Toplam hasta sayısını yükle
                     var (_, patientsPagination) = await _patientService.GetPatientsAsync(page: 1, limit: 1);

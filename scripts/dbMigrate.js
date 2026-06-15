@@ -22,4 +22,3 @@ run()
   .finally(async () => {
     await pool.end().catch(() => {});
   });
-

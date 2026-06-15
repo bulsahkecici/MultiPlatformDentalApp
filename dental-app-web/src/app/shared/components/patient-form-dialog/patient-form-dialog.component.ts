@@ -10,8 +10,10 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PatientService } from '../../../core/services/patient.service';
+import { InstitutionAgreementService, InstitutionAgreement } from '../../../core/services/institution-agreement.service';
 import { Patient } from '../../../core/models/models';
 import { DataMapper } from '../../../core/utils/data-mapper';
+import { formatLocalDate } from '../../../core/utils/date.util';
 
 @Component({
   selector: 'app-patient-form-dialog',
@@ -29,15 +31,16 @@ import { DataMapper } from '../../../core/utils/data-mapper';
     MatProgressSpinnerModule
   ],
   template: `
-    <h2 mat-dialog-title>{{ data ? 'Hasta Düzenle' : 'Yeni Hasta' }}</h2>
-    <mat-dialog-content>
-      <form [formGroup]="patientForm">
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="full-width">
+    <h2 mat-dialog-title class="dialog-title">{{ data ? 'Hasta Duzenle' : 'Yeni Hasta' }}</h2>
+    <p class="dialog-subtitle">Kimlik, iletisim ve temel demografik bilgileri duzenleyin.</p>
+    <mat-dialog-content class="dialog-content">
+      <form [formGroup]="patientForm" class="form-grid">
+        <div class="form-row full-width">
+          <mat-form-field appearance="outline">
             <mat-label>Ad</mat-label>
             <input matInput formControlName="firstName" required>
           </mat-form-field>
-          <mat-form-field appearance="outline" class="full-width">
+          <mat-form-field appearance="outline">
             <mat-label>Soyad</mat-label>
             <input matInput formControlName="lastName" required>
           </mat-form-field>
@@ -75,50 +78,98 @@ import { DataMapper } from '../../../core/utils/data-mapper';
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Anlaşmalı Kurum</mat-label>
+          <mat-select formControlName="institutionAgreementId">
+            <mat-option [value]="null">Kurum seçilmedi</mat-option>
+            <mat-option *ngFor="let agreement of agreements" [value]="agreement.id">
+              {{ agreement.institution_name }} ({{ agreement.discount_percentage }}%)
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
           <mat-label>Şehir</mat-label>
           <input matInput formControlName="city">
         </mat-form-field>
       </form>
     </mat-dialog-content>
-    <mat-dialog-actions>
-      <button mat-button (click)="onCancel()">İptal</button>
-      <button mat-raised-button color="primary" (click)="onSave()" [disabled]="!patientForm.valid || isLoading">
+    <mat-dialog-actions align="end" class="dialog-actions">
+      <button mat-button (click)="onCancel()">Iptal</button>
+      <button mat-raised-button color="primary" class="save-btn" (click)="onSave()" [disabled]="!patientForm.valid || isLoading">
         <mat-spinner *ngIf="isLoading" diameter="20" class="inline-spinner"></mat-spinner>
         <span *ngIf="!isLoading">Kaydet</span>
       </button>
     </mat-dialog-actions>
   `,
   styles: [`
+    .dialog-title {
+      margin-bottom: 2px;
+    }
+    .dialog-subtitle {
+      margin: 0 24px 10px;
+      color: #5a6986;
+      font-size: 0.88rem;
+    }
+    .dialog-content {
+      min-width: 520px;
+      max-height: 66vh;
+      overflow-y: auto;
+      padding-top: 4px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(180px, 1fr));
+      gap: 0 14px;
+    }
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
+      gap: 14px;
     }
     .full-width {
-      width: 100%;
-      margin-bottom: 16px;
+      grid-column: span 2;
     }
     .inline-spinner {
       display: inline-block;
       margin-right: 8px;
     }
-    mat-dialog-content {
-      min-width: 500px;
-      max-height: 600px;
-      overflow-y: auto;
+    .dialog-actions {
+      border-top: 1px solid #e5edf8;
+      margin-top: 10px;
+      padding: 14px 24px 16px;
+      gap: 10px;
+    }
+    .save-btn {
+      min-width: 112px;
+      font-weight: 700;
+    }
+    @media (max-width: 720px) {
+      .dialog-content {
+        min-width: 0;
+      }
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .full-width {
+        grid-column: span 1;
+      }
+      .form-row {
+        grid-template-columns: 1fr;
+      }
     }
   `]
 })
 export class PatientFormDialogComponent implements OnInit {
   patientForm: FormGroup;
   isLoading = false;
+  agreements: InstitutionAgreement[] = [];
 
   constructor(
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<PatientFormDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: Patient | null,
-    private patientService: PatientService
+    private patientService: PatientService,
+    private agreementService: InstitutionAgreementService
   ) {
     this.patientForm = this.fb.group({
       firstName: ['', Validators.required],
@@ -128,21 +179,28 @@ export class PatientFormDialogComponent implements OnInit {
       phone: [''],
       email: ['', Validators.email],
       address: [''],
-      city: ['']
+      city: [''],
+      institutionAgreementId: [null]
     });
   }
 
   ngOnInit(): void {
+    this.agreementService.getAgreements().subscribe({
+      next: agreements => this.agreements = agreements.filter(a => a.is_active !== false)
+    });
+
     if (this.data) {
+      const mapped = DataMapper.mapPatient(this.data);
       this.patientForm.patchValue({
-        firstName: this.data.firstName,
-        lastName: this.data.lastName,
-        dateOfBirth: this.data.dateOfBirth ? new Date(this.data.dateOfBirth) : null,
-        gender: this.data.gender,
-        phone: this.data.phone,
-        email: this.data.email,
-        address: this.data.address,
-        city: this.data.city
+        firstName: mapped.firstName,
+        lastName: mapped.lastName,
+        dateOfBirth: mapped.dateOfBirth ? new Date(mapped.dateOfBirth) : null,
+        gender: mapped.gender,
+        phone: mapped.phone,
+        email: mapped.email,
+        address: mapped.address,
+        city: mapped.city,
+        institutionAgreementId: mapped.institutionAgreementId || mapped.institution_agreement_id || null
       });
     }
   }
@@ -154,15 +212,16 @@ export class PatientFormDialogComponent implements OnInit {
       const patientData: Partial<Patient> = {
         firstName: formValue.firstName,
         lastName: formValue.lastName,
-        dateOfBirth: formValue.dateOfBirth ? formValue.dateOfBirth.toISOString().split('T')[0] : null,
+        dateOfBirth: formValue.dateOfBirth ? formatLocalDate(formValue.dateOfBirth) : undefined,
         gender: formValue.gender,
         phone: formValue.phone,
         email: formValue.email,
         address: formValue.address,
-        city: formValue.city
+        city: formValue.city,
+        institutionAgreementId: formValue.institutionAgreementId || null
       };
 
-      // Convert to backend format
+      // Backend formatına dönüştür
       const backendData = DataMapper.mapPatientToBackend(patientData);
 
       const request = this.data

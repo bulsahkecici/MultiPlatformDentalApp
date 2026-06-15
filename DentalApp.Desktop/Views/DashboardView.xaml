@@ -47,7 +47,7 @@
                                                HorizontalAlignment="Center" 
                                                Margin="0,0,0,10"
                                                Foreground="{StaticResource BulkaMediumBlue}"/>
-                        <TextBlock Text="{Binding TotalAmount, StringFormat='{}{0:N2} ₺'}" 
+                        <TextBlock Text="{Binding TotalAmount, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                  Style="{StaticResource MaterialDesignHeadline3TextBlock}" 
                                  Foreground="{StaticResource BulkaDarkBlue}"
                                  FontWeight="Bold"
@@ -67,7 +67,7 @@
                                                HorizontalAlignment="Center" 
                                                Margin="0,0,0,10"
                                                Foreground="{StaticResource BulkaLightGreen}"/>
-                        <TextBlock Text="{Binding PaidAmount, StringFormat='{}{0:N2} ₺'}" 
+                        <TextBlock Text="{Binding PaidAmount, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                  Style="{StaticResource MaterialDesignHeadline3TextBlock}" 
                                  Foreground="{StaticResource BulkaDarkBlue}"
                                  FontWeight="Bold"
@@ -105,7 +105,7 @@
                             Style="{StaticResource MaterialDesignDataGrid}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Doktor Adı" Binding="{Binding DentistName}" Width="*"/>
-                            <DataGridTextColumn Header="Ciro" Binding="{Binding Turnover, StringFormat='{}{0:N2} ₺'}" Width="*"/>
+                            <DataGridTextColumn Header="Ciro" Binding="{Binding Turnover, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" Width="*"/>
                             <DataGridTextColumn Header="Ciro Payı (%)" Binding="{Binding TurnoverPercentage, StringFormat='{}{0:F2}%'}" Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>

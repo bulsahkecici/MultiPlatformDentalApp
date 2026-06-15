@@ -9,20 +9,27 @@ import { User } from '../models/models';
 export class UserService {
   constructor(private apiService: ApiService) {}
 
-  getUsers(): Observable<{ users: User[] }> {
-    return this.apiService.get<{ users: User[] }>('/api/users');
+  getUsers(limit: number = 500, role?: string, page: number = 1, search?: string): Observable<{ users: User[] }> {
+    const params: any = { limit, page };
+    if (role) params.role = role;
+    if (search) params.search = search;
+    return this.apiService.get<{ users: User[] }>('/api/users', params);
   }
 
   getUser(id: number): Observable<{ user: User }> {
     return this.apiService.get<{ user: User }>(`/api/users/${id}`);
   }
 
-  createUser(user: { email: string; password: string; roles: string[] }): Observable<{ user: User }> {
+  createUser(user: any): Observable<{ user: User }> {
     return this.apiService.post<{ user: User }>('/api/users', user);
   }
 
   updateUser(id: number, user: Partial<User>): Observable<{ user: User }> {
     return this.apiService.put<{ user: User }>(`/api/users/${id}`, user);
+  }
+
+  updateUserRoles(id: number, roles: string[]): Observable<{ user: User }> {
+    return this.apiService.put<{ user: User }>(`/api/users/${id}/roles`, { roles });
   }
 
   deleteUser(id: number): Observable<void> {

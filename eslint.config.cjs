@@ -1,9 +1,19 @@
-import globals from 'globals';
-import eslintPluginPrettier from 'eslint-plugin-prettier';
+const globals = require('globals');
+const eslintPluginPrettier = require('eslint-plugin-prettier');
 
-export default [
+module.exports = [
   {
-    ignores: ['node_modules/**', 'eslint.config.js', 'coverage/**'],
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/coverage/**',
+      'eslint.config.cjs',
+      'dental-app-web/**',
+      'dental_app_mobile/**',
+      'DentalApp.Desktop/**',
+      'DentalApp.Desktop.Tests/**',
+    ],
   },
   {
     languageOptions: {

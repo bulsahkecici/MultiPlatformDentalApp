@@ -110,55 +110,42 @@
                             </ScrollViewer>
                             
                             <Grid Grid.Row="2" Margin="0,10,0,0">
-                                <TextBlock Text="Henüz anlaşma yok veya liste yüklenemedi. &#x0a;Yenile'yi deneyin veya yukarıdan yeni anlaşma ekleyin."
-                                         Visibility="{Binding IsAgreementsListEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                         Style="{StaticResource MaterialDesignBody1TextBlock}"
-                                         Foreground="Gray"
-                                         TextWrapping="Wrap"
-                                         VerticalAlignment="Center"
-                                         HorizontalAlignment="Center"
-                                         Margin="20"/>
                                 <DataGrid ItemsSource="{Binding InstitutionAgreements}"
-                                    SelectedItem="{Binding SelectedAgreement}"
-                                    AutoGenerateColumns="False"
-                                    CanUserAddRows="False"
-                                    IsReadOnly="True"
-                                    SelectionMode="Single"
-                                    SelectionUnit="FullRow"
-                                    GridLinesVisibility="Horizontal"
-                                    Style="{StaticResource MaterialDesignDataGrid}"
-                                    Visibility="{Binding IsAgreementsListEmpty, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
-                                <DataGrid.RowStyle>
-                                    <Style TargetType="DataGridRow">
-                                        <Setter Property="Cursor" Value="Hand"/>
-                                        <Setter Property="Background" Value="White"/>
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#E3F2FD"/>
-                                            </Trigger>
-                                            <Trigger Property="IsSelected" Value="True">
-                                                <Setter Property="Background" Value="#BBDEFB"/>
-                                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </DataGrid.RowStyle>
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Kurum Adı" Binding="{Binding Name}" Width="*"/>
-                                    <DataGridTextColumn Header="Ortalama İndirim" Binding="{Binding AverageDiscountPercentage, StringFormat='{}{0:F1}%'}" Width="*"/>
-                                    <DataGridTemplateColumn Header="İşlemler" Width="Auto"
-                                                          Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Button Content="Düzenle" 
-                                                      Command="{Binding DataContext.EditAgreementCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                      CommandParameter="{Binding}"
-                                                      Style="{StaticResource MaterialDesignFlatButton}"
-                                                      Margin="5,0"/>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                </DataGrid.Columns>
+                                         SelectedItem="{Binding SelectedAgreement}"
+                                         AutoGenerateColumns="False"
+                                         CanUserAddRows="False"
+                                         IsReadOnly="True"
+                                         HeadersVisibility="Column"
+                                         GridLinesVisibility="Horizontal"
+                                         Style="{StaticResource MaterialDesignDataGrid}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Kurum Adı" Binding="{Binding Name}" Width="*"/>
+                                        <DataGridTextColumn Header="Ort. İndirim" Binding="{Binding AverageDiscountPercentage, StringFormat='{}{0:F1}%'}" Width="100"/>
+                                        <DataGridTemplateColumn Header="İşlemler" Width="120">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                                ToolTip="Düzenle"
+                                                                Foreground="{StaticResource BulkaMediumBlue}"
+                                                                Command="{Binding DataContext.EditAgreementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                                CommandParameter="{Binding}"
+                                                                Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                            <materialDesign:PackIcon Kind="Pencil" />
+                                                        </Button>
+                                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                                ToolTip="Sil"
+                                                                Foreground="Red"
+                                                                Command="{Binding DataContext.DeleteAgreementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                                CommandParameter="{Binding}"
+                                                                Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                            <materialDesign:PackIcon Kind="Delete" />
+                                                        </Button>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
                                 </DataGrid>
                             </Grid>
                         </Grid>
@@ -172,27 +159,21 @@
                                          Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
                                          Foreground="{StaticResource BulkaDarkBlue}"
                                          FontWeight="Bold"
-                                         Margin="0,0,0,15"
-                                         Visibility="{Binding SelectedAgreement, Converter={StaticResource NullToBooleanConverter}}"/>
+                                         Margin="0,0,0,15"/>
                                 
-                                <TextBlock Text="Kurum seçin" 
-                                         Style="{StaticResource MaterialDesignBody1TextBlock}"
-                                         Foreground="Gray"
-                                         Margin="0,20,0,0"
-                                         Visibility="{Binding SelectedAgreement, Converter={StaticResource InverseBooleanConverter}}"/>
-                                
-                                <TextBlock Text="{Binding SelectedAgreement.Name, StringFormat='Kurum: {0}'}" 
-                                         Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
-                                         Foreground="{StaticResource BulkaDarkBlue}"
-                                         FontWeight="Bold"
-                                         Margin="0,0,0,15"
-                                         Visibility="{Binding SelectedAgreement, Converter={StaticResource NullToBooleanConverter}}"/>
+                                <ComboBox ItemsSource="{Binding InstitutionAgreements}"
+                                         SelectedItem="{Binding SelectedAgreement, Mode=TwoWay}"
+                                         DisplayMemberPath="Name"
+                                         materialDesign:HintAssist.Hint="Kurum seçin"
+                                         Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                         Margin="0,0,0,20"
+                                         MinHeight="48"/>
                                 
                                 <TextBlock Text="Kategori Bazlı İndirim Oranları" 
                                          Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
                                          Foreground="{StaticResource BulkaDarkBlue}"
                                          Margin="0,0,0,10"
-                                         Visibility="{Binding SelectedAgreement, Converter={StaticResource NullToBooleanConverter}}"/>
+                                         Visibility="{Binding IsAgreementSelected, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                 
                                 <DataGrid ItemsSource="{Binding SelectedAgreementCategoryDiscounts}"
                                          AutoGenerateColumns="False"
@@ -202,7 +183,7 @@
                                          GridLinesVisibility="Horizontal"
                                          Style="{StaticResource MaterialDesignDataGrid}"
                                          MaxHeight="400"
-                                         Visibility="{Binding SelectedAgreement, Converter={StaticResource NullToBooleanConverter}}">
+                                         Visibility="{Binding IsAgreementSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Kategori" Binding="{Binding CategoryName}" Width="*"/>
                                         <DataGridTextColumn Header="İndirim" Binding="{Binding DiscountPercentage, StringFormat='{}{0:F1}%'}" Width="150">
@@ -222,9 +203,9 @@
                                          Foreground="Gray"
                                          Margin="0,20,0,0"
                                          TextAlignment="Center"
-                                         Visibility="{Binding HasCategoryDiscounts, Converter={StaticResource InverseBooleanConverter}}"/>
+                                         Visibility="{Binding ShowNoCategoryDiscountsMessage, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                 
-                                <!-- Secretary için read-only uyarı -->
+                                <!-- Sekreter için salt-okunur uyarı -->
                                 <TextBlock Text="Not: Sekreter kullanıcıları anlaşmaları sadece görüntüleyebilir, düzenleyemez." 
                                          Style="{StaticResource MaterialDesignBody2TextBlock}" 
                                          Foreground="Gray"
@@ -262,7 +243,7 @@
                                 <TextBlock Text="Seçilen Planların Toplam Maliyeti:" 
                                          Style="{StaticResource MaterialDesignBody1TextBlock}"
                                          FontWeight="Bold"/>
-                                <TextBlock Text="{Binding SelectedPlansTotal, StringFormat='{}{0:F2} ₺'}" 
+                                <TextBlock Text="{Binding SelectedPlansTotal, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                          Style="{StaticResource MaterialDesignHeadline5TextBlock}"
                                          Foreground="{StaticResource BulkaDarkBlue}"
                                          FontWeight="Bold"
@@ -310,7 +291,7 @@
                                 <DataGridTextColumn Header="Diş Hekimi" Binding="{Binding DentistName}" Width="*" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="İşlemler" Binding="{Binding ProceduresCount, StringFormat='{}{0} işlem'}" Width="Auto" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Toplam Maliyet" 
-                                                 Binding="{Binding TotalCost, StringFormat='{}{0:F2} ₺'}" 
+                                                 Binding="{Binding TotalCost, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                                  Width="*"
                                                  IsReadOnly="True"
                                                  Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
@@ -335,7 +316,7 @@
                                                     <DataGridTextColumn Header="İşlem Adı" Binding="{Binding Name}" Width="*"/>
                                                     <DataGridTextColumn Header="Kategori" Binding="{Binding Category}" Width="Auto"/>
                                                     <DataGridTextColumn Header="Fiyat" 
-                                                                     Binding="{Binding Price, StringFormat='{}{0:F2} ₺'}" 
+                                                                     Binding="{Binding Price, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                                                      Width="Auto"
                                                                      Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                                 </DataGrid.Columns>
@@ -399,7 +380,7 @@
                                     </DataGridTemplateColumn>
                                     <DataGridTextColumn Header="İşlem" Binding="{Binding Name}" Width="*"/>
                                     <DataGridTextColumn Header="Fiyat" 
-                                                     Binding="{Binding Price, StringFormat='{}{0:F2} ₺'}" 
+                                                     Binding="{Binding Price, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                                      Width="Auto"
                                                      Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                 </DataGrid.Columns>
@@ -408,7 +389,7 @@
                             <TextBlock Text="Toplam Maliyet:" 
                                      Style="{StaticResource MaterialDesignBody1TextBlock}"
                                      Margin="0,0,0,5"/>
-                            <TextBlock Text="{Binding SelectedPaymentPatientTotal, StringFormat='{}{0:F2} ₺'}" 
+                            <TextBlock Text="{Binding SelectedPaymentPatientTotal, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                      Style="{StaticResource MaterialDesignHeadline5TextBlock}"
                                      Foreground="{StaticResource BulkaDarkBlue}"
                                      FontWeight="Bold"
@@ -420,7 +401,7 @@
                                     IsEditable="False"
                                     Margin="0,0,0,15"/>
                             
-                            <TextBox Text="{Binding PaymentAmount, UpdateSourceTrigger=PropertyChanged}" 
+                            <TextBox Text="{Binding PaymentAmount, UpdateSourceTrigger=LostFocus}" 
                                    materialDesign:HintAssist.Hint="Alınan Miktar (₺) *" 
                                    Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                                    Margin="0,0,0,15"/>
@@ -448,7 +429,7 @@
                                 <StackPanel>
                                     <TextBlock Text="Kalan Borç:" 
                                              Style="{StaticResource MaterialDesignBody2TextBlock}"/>
-                                    <TextBlock Text="{Binding RemainingDebt, StringFormat='{}{0:F2} ₺'}" 
+                                    <TextBlock Text="{Binding RemainingDebt, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                              Style="{StaticResource MaterialDesignHeadline4TextBlock}"
                                              Foreground="{StaticResource BulkaDarkBlue}"
                                              FontWeight="Bold"
@@ -460,7 +441,7 @@
                                 <StackPanel>
                                     <TextBlock Text="Hekimin Ciro Payı:" 
                                              Style="{StaticResource MaterialDesignBody2TextBlock}"/>
-                                    <TextBlock Text="{Binding DentistCommission, StringFormat='{}{0:F2} ₺'}" 
+                                    <TextBlock Text="{Binding DentistCommission, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                              Style="{StaticResource MaterialDesignHeadline4TextBlock}"
                                              Foreground="{StaticResource BulkaDarkBlue}"
                                              FontWeight="Bold"
@@ -500,7 +481,7 @@
                                          Foreground="{StaticResource BulkaDarkBlue}"
                                          FontWeight="Bold"
                                          Margin="0,0,0,10"/>
-                                <TextBlock Text="{Binding TotalReceivables, StringFormat='{}{0:F2} ₺'}" 
+                                <TextBlock Text="{Binding TotalReceivables, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                          Style="{StaticResource MaterialDesignHeadline3TextBlock}"
                                          Foreground="{StaticResource BulkaMediumBlue}"
                                          FontWeight="Bold"/>
@@ -519,7 +500,7 @@
                                          Foreground="{StaticResource BulkaDarkBlue}"
                                          FontWeight="Bold"
                                          Margin="0,0,0,10"/>
-                                <TextBlock Text="{Binding TotalIncome, StringFormat='{}{0:F2} ₺'}" 
+                                <TextBlock Text="{Binding TotalIncome, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                          Style="{StaticResource MaterialDesignHeadline3TextBlock}"
                                          Foreground="{StaticResource BulkaMediumBlue}"
                                          FontWeight="Bold"/>
@@ -573,7 +554,7 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Text="Toplam Borç:" Grid.Column="0" 
                                                      Style="{StaticResource MaterialDesignBody1TextBlock}"/>
-                                            <TextBlock Text="{Binding SelectedPatientTotalDebt, StringFormat='{}{0:F2} ₺'}" 
+                                            <TextBlock Text="{Binding SelectedPatientTotalDebt, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                                      Grid.Column="1"
                                                      Style="{StaticResource MaterialDesignBody1TextBlock}"
                                                      FontWeight="Bold"
@@ -586,7 +567,7 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Text="Ödenen:" Grid.Column="0" 
                                                      Style="{StaticResource MaterialDesignBody1TextBlock}"/>
-                                            <TextBlock Text="{Binding SelectedPatientPaidAmount, StringFormat='{}{0:F2} ₺'}" 
+                                            <TextBlock Text="{Binding SelectedPatientPaidAmount, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                                      Grid.Column="1"
                                                      Style="{StaticResource MaterialDesignBody1TextBlock}"
                                                      FontWeight="Bold"
@@ -600,7 +581,7 @@
                                             <TextBlock Text="Kalan Borç:" Grid.Column="0" 
                                                      Style="{StaticResource MaterialDesignBody1TextBlock}"
                                                      FontWeight="Bold"/>
-                                            <TextBlock Text="{Binding SelectedPatientRemainingDebt, StringFormat='{}{0:F2} ₺'}" 
+                                            <TextBlock Text="{Binding SelectedPatientRemainingDebt, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                                      Grid.Column="1"
                                                      Style="{StaticResource MaterialDesignBody1TextBlock}"
                                                      FontWeight="Bold"
@@ -639,7 +620,7 @@
                                                          Binding="{Binding CreatedAt, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
                                                          Width="*"/>
                                         <DataGridTextColumn Header="Miktar" 
-                                                         Binding="{Binding Amount, StringFormat='{}{0:F2} ₺'}" 
+                                                         Binding="{Binding Amount, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                                                          Width="*"/>
                                         <DataGridTextColumn Header="Yöntem" 
                                                          Binding="{Binding PaymentMethod}" 

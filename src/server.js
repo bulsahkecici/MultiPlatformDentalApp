@@ -27,25 +27,27 @@ const notificationsRouter = require('./routes/notifications');
 const dentistRouter = require('./routes/dentist');
 const paymentsRouter = require('./routes/payments');
 const institutionAgreementsRouter = require('./routes/institutionAgreements');
+const invoicesRouter = require('./routes/invoices');
+const discountsRouter = require('./routes/discounts');
 
 const app = express();
 const server = http.createServer(app);
 
-// Initialize Socket.IO
+// Socket.IO'yu başlat
 initializeSocketIO(server);
 
-// Logging
+// Günlükleme
 app.use(httpLogger());
 
-// Security headers & CSP
+// Güvenlik başlıkları & CSP
 app.use(securityMiddleware());
 
-// CORS - narrowly allow configured origins only
+// CORS - yalnızca yapılandırılmış kaynaklara sınırlı izin ver
 const allowedOrigins = new Set(config.cors.origins);
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // allow same-origin and curl
+      if (!origin) return callback(null, true); // aynı kaynağa ve curl'e izin ver
       if (allowedOrigins.has(origin)) return callback(null, true);
       return callback(new Error('Not allowed by CORS'));
     },
@@ -53,20 +55,20 @@ app.use(
   }),
 );
 
-// Body parsing & compression
+// Gövde ayrıştırma & sıkıştırma
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(compression());
 
-// Rate limiting - applied globally; mutating routes use per-route limiter
+// Hız sınırlama - global uygulanır; veri değiştiren rotalar rota bazlı sınırlayıcı kullanır
 app.use(generalLimiter);
 
-// Static files
+// Statik dosyalar
 app.use(
   express.static(path.join(__dirname, '..', 'public'), { fallthrough: true }),
 );
 
-// Routes
+// Rotalar
 app.use('/', healthRouter);
 app.use('/', authRouter);
 app.use('/', adminRouter);
@@ -78,8 +80,10 @@ app.use('/', notificationsRouter);
 app.use('/', dentistRouter);
 app.use('/', paymentsRouter);
 app.use('/', institutionAgreementsRouter);
+app.use('/', invoicesRouter);
+app.use('/', discountsRouter);
 
-// 404 and error handlers
+// 404 ve hata yöneticileri
 app.use(notFoundHandler);
 app.use(logErrors);
 app.use(errorResponder);

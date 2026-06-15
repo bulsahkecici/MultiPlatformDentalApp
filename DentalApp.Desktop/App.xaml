@@ -22,14 +22,14 @@
             <SolidColorBrush x:Key="BulkaGradientStart" Color="#E6F2FF"/>
             <SolidColorBrush x:Key="BulkaGradientEnd" Color="#FFFFFF"/>
             
-            <!-- Gradient Brush -->
+            <!-- Degrade Fırça -->
             <LinearGradientBrush x:Key="BulkaGradientBrush" StartPoint="0,0" EndPoint="0,1">
                 <GradientStop Color="#E6F2FF" Offset="0"/>
                 <GradientStop Color="#FFFFFF" Offset="0.5"/>
                 <GradientStop Color="#E6F2FF" Offset="1"/>
             </LinearGradientBrush>
             
-            <!-- Global Converters -->
+            <!-- Genel Dönüştürücüler -->
             <helpers:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
             <helpers:StatusToTurkishConverter x:Key="StatusToTurkishConverter"/>
             <helpers:NullToBooleanConverter x:Key="NullToBooleanConverter"/>
@@ -38,9 +38,12 @@
             <helpers:DateToColorConverter x:Key="DateToColorConverter"/>
             <helpers:BooleanToBrushConverter x:Key="BooleanToBrushConverter"/>
             <helpers:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
+            <helpers:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+            <helpers:StatusToColorConverter x:Key="StatusToColorConverter"/>
+            <helpers:DecimalToTurkishStringConverter x:Key="DecimalToTurkishStringConverter"/>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             
-            <!-- Global DatePicker Style for Turkish -->
+            <!-- Türkçe için Genel DatePicker Stili -->
             <Style TargetType="DatePicker">
                 <Setter Property="Language" Value="tr-TR"/>
             </Style>

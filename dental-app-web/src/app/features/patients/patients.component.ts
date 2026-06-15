@@ -16,6 +16,7 @@ import { Patient, Appointment, Treatment } from '../../core/models/models';
 import { PatientFormDialogComponent } from '../../shared/components/patient-form-dialog/patient-form-dialog.component';
 import { DataMapper } from '../../core/utils/data-mapper';
 import { MatListModule } from '@angular/material/list';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-patients',
@@ -37,7 +38,7 @@ import { MatListModule } from '@angular/material/list';
     <div class="patients-container">
       <div class="patients-header">
         <h1>Hasta Yönetimi</h1>
-        <button mat-raised-button color="primary" (click)="openPatientForm()">
+        <button mat-raised-button color="primary" (click)="openPatientForm()" *ngIf="canEditPatients">
           <mat-icon>add</mat-icon>
           Yeni Hasta
         </button>
@@ -123,8 +124,8 @@ import { MatListModule } from '@angular/material/list';
             </div>
 
             <div class="patient-actions">
-              <button mat-raised-button color="primary" (click)="editPatient()">Düzenle</button>
-              <button mat-raised-button color="warn" (click)="deletePatient()">Sil</button>
+              <button mat-raised-button color="primary" (click)="editPatient()" *ngIf="canEditPatients">Düzenle</button>
+              <button mat-raised-button color="warn" (click)="deletePatient()" *ngIf="canDeletePatients">Sil</button>
             </div>
           </mat-card-content>
         </mat-card>
@@ -184,15 +185,24 @@ export class PatientsComponent implements OnInit {
   displayedColumns: string[] = ['name', 'phone', 'email'];
   searchTerm = '';
   isLoading = false;
+  canEditPatients = false;
+  canDeletePatients = false;
 
   constructor(
     private patientService: PatientService,
     private appointmentService: AppointmentService,
     private treatmentService: TreatmentService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
+    const user = this.authService.currentUser;
+    const roles = user?.roles || [];
+    const isDentist = roles.includes('dentist');
+    this.canEditPatients = !isDentist;
+    this.canDeletePatients = roles.includes('admin');
+
     this.loadPatients();
   }
 
@@ -200,7 +210,7 @@ export class PatientsComponent implements OnInit {
     this.isLoading = true;
     this.patientService.getPatients(1, 100, this.searchTerm).subscribe({
       next: (response) => {
-        // Map backend data to frontend format
+        // Backend verisini ön yüz formatına dönüştür
         this.patients = (response.patients || []).map((p: any) => DataMapper.mapPatient(p));
         this.isLoading = false;
       },
@@ -223,14 +233,14 @@ export class PatientsComponent implements OnInit {
   loadPatientDetails(): void {
     if (!this.selectedPatient) return;
 
-    // Load appointments
+    // Randevuları yükle
     this.appointmentService.getAppointments(1, 100, this.selectedPatient.id).subscribe({
       next: (response) => {
         this.patientAppointments = (response.appointments || []).map((a: any) => DataMapper.mapAppointment(a));
       }
     });
 
-    // Load treatments
+    // Tedavileri yükle
     this.treatmentService.getTreatments(1, 100, this.selectedPatient.id).subscribe({
       next: (response) => {
         this.patientTreatments = (response.treatments || []).map((t: any) => DataMapper.mapTreatment(t));
@@ -239,6 +249,8 @@ export class PatientsComponent implements OnInit {
   }
 
   openPatientForm(): void {
+    if (!this.canEditPatients) return;
+
     const dialogRef = this.dialog.open(PatientFormDialogComponent, {
       width: '600px',
       maxWidth: '90vw',
@@ -254,6 +266,7 @@ export class PatientsComponent implements OnInit {
 
   editPatient(): void {
     if (!this.selectedPatient) return;
+    if (!this.canEditPatients) return;
     
     const dialogRef = this.dialog.open(PatientFormDialogComponent, {
       width: '600px',
@@ -264,7 +277,7 @@ export class PatientsComponent implements OnInit {
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         this.loadPatients();
-        // Reload selected patient details
+        // Seçili hasta detaylarını yeniden yükle
         if (this.selectedPatient) {
           this.selectPatient(this.selectedPatient);
         }
@@ -274,6 +287,8 @@ export class PatientsComponent implements OnInit {
 
   deletePatient(): void {
     if (!this.selectedPatient) return;
+    if (!this.canDeletePatients) return;
+
     if (confirm('Bu hastayı silmek istediğinizden emin misiniz?')) {
       this.patientService.deletePatient(this.selectedPatient.id).subscribe({
         next: () => {

@@ -1,6 +1,9 @@
 # Node modules
 node_modules/
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # Environment variables
 .env
@@ -18,6 +21,7 @@ coverage/
 *.lcov
 
 # IDEs
+.vs/
 .vscode/
 .idea/
 *.swp
@@ -30,14 +34,34 @@ Thumbs.db
 # Build output
 dist/
 build/
+bin/
+obj/
+out/
 
 # Temporary files
 tmp/
 
 # Angular build cache (do not commit)
 dental-app-web/.angular/
+dental-app-web/dist/
 **/.angular/
+
+# Flutter generated output
+dental_app_mobile/.dart_tool/
+dental_app_mobile/.flutter-plugins
+dental_app_mobile/.flutter-plugins-dependencies
+dental_app_mobile/build/
+dental_app_mobile/.pub-cache/
+
+# .NET generated output
+**/bin/
+**/obj/
 
 # Crash / app logs
 crash_log.txt
 DentalApp.Desktop/crash_log.txt
+doctor_output.txt
+final_doctor.txt
+web.out.log
+.codex_server_*.log
+DentalApp.Desktop/run_output*.txt

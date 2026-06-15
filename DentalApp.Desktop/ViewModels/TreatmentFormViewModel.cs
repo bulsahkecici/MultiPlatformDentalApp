@@ -22,7 +22,7 @@ namespace DentalApp.Desktop.ViewModels
         private bool _isBusy;
         private string _costString = string.Empty;
         
-        // Tariff properties
+        // Tarife özellikleri
         private TariffCategory? _selectedCategory;
         private string _searchText = string.Empty;
         private TariffItem? _selectedTariffItem;
@@ -71,24 +71,25 @@ namespace DentalApp.Desktop.ViewModels
         public ObservableCollection<Patient> Patients { get; } = new();
         public ObservableCollection<StatusItem> StatusOptions { get; } = new();
         
-        // Tariff collections
+        // Tarife koleksiyonları
         public ObservableCollection<TariffCategory> Categories { get; } = new();
         public ObservableCollection<TariffItem> TariffItems { get; } = new();
         public CollectionView TariffItemsView { get; private set; } = null!;
 
-        // Tooth chart collections
+        // Diş haritası koleksiyonları
         public ObservableCollection<ToothHotspot> ToothHotspots { get; } = new();
         
-        // Multi-tooth selection
+        // Çoklu diş seçimi
         public ObservableCollection<int> SelectedTeeth { get; } = new();
+        public bool HasSelectedTeeth => SelectedTeeth.Count > 0;
         
-        // Multi-procedure support: Dictionary<ToothNumber, List<ProcedureItem>>
+        // Çoklu işlem desteği: Dictionary<ToothNumber, List<ProcedureItem>>
         public Dictionary<int, ObservableCollection<ProcedureItem>> ToothPlans { get; } = new();
         
-        // Available procedures for selected category
+        // Seçili kategori için mevcut işlemler
         public ObservableCollection<ProcedureItem> AvailableProcedures { get; } = new();
         
-        // Selected procedures for current tooth
+        // Geçerli diş için seçili işlemler
         public ObservableCollection<ProcedureItem> SelectedProcedures { get; } = new();
 
         public string? SelectedToothNumber
@@ -114,7 +115,7 @@ namespace DentalApp.Desktop.ViewModels
                     if (value != null)
                     {
                         Treatment.PatientId = value.Id;
-                        // Load patient with institution agreement details
+                        // Hastayı kurum anlaşması detaylarıyla birlikte yükle
                         _ = LoadPatientWithDiscountsAsync(value.Id);
                     }
                     else
@@ -242,7 +243,7 @@ namespace DentalApp.Desktop.ViewModels
             _tariffService = new TariffService();
             CanViewPrices = canViewPrices;
             
-            // Initialize CollectionView for filtering
+            // Filtreleme için CollectionView'i başlat
             var view = CollectionViewSource.GetDefaultView(TariffItems);
             TariffItemsView = view as CollectionView ?? new ListCollectionView(TariffItems);
             if (TariffItemsView != null)
@@ -250,7 +251,7 @@ namespace DentalApp.Desktop.ViewModels
                 TariffItemsView.Filter = FilterTariffItems;
             }
             
-            // Initialize search timer for debounce
+            // Geciktirme (debounce) için arama zamanlayıcısını başlat
             _searchTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(300)
@@ -269,24 +270,24 @@ namespace DentalApp.Desktop.ViewModels
             _isEditMode = treatment != null;
             _costString = treatment?.Cost?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             
-            // Set initial selected patient if editing
+            // Düzenleme yapılıyorsa başlangıçta seçili hastayı ayarla
             if (treatment != null && treatment.PatientId > 0)
             {
-                // Will be set after patients are loaded
+                // Hastalar yüklendikten sonra ayarlanacak
             }
 
-            SaveCommand = new RelayCommand(async _ => await SaveTreatmentAsync(), _ => !IsBusy && IsValid());
+            SaveCommand = new RelayCommand(async _ => await SaveAsync(), _ => !IsBusy && CanSave());
             CancelCommand = new RelayCommand(_ => SaveCompleted?.Invoke(false));
             AddTariffItemCommand = new RelayCommand(_ => AddSelectedTariffItemToTreatment(), _ => SelectedTariffItem != null);
             SelectToothCommand = new RelayCommand(OnSelectTooth);
-            AddProcedureCommand = new RelayCommand<object>(OnAddProcedure, _ => SelectedTariffItem != null);
+            AddProcedureCommand = new RelayCommand<object>(OnAddProcedure, _ => SelectedTariffItem != null && HasSelectedTeeth);
             RemoveProcedureCommand = new RelayCommand<ProcedureItem>(OnRemoveProcedure);
             SavePlanCommand = new RelayCommand(async _ => await SavePlanAsync(), _ => !IsBusy && ToothPlans.Count > 0);
 
-            // Initialize tooth hotspots (FDI numbering: 11-18, 21-28, 31-38, 41-48)
+            // Diş etkin noktalarını başlat (FDI numaralandırması: 11-18, 21-28, 31-38, 41-48)
             InitializeToothHotspots();
 
-            // Initialize status options
+            // Durum seçeneklerini başlat
             StatusOptions.Add(new Helpers.StatusItem { Value = "planned", Text = "Planlandı" });
             StatusOptions.Add(new Helpers.StatusItem { Value = "in_progress", Text = "Devam Ediyor" });
             StatusOptions.Add(new Helpers.StatusItem { Value = "completed", Text = "Tamamlandı" });
@@ -295,7 +296,7 @@ namespace DentalApp.Desktop.ViewModels
             _ = LoadPatientsAsync(patientService);
             _ = LoadTariffDataAsync();
             
-            // If editing, reload full treatment data to ensure all fields are populated
+            // Düzenleme yapılıyorsa, tüm alanların dolması için tam tedavi verisini yeniden yükle
             if (_isEditMode && treatment != null && treatment.Id > 0)
             {
                 _ = LoadTreatmentDataAsync(treatment.Id);
@@ -313,13 +314,13 @@ namespace DentalApp.Desktop.ViewModels
                     _costString = fullTreatment.Cost?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
                     OnPropertyChanged(nameof(CostString));
                     
-                    // Update selected patient if not already set
+                    // Henüz ayarlanmadıysa seçili hastayı güncelle
                     if (Treatment.PatientId > 0 && SelectedPatient == null)
                     {
                         SelectedPatient = Patients.FirstOrDefault(p => p.Id == Treatment.PatientId);
                     }
                     
-                    // Load tooth plans if tooth number exists
+                    // Diş numarası varsa diş planlarını yükle
                     if (!string.IsNullOrWhiteSpace(Treatment.ToothNumber))
                     {
                         if (int.TryParse(Treatment.ToothNumber, out var toothNumber))
@@ -332,7 +333,7 @@ namespace DentalApp.Desktop.ViewModels
                                 ToothPlans[toothNumber] = new ObservableCollection<ProcedureItem>();
                             }
                             
-                            // Add the existing treatment as a procedure item
+                            // Mevcut tedaviyi bir işlem kalemi olarak ekle
                             var procItem = new ProcedureItem
                             {
                                 Code = Treatment.Description?.Contains("Kod:") == true 
@@ -352,7 +353,7 @@ namespace DentalApp.Desktop.ViewModels
                         }
                     }
                     
-                    // Set category if treatment type matches
+                    // Tedavi türü eşleşiyorsa kategoriyi ayarla
                     if (!string.IsNullOrWhiteSpace(Treatment.TreatmentType))
                     {
                         var matchingCategory = Categories.FirstOrDefault(c => c.Name == Treatment.TreatmentType);
@@ -470,13 +471,13 @@ namespace DentalApp.Desktop.ViewModels
                     Patients.Add(p);
                 }
                 
-                // Set selected patient if editing
+                // Düzenleme yapılıyorsa seçili hastayı ayarla
                 if (Treatment.PatientId > 0)
                 {
                     SelectedPatient = Patients.FirstOrDefault(p => p.Id == Treatment.PatientId);
                 }
 
-                // If editing an existing treatment, load its data into ToothPlans
+                // Mevcut bir tedavi düzenleniyorsa, verisini ToothPlans'e yükle
                 if (IsEditMode && Treatment.Id > 0 && !string.IsNullOrWhiteSpace(Treatment.ToothNumber))
                 {
                     if (int.TryParse(Treatment.ToothNumber, out var toothNumber))
@@ -489,7 +490,7 @@ namespace DentalApp.Desktop.ViewModels
                             ToothPlans[toothNumber] = new ObservableCollection<ProcedureItem>();
                         }
                         
-                        // Add the existing treatment as a procedure item
+                        // Mevcut tedaviyi bir işlem kalemi olarak ekle
                         var procItem = new ProcedureItem
                         {
                             Code = Treatment.Description?.Contains("Kod:") == true 
@@ -519,6 +520,33 @@ namespace DentalApp.Desktop.ViewModels
         {
             return Treatment.PatientId > 0 &&
                    !string.IsNullOrWhiteSpace(Treatment.TreatmentType);
+        }
+
+        private bool HasPlanItems()
+        {
+            return ToothPlans.Any(tp => tp.Value != null && tp.Value.Count > 0);
+        }
+
+        private bool CanSave()
+        {
+            // Kullanıcı diş bazlı bir plan oluşturduysa plan olarak kaydet. Aksi halde tek tedavi olarak kaydet.
+            if (HasPlanItems())
+            {
+                return Treatment.PatientId > 0;
+            }
+
+            return IsValid();
+        }
+
+        private async Task SaveAsync()
+        {
+            if (HasPlanItems())
+            {
+                await SavePlanAsync();
+                return;
+            }
+
+            await SaveTreatmentAsync();
         }
 
         private async Task SaveTreatmentAsync()
@@ -558,49 +586,42 @@ namespace DentalApp.Desktop.ViewModels
 
         private void InitializeToothHotspots()
         {
-            // FDI numbering system coordinates
-            // These are approximate positions - adjust based on your mouth_chart.png image
-            // Format: ToothNumber, X, Y, Width, Height
-            
-            // Upper right quadrant (11-18)
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 11, X = 200, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 12, X = 250, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 13, X = 300, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 14, X = 350, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 15, X = 400, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 16, X = 450, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 17, X = 500, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 18, X = 550, Y = 50, Width = 40, Height = 50 });
+            // FDI numaralandırması — koordinatlar web diş haritasıyla hizalı (600×400 viewBox)
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 18, X = 300, Y = 50, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 17, X = 335, Y = 50, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 16, X = 370, Y = 50, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 15, X = 405, Y = 50, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 14, X = 440, Y = 50, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 13, X = 475, Y = 50, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 12, X = 510, Y = 50, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 11, X = 545, Y = 50, Width = 30, Height = 45 });
 
-            // Upper left quadrant (21-28)
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 21, X = 200, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 22, X = 150, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 23, X = 100, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 24, X = 50, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 25, X = 0, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 26, X = -50, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 27, X = -100, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 28, X = -150, Y = 50, Width = 40, Height = 50 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 21, X = 270, Y = 50, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 22, X = 235, Y = 50, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 23, X = 200, Y = 50, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 24, X = 165, Y = 50, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 25, X = 130, Y = 50, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 26, X = 95, Y = 50, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 27, X = 60, Y = 50, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 28, X = 25, Y = 50, Width = 30, Height = 45 });
 
-            // Lower left quadrant (31-38)
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 31, X = 200, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 32, X = 150, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 33, X = 100, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 34, X = 50, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 35, X = 0, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 36, X = -50, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 37, X = -100, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 38, X = -150, Y = 200, Width = 40, Height = 50 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 38, X = 25, Y = 150, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 37, X = 60, Y = 150, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 36, X = 95, Y = 150, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 35, X = 130, Y = 150, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 34, X = 165, Y = 150, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 33, X = 200, Y = 150, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 32, X = 235, Y = 150, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 31, X = 270, Y = 150, Width = 30, Height = 45 });
 
-            // Lower right quadrant (41-48)
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 41, X = 200, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 42, X = 250, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 43, X = 300, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 44, X = 350, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 45, X = 400, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 46, X = 450, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 47, X = 500, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 48, X = 550, Y = 200, Width = 40, Height = 50 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 41, X = 545, Y = 150, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 42, X = 510, Y = 150, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 43, X = 475, Y = 150, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 44, X = 440, Y = 150, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 45, X = 405, Y = 150, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 46, X = 370, Y = 150, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 47, X = 335, Y = 150, Width = 30, Height = 45 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 48, X = 300, Y = 150, Width = 30, Height = 45 });
         }
 
         private void OnSelectTooth(object? parameter)
@@ -630,8 +651,15 @@ namespace DentalApp.Desktop.ViewModels
                     ToothPlans[toothNumber] = new ObservableCollection<ProcedureItem>();
                 }
             }
+
+            if (!HasSelectedTeeth)
+            {
+                SelectedCategory = null;
+                SelectedTariffItem = null;
+                AvailableProcedures.Clear();
+            }
             
-            // Update selected tooth number for display
+            // Görüntüleme için seçili diş numarasını güncelle
             if (SelectedTeeth.Count > 0)
             {
                 SelectedToothNumber = string.Join(", ", SelectedTeeth.OrderBy(t => t));
@@ -642,6 +670,8 @@ namespace DentalApp.Desktop.ViewModels
             }
             
             UpdateSelectedProcedures();
+            OnPropertyChanged(nameof(HasSelectedTeeth));
+            System.Windows.Input.CommandManager.InvalidateRequerySuggested();
         }
         
         private void UpdateSelectedProcedures()
@@ -691,7 +721,7 @@ namespace DentalApp.Desktop.ViewModels
                 Category = SelectedCategory?.Name ?? ""
             };
             
-            // Add to all selected teeth
+            // Tüm seçili dişlere ekle
             foreach (var tooth in SelectedTeeth)
             {
                 if (!ToothPlans.ContainsKey(tooth))
@@ -699,7 +729,7 @@ namespace DentalApp.Desktop.ViewModels
                     ToothPlans[tooth] = new ObservableCollection<ProcedureItem>();
                 }
                 
-                // Check if already added
+                // Zaten eklenmiş mi kontrol et
                 if (!ToothPlans[tooth].Any(p => p.Code == procItem.Code))
                 {
                     ToothPlans[tooth].Add(procItem);
@@ -742,7 +772,7 @@ namespace DentalApp.Desktop.ViewModels
             IsBusy = true;
             try
             {
-                // Prepare treatment plan items
+                // Tedavi planı kalemlerini hazırla
                 var planItems = new List<Services.TreatmentPlanItem>();
                 
                 foreach (var toothPlan in ToothPlans)
@@ -763,7 +793,7 @@ namespace DentalApp.Desktop.ViewModels
                     }
                 }
 
-                // Create treatment plan using the API
+                // API kullanarak tedavi planı oluştur
                 var title = $"Tedavi Planı - {Treatment.TreatmentDate:dd.MM.yyyy}";
                 var description = $"Toplam {planItems.Count} işlem, {ToothPlans.Count} diş";
                 
@@ -798,11 +828,18 @@ namespace DentalApp.Desktop.ViewModels
     
     public class ProcedureItem : ObservableObject
     {
+        private int _id;
         private string _code = string.Empty;
         private string _name = string.Empty;
         private decimal _price;
         private string _category = string.Empty;
         private bool _isSelected;
+
+        public int Id
+        {
+            get => _id;
+            set => SetProperty(ref _id, value);
+        }
         
         public string Code
         {

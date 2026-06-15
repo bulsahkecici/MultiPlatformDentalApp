@@ -3,12 +3,15 @@ const validator = require('validator');
 const { query } = require('../db');
 const { AppError } = require('../utils/errorResponder');
 const { parseRolesCsv } = require('../utils/roles');
-const { validatePasswordStrength, isPasswordReused } = require('../utils/passwordValidator');
+const {
+  validatePasswordStrength,
+  isPasswordReused,
+} = require('../utils/passwordValidator');
 const {
   generateAccessToken,
   generateRefreshToken,
   storeRefreshToken,
-  verifyRefreshToken,
+  rotateRefreshToken,
   revokeRefreshToken,
   generateEmailVerificationToken,
   generatePasswordResetToken,
@@ -30,14 +33,14 @@ const {
 const config = require('../config');
 
 /**
- * Login endpoint
- * Returns access token and refresh token
+ * Giriş uç noktası
+ * Erişim token'ı ve yenileme token'ı döndürür
  */
 async function login(req, res, next) {
   try {
     const { email, password } = req.body || {};
 
-    // Validate input
+    // Girdiyi doğrula
     if (!email || !password) {
       return next(new AppError('Email and password are required', 400));
     }
@@ -49,7 +52,7 @@ async function login(req, res, next) {
     const ipAddress = getClientIp(req);
     const userAgent = req.headers['user-agent'] || '';
 
-    // Check if account is locked
+    // Hesabın kilitli olup olmadığını kontrol et
     const lockStatus = await checkAccountLock(email);
     if (lockStatus.locked) {
       const minutesRemaining = Math.ceil(
@@ -74,7 +77,7 @@ async function login(req, res, next) {
       );
     }
 
-    // Get user from database (include profile fields from users table)
+    // Kullanıcıyı veritabanından al (users tablosundaki profil alanları dahil)
     const result = await query(
       `SELECT id, email, password_hash, roles, email_verified, deleted_at, last_login_at,
               first_name, last_name, phone, tc_no, created_at
@@ -84,7 +87,7 @@ async function login(req, res, next) {
 
     const user = result.rows && result.rows[0];
 
-    // Check if user exists and is not deleted
+    // Kullanıcının var olduğunu ve silinmediğini kontrol et
     if (!user || user.deleted_at) {
       await recordFailedAttempt(email, ipAddress, userAgent);
 
@@ -101,10 +104,14 @@ async function login(req, res, next) {
       return next(new AppError('Invalid credentials', 401));
     }
 
-    // Verify password
+    // Parolayı doğrula
     const passwordValid = await bcrypt.compare(password, user.password_hash);
     if (!passwordValid) {
-      const failureResult = await recordFailedAttempt(email, ipAddress, userAgent);
+      const failureResult = await recordFailedAttempt(
+        email,
+        ipAddress,
+        userAgent,
+      );
 
       await logAuthEvent({
         eventType: AuditEventType.LOGIN_FAILED,
@@ -128,25 +135,22 @@ async function login(req, res, next) {
       return next(new AppError('Invalid credentials', 401));
     }
 
-    // Check if email is verified (if email service is enabled)
+    // E-postanın doğrulanıp doğrulanmadığını kontrol et (e-posta servisi etkinse)
     if (config.email.enabled && !user.email_verified) {
       return next(
-        new AppError(
-          'Please verify your email address before logging in',
-          403,
-        ),
+        new AppError('Please verify your email address before logging in', 403),
       );
     }
 
-    // Reset failed login attempts
+    // Başarısız giriş denemelerini sıfırla
     await resetFailedAttempts(email);
 
-    // Update last login time
+    // Son giriş zamanını güncelle
     await query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [
       user.id,
     ]);
 
-    // Generate tokens
+    // Token'ları üret
     const roles = parseRolesCsv(user.roles);
     const tokenPayload = {
       sub: user.id,
@@ -157,10 +161,10 @@ async function login(req, res, next) {
     const accessToken = generateAccessToken(tokenPayload);
     const refreshToken = generateRefreshToken(tokenPayload);
 
-    // Store refresh token
+    // Yenileme token'ını sakla
     await storeRefreshToken(user.id, refreshToken, userAgent, ipAddress);
 
-    // Log successful login
+    // Başarılı girişi günlüğe yaz
     await logAuthEvent({
       eventType: AuditEventType.LOGIN_SUCCESS,
       userId: user.id,
@@ -192,7 +196,7 @@ async function login(req, res, next) {
 }
 
 /**
- * Refresh access token using refresh token
+ * Yenileme token'ı kullanarak erişim token'ını yeniler
  */
 async function refreshToken(req, res, next) {
   try {
@@ -202,13 +206,22 @@ async function refreshToken(req, res, next) {
       return next(new AppError('Refresh token is required', 400));
     }
 
-    // Verify refresh token
-    const tokenData = await verifyRefreshToken(refreshToken);
-    if (!tokenData) {
+    const ipAddress = getClientIp(req);
+    const userAgent = req.headers['user-agent'] || '';
+
+    // Yenileme token'ını doğrula ve döndür (eskisini iptal eder, yenisini saklar)
+    const rotationResult = await rotateRefreshToken(
+      refreshToken,
+      userAgent,
+      ipAddress,
+    );
+    if (!rotationResult) {
       return next(new AppError('Invalid or expired refresh token', 401));
     }
 
-    // Generate new access token
+    const { tokenData, newRefreshToken } = rotationResult;
+
+    // Yeni erişim token'ı üret
     const roles = parseRolesCsv(tokenData.roles);
     const tokenPayload = {
       sub: tokenData.id,
@@ -218,10 +231,7 @@ async function refreshToken(req, res, next) {
 
     const newAccessToken = generateAccessToken(tokenPayload);
 
-    const ipAddress = getClientIp(req);
-    const userAgent = req.headers['user-agent'] || '';
-
-    // Log token refresh
+    // Token yenilemeyi günlüğe yaz
     await logAuthEvent({
       eventType: AuditEventType.TOKEN_REFRESH,
       userId: tokenData.id,
@@ -233,6 +243,7 @@ async function refreshToken(req, res, next) {
 
     return res.status(200).json({
       accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
     });
   } catch (err) {
     return next(new AppError('Token refresh failed', 401));
@@ -240,7 +251,7 @@ async function refreshToken(req, res, next) {
 }
 
 /**
- * Logout - revoke refresh token
+ * Çıkış - yenileme token'ını iptal eder
  */
 async function logout(req, res, next) {
   try {
@@ -271,7 +282,7 @@ async function logout(req, res, next) {
 }
 
 /**
- * Request password reset email
+ * Parola sıfırlama e-postası talep eder
  */
 async function requestPasswordReset(req, res, next) {
   try {
@@ -281,7 +292,7 @@ async function requestPasswordReset(req, res, next) {
       return next(new AppError('Valid email is required', 400));
     }
 
-    // Get user
+    // Kullanıcıyı al
     const result = await query(
       'SELECT id, email, deleted_at FROM users WHERE email = $1',
       [email],
@@ -289,8 +300,8 @@ async function requestPasswordReset(req, res, next) {
 
     const user = result.rows && result.rows[0];
 
-    // Always return success to prevent email enumeration
-    // But only send email if user exists and is not deleted
+    // E-posta sızdırmayı (enumeration) önlemek için her zaman başarı döndür
+    // Ancak yalnızca kullanıcı varsa ve silinmemişse e-posta gönder
     if (user && !user.deleted_at) {
       const resetToken = await generatePasswordResetToken(user.id);
 
@@ -320,7 +331,7 @@ async function requestPasswordReset(req, res, next) {
 }
 
 /**
- * Reset password using token
+ * Token kullanarak parolayı sıfırlar
  */
 async function resetPassword(req, res, next) {
   try {
@@ -330,7 +341,7 @@ async function resetPassword(req, res, next) {
       return next(new AppError('Token and new password are required', 400));
     }
 
-    // Validate password strength
+    // Parola güçlülüğünü doğrula
     const passwordValidation = validatePasswordStrength(newPassword);
     if (!passwordValidation.valid) {
       return next(
@@ -340,13 +351,13 @@ async function resetPassword(req, res, next) {
       );
     }
 
-    // Verify reset token
+    // Sıfırlama token'ını doğrula
     const user = await verifyPasswordResetToken(token);
     if (!user) {
       return next(new AppError('Invalid or expired reset token', 400));
     }
 
-    // Check password history
+    // Parola geçmişini kontrol et
     const historyResult = await query(
       `SELECT password_hash FROM password_history 
        WHERE user_id = $1 
@@ -356,7 +367,11 @@ async function resetPassword(req, res, next) {
     );
 
     const previousHashes = historyResult.rows.map((row) => row.password_hash);
-    const isReused = await isPasswordReused(newPassword, previousHashes, bcrypt.compare);
+    const isReused = await isPasswordReused(
+      newPassword,
+      previousHashes,
+      bcrypt.compare,
+    );
 
     if (isReused) {
       return next(
@@ -367,10 +382,10 @@ async function resetPassword(req, res, next) {
       );
     }
 
-    // Hash new password
+    // Yeni parolayı hash'le
     const passwordHash = await bcrypt.hash(newPassword, 10);
 
-    // Update password and clear reset token
+    // Parolayı güncelle ve sıfırlama token'ını temizle
     await query(
       `UPDATE users 
        SET password_hash = $1, 
@@ -381,7 +396,7 @@ async function resetPassword(req, res, next) {
       [passwordHash, user.id],
     );
 
-    // Add to password history
+    // Parola geçmişine ekle
     await query(
       'INSERT INTO password_history (user_id, password_hash) VALUES ($1, $2)',
       [user.id, passwordHash],
@@ -408,7 +423,7 @@ async function resetPassword(req, res, next) {
 }
 
 /**
- * Verify email address
+ * E-posta adresini doğrular
  */
 async function verifyEmail(req, res, next) {
   try {
@@ -418,13 +433,13 @@ async function verifyEmail(req, res, next) {
       return next(new AppError('Verification token is required', 400));
     }
 
-    // Verify token
+    // Token'ı doğrula
     const user = await verifyEmailVerificationToken(token);
     if (!user) {
       return next(new AppError('Invalid or expired verification token', 400));
     }
 
-    // Mark email as verified
+    // E-postayı doğrulanmış olarak işaretle
     await query(
       `UPDATE users 
        SET email_verified = true,
@@ -447,7 +462,7 @@ async function verifyEmail(req, res, next) {
       success: true,
     });
 
-    // Send welcome email
+    // Hoş geldiniz e-postası gönder
     if (config.email.enabled) {
       await sendWelcomeEmail(user.email);
     }
@@ -461,7 +476,7 @@ async function verifyEmail(req, res, next) {
 }
 
 /**
- * Resend verification email
+ * Doğrulama e-postasını yeniden gönderir
  */
 async function resendVerification(req, res, next) {
   try {
@@ -471,16 +486,16 @@ async function resendVerification(req, res, next) {
       return next(new AppError('Valid email is required', 400));
     }
 
-    // Get user
+    // Kullanıcıyı al
     const result = await query(
-      `SELECT id, email, email_verified, deleted_at 
+      `SELECT id, email, email_verified, deleted_at
        FROM users WHERE email = $1`,
       [email],
     );
 
     const user = result.rows && result.rows[0];
 
-    // Always return success to prevent email enumeration
+    // E-posta sızdırmayı (enumeration) önlemek için her zaman başarı döndür
     if (user && !user.deleted_at && !user.email_verified) {
       const verificationToken = await generateEmailVerificationToken(user.id);
 
@@ -490,7 +505,8 @@ async function resendVerification(req, res, next) {
     }
 
     return res.status(200).json({
-      message: 'If the email exists and is unverified, a verification link has been sent',
+      message:
+        'If the email exists and is unverified, a verification link has been sent',
     });
   } catch (err) {
     return next(new AppError('Failed to resend verification email', 500));
@@ -498,14 +514,16 @@ async function resendVerification(req, res, next) {
 }
 
 /**
- * Get current user profile (me)
- * Requires authentication
+ * Geçerli kullanıcı profilini getirir (me)
+ * Kimlik doğrulama gerektirir
  */
 async function getMe(req, res, next) {
   try {
     const userId = req.user.sub;
     const result = await query(
-      'SELECT id, email, roles, email_verified, created_at, last_login_at FROM users WHERE id = $1',
+      `SELECT id, email, roles, email_verified, first_name, last_name, phone,
+              commission_rate, salary, specializations, created_at, last_login_at
+       FROM users WHERE id = $1`,
       [userId],
     );
 
@@ -522,6 +540,12 @@ async function getMe(req, res, next) {
         email: user.email,
         roles,
         emailVerified: user.email_verified,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        phone: user.phone,
+        commissionRate: user.commission_rate,
+        salary: user.salary,
+        specializations: user.specializations,
         createdAt: user.created_at,
         lastLoginAt: user.last_login_at,
       },

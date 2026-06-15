@@ -2,6 +2,7 @@ using DentalApp.Desktop.Helpers;
 using DentalApp.Desktop.Models;
 using DentalApp.Desktop.Services;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
@@ -15,6 +16,9 @@ namespace DentalApp.Desktop.ViewModels
         private readonly AppointmentService _appointmentService;
         private readonly PatientService _patientService;
         private readonly ApiService _apiService;
+        private readonly bool _isDentist;
+        private readonly bool _isSecretary;
+        private readonly int? _currentUserId;
         private bool _isBusy;
         private Appointment? _selectedAppointment;
         private DateTime _selectedDate = DateTime.Today;
@@ -78,11 +82,20 @@ namespace DentalApp.Desktop.ViewModels
         public ICommand SlotClickCommand { get; }
         public ICommand SMSCommand { get; }
 
-        public AppointmentsViewModel(AppointmentService appointmentService, PatientService patientService, ApiService? apiService = null)
+        public AppointmentsViewModel(
+            AppointmentService appointmentService, 
+            PatientService patientService, 
+            ApiService? apiService = null,
+            Models.User? currentUser = null,
+            bool isSecretary = false,
+            bool isDentist = false)
         {
             _appointmentService = appointmentService;
             _patientService = patientService;
             _apiService = apiService ?? new ApiService();
+            _isDentist = isDentist;
+            _isSecretary = isSecretary;
+            _currentUserId = currentUser?.Id;
             RefreshCommand = new RelayCommand(async _ => await LoadAppointmentsAsync(), _ => !IsBusy);
             AddAppointmentCommand = new RelayCommand(_ => AddAppointmentRequested?.Invoke(null));
             EditAppointmentCommand = new RelayCommand(_ =>
@@ -131,19 +144,46 @@ namespace DentalApp.Desktop.ViewModels
         {
             try
             {
-                // TODO: Load from /api/users?role=dentist when API is ready
-                // For now, use placeholder data
-                Dentists.Clear();
-                Dentists.Add(new DentistInfo { Id = 1, Name = "Dr. Ahmet Yılmaz", Email = "ahmet@example.com" });
-                Dentists.Add(new DentistInfo { Id = 2, Name = "Dr. Ayşe Demir", Email = "ayse@example.com" });
-                Dentists.Add(new DentistInfo { Id = 3, Name = "Dr. Mehmet Kaya", Email = "mehmet@example.com" });
-                
-                // After loading dentists, refresh slots
+                // Secretary/Admin: tüm hekimler; Dentist: sadece kendi
+                if (_isDentist && _currentUserId.HasValue)
+                {
+                    var self = await _apiService.GetAsync<User>($"/users/{_currentUserId.Value}");
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        Dentists.Clear();
+                        if (self != null)
+                        {
+                            Dentists.Add(new DentistInfo
+                            {
+                                Id = self.Id,
+                                Name = $"Dr. {self.FullName}",
+                                Email = self.Email ?? string.Empty
+                            });
+                        }
+                    });
+                }
+                else
+                {
+                    var response = await _apiService.GetAsync<UsersResponse>("/users?limit=500&role=dentist");
+                    var list = response?.Users ?? new List<User>();
+                    var dentistList = list
+                        .Where(u => u.Roles.Contains("dentist"))
+                        .Select(u => new DentistInfo { Id = u.Id, Name = $"Dr. {u.FullName}", Email = u.Email ?? "" })
+                        .ToList();
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        Dentists.Clear();
+                        foreach (var d in dentistList)
+                            Dentists.Add(d);
+                    });
+                }
                 await RefreshSlotsAsync();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading dentists: {ex}");
+                await Application.Current.Dispatcher.InvokeAsync(() => Dentists.Clear());
+                await RefreshSlotsAsync();
             }
         }
         
@@ -154,10 +194,10 @@ namespace DentalApp.Desktop.ViewModels
             System.Diagnostics.Debug.WriteLine($"[RefreshSlotsAsync] Dentists count: {Dentists.Count}");
             System.Diagnostics.Debug.WriteLine($"[RefreshSlotsAsync] TimeSlots count: {TimeSlots.Count}");
             
-            // Clear existing slots
+            // Mevcut hücreleri temizle
             AppointmentSlots.Clear();
             
-            // Create slots for each time and dentist combination
+            // Her saat ve hekim kombinasyonu için hücre oluştur
             foreach (var timeSlot in TimeSlots)
             {
                 foreach (var dentist in Dentists)
@@ -170,8 +210,8 @@ namespace DentalApp.Desktop.ViewModels
                         Date = SelectedDate
                     };
                     
-                    // Check if there's an appointment for this slot
-                    // Match by date, dentist, and time overlap
+                    // Bu hücre için bir randevu olup olmadığını kontrol et
+                    // Tarih, hekim ve saat çakışmasına göre eşleştir
                     var appointment = Appointments.FirstOrDefault(a => 
                         a.AppointmentDate.Date == SelectedDate.Date &&
                         a.DentistId == dentist.Id &&
@@ -197,7 +237,7 @@ namespace DentalApp.Desktop.ViewModels
             
             System.Diagnostics.Debug.WriteLine($"[RefreshSlotsAsync] Created {AppointmentSlots.Count} slots, Occupied: {AppointmentSlots.Count(s => s.Status == SlotStatus.Occupied)}");
             
-            // Force UI update
+            // Arayüz güncellemesini zorla
             OnPropertyChanged(nameof(AppointmentSlots));
             return Task.CompletedTask;
         }
@@ -246,14 +286,14 @@ namespace DentalApp.Desktop.ViewModels
             {
                 var detailsViewModel = new AppointmentDetailsViewModel(appointment);
                 
-                // Edit requested handler
+                // Düzenleme isteği yöneticisi
                 detailsViewModel.EditRequested += () =>
                 {
                     MaterialDesignThemes.Wpf.DialogHost.CloseDialogCommand.Execute(null, null);
                     EditAppointmentRequested?.Invoke(appointment);
                 };
                 
-                // Close requested handler
+                // Kapatma isteği yöneticisi
                 detailsViewModel.CloseRequested += () =>
                 {
                     MaterialDesignThemes.Wpf.DialogHost.CloseDialogCommand.Execute(null, null);
@@ -312,7 +352,7 @@ namespace DentalApp.Desktop.ViewModels
                 TotalPages = pagination.Pages;
                 OnPropertyChanged(nameof(PageInfo));
                 
-                // Refresh slots after loading appointments
+                // Randevular yüklendikten sonra hücreleri yenile
                 await RefreshSlotsAsync();
             }
             catch (Exception ex)

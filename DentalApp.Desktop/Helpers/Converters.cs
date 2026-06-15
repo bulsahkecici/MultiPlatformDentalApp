@@ -35,7 +35,7 @@ namespace DentalApp.Desktop.Helpers
             return Visibility.Visible;
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-            => throw new NotImplementedException();
+            => Binding.DoNothing;
     }
 
     public class BooleanToTextConverter : IValueConverter
@@ -54,7 +54,7 @@ namespace DentalApp.Desktop.Helpers
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            return Binding.DoNothing;
         }
     }
 
@@ -62,17 +62,17 @@ namespace DentalApp.Desktop.Helpers
     {
         private static readonly Dictionary<string, string> StatusTranslations = new()
         {
-            // Appointment statuses
+            // Randevu durumları
             { "scheduled", "Planlandı" },
             { "confirmed", "Onaylandı" },
             { "completed", "Tamamlandı" },
             { "cancelled", "İptal Edildi" },
             { "no_show", "Gelmedi" },
             
-            // Treatment statuses
+            // Tedavi durumları
             { "planned", "Planlandı" },
             { "in_progress", "Devam Ediyor" }
-            // "completed" and "cancelled" already added above
+            // "completed" ve "cancelled" yukarıda zaten eklendi
         };
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -88,7 +88,7 @@ namespace DentalApp.Desktop.Helpers
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            return Binding.DoNothing;
         }
     }
 
@@ -101,7 +101,7 @@ namespace DentalApp.Desktop.Helpers
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            return Binding.DoNothing;
         }
     }
 
@@ -112,13 +112,13 @@ namespace DentalApp.Desktop.Helpers
             if (values == null || values.Length < 2)
                 return false;
 
-            // Support both single tooth (string) and multiple teeth (collection)
+            // Hem tek diş (string) hem de çoklu diş (koleksiyon) desteği
             var selectedTeeth = values[0];
             var currentTooth = values[1]?.ToString();
 
             if (currentTooth == null) return false;
 
-            // If it's a collection (ObservableCollection<int>)
+            // Eğer bir koleksiyonsa (ObservableCollection<int>)
             if (selectedTeeth is System.Collections.ICollection teethCollection)
             {
                 foreach (var tooth in teethCollection)
@@ -129,19 +129,19 @@ namespace DentalApp.Desktop.Helpers
                 return false;
             }
 
-            // If it's a string (single tooth or comma-separated)
+            // Eğer bir string ise (tek diş veya virgülle ayrılmış)
             var selectedToothStr = selectedTeeth?.ToString();
             if (string.IsNullOrWhiteSpace(selectedToothStr))
                 return false;
 
-            // Check if current tooth is in the comma-separated list
+            // Geçerli dişin virgülle ayrılmış listede olup olmadığını kontrol et
             var teethList = selectedToothStr.Split(',').Select(t => t.Trim());
             return teethList.Contains(currentTooth);
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            return null;
         }
     }
     
@@ -166,7 +166,7 @@ namespace DentalApp.Desktop.Helpers
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            return Binding.DoNothing;
         }
     }
     
@@ -200,7 +200,7 @@ namespace DentalApp.Desktop.Helpers
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            return Binding.DoNothing;
         }
     }
     
@@ -220,7 +220,78 @@ namespace DentalApp.Desktop.Helpers
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            return Binding.DoNothing;
+        }
+    }
+
+    /// <summary>Para alanları: decimal &lt;-&gt; string (Türkçe: 1.234,56)</summary>
+    public class DecimalToTurkishStringConverter : IValueConverter
+    {
+        private static readonly CultureInfo Turkish = CultureInfo.GetCultureInfo("tr-TR");
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var suffix = parameter as string ?? "";
+            if (value is decimal d)
+                return d.ToString("N2", Turkish) + suffix;
+            if (value is double dbl)
+                return dbl.ToString("N2", Turkish) + suffix;
+            return "0,00" + suffix;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is not string s || string.IsNullOrWhiteSpace(s))
+                return 0m;
+            var suffix = parameter as string ?? "";
+            if (!string.IsNullOrEmpty(suffix) && s.EndsWith(suffix, StringComparison.Ordinal))
+                s = s.Substring(0, s.Length - suffix.Length);
+            s = s.Trim().Replace("\u00A0", "");
+            if (decimal.TryParse(s, NumberStyles.Number, Turkish, out var result))
+                return result;
+            if (decimal.TryParse(s.Replace(",", "."), NumberStyles.Number, CultureInfo.InvariantCulture, out result))
+                return result;
+            return 0m;
+        }
+    }
+
+    public class NullToVisibilityConverter : IValueConverter
+    {
+        public Visibility NullValue { get; set; } = Visibility.Collapsed;
+        public Visibility NotNullValue { get; set; } = Visibility.Visible;
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return value == null ? NullValue : NotNullValue;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
+        }
+    }
+
+    public class StatusToColorConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is string status && !string.IsNullOrWhiteSpace(status))
+            {
+                return status.ToLower() switch
+                {
+                    "scheduled" or "planned" => System.Windows.Media.Brushes.SkyBlue,
+                    "confirmed" or "in_progress" => System.Windows.Media.Brushes.Orange,
+                    "completed" => System.Windows.Media.Brushes.LimeGreen,
+                    "cancelled" or "no_show" => System.Windows.Media.Brushes.Tomato,
+                    _ => System.Windows.Media.Brushes.Gray
+                };
+            }
+            return System.Windows.Media.Brushes.Gray;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
         }
     }
 }

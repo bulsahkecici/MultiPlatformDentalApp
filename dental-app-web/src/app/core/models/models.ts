@@ -3,6 +3,10 @@ export interface User {
     email: string;
     roles: string[];
     emailVerified: boolean;
+    firstName?: string;
+    lastName?: string;
+    first_name?: string;
+    last_name?: string;
     lastLoginAt?: string;
 }
 
@@ -46,6 +50,8 @@ export interface Patient {
     notes?: string;
     createdAt?: string;
     created_at?: string; // Backend format
+    institutionAgreementId?: number;
+    institution_agreement_id?: number; // Backend format
 }
 
 export interface Appointment {

@@ -172,7 +172,7 @@ CREATE TABLE IF NOT EXISTS treatments (
   
   -- Cost
   cost DECIMAL(10, 2),
-  currency VARCHAR(10) DEFAULT 'USD',
+  currency VARCHAR(10) DEFAULT 'TRY',
   
   -- Status
   status VARCHAR(50) NOT NULL DEFAULT 'completed', -- planned, in_progress, completed, cancelled
@@ -201,7 +201,7 @@ CREATE TABLE IF NOT EXISTS treatment_plans (
   status VARCHAR(50) NOT NULL DEFAULT 'active', -- active, completed, cancelled
   
   total_estimated_cost DECIMAL(10, 2),
-  currency VARCHAR(10) DEFAULT 'USD',
+  currency VARCHAR(10) DEFAULT 'TRY',
   
   start_date DATE,
   estimated_completion_date DATE,
@@ -232,7 +232,7 @@ CREATE TABLE IF NOT EXISTS invoices (
   tax DECIMAL(10, 2) NOT NULL DEFAULT 0,
   discount DECIMAL(10, 2) NOT NULL DEFAULT 0,
   total DECIMAL(10, 2) NOT NULL,
-  currency VARCHAR(10) DEFAULT 'USD',
+  currency VARCHAR(10) DEFAULT 'TRY',
   
   status VARCHAR(50) NOT NULL DEFAULT 'pending', -- pending, paid, overdue, cancelled
   payment_method VARCHAR(50), -- cash, credit_card, insurance, etc.
@@ -426,3 +426,32 @@ INSERT INTO discount_reasons (name, description) VALUES
   ('Yaşlı İndirimi', '65 yaş üstü hastalara indirim'),
   ('Toplu İşlem', 'Birden fazla işlem için toplu indirim')
 ON CONFLICT (name) DO NOTHING;
+
+-- Seed default discounts
+INSERT INTO discounts (name, description, discount_type, discount_value, is_active)
+SELECT 'Genel %10', 'Genel indirim kampanyası', 'percentage', 10, true
+WHERE NOT EXISTS (SELECT 1 FROM discounts WHERE name = 'Genel %10');
+
+INSERT INTO discounts (name, description, discount_type, discount_value, is_active)
+SELECT 'Nakit %5', 'Nakit ödeme indirimi', 'percentage', 5, true
+WHERE NOT EXISTS (SELECT 1 FROM discounts WHERE name = 'Nakit %5');
+
+INSERT INTO discounts (name, description, discount_type, discount_value, is_active)
+SELECT 'Sabit 500 TL', 'Sabit tutar indirimi', 'fixed', 500, true
+WHERE NOT EXISTS (SELECT 1 FROM discounts WHERE name = 'Sabit 500 TL');
+
+-- Notifications table (in-app + Socket.IO)
+CREATE TABLE IF NOT EXISTS notifications (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type VARCHAR(50) NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  message TEXT NOT NULL,
+  data JSONB,
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications (user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications (created_at DESC);

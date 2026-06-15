@@ -1,9 +1,12 @@
 using DentalApp.Desktop.Helpers;
 using DentalApp.Desktop.Models;
 using DentalApp.Desktop.Services;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Globalization;
 using System.Windows.Input;
+using System.Text.RegularExpressions;
 
 namespace DentalApp.Desktop.ViewModels
 {
@@ -15,6 +18,8 @@ namespace DentalApp.Desktop.ViewModels
         private bool _isBusy;
         private string _startTimeString = string.Empty;
         private string _endTimeString = string.Empty;
+        private readonly bool _isDentist;
+        private readonly int? _currentUserId;
 
         public Appointment Appointment
         {
@@ -46,7 +51,7 @@ namespace DentalApp.Desktop.ViewModels
                         
                     try
                     {
-                        // Parse HH:mm format manually
+                        // HH:mm formatını manuel ayrıştır
                         if (TryParseTime(value, out var time))
                         {
                             Appointment.StartTime = time;
@@ -54,7 +59,7 @@ namespace DentalApp.Desktop.ViewModels
                     }
                     catch
                     {
-                        // Ignore parse errors, user is still typing
+                        // Ayrıştırma hatalarını yoksay, kullanıcı hâlâ yazıyor
                     }
                 }
             }
@@ -72,7 +77,7 @@ namespace DentalApp.Desktop.ViewModels
                         
                     try
                     {
-                        // Parse HH:mm format manually
+                        // HH:mm formatını manuel ayrıştır
                         if (TryParseTime(value, out var time))
                         {
                             Appointment.EndTime = time;
@@ -80,7 +85,7 @@ namespace DentalApp.Desktop.ViewModels
                     }
                     catch
                     {
-                        // Ignore parse errors, user is still typing
+                        // Ayrıştırma hatalarını yoksay, kullanıcı hâlâ yazıyor
                     }
                 }
             }
@@ -92,39 +97,17 @@ namespace DentalApp.Desktop.ViewModels
             
             if (string.IsNullOrWhiteSpace(timeString))
                 return false;
-            
-            // Try DateTime.ParseExact with HH:mm format
-            if (DateTime.TryParseExact(timeString, "HH:mm", CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt))
+
+            // Katı HH:mm maskesi (00-23):(00-59)
+            if (!System.Text.RegularExpressions.Regex.IsMatch(timeString, @"^(?:[01]\d|2[0-3]):[0-5]\d$"))
+                return false;
+
+            if (TimeSpan.TryParseExact(timeString, "hh\\:mm", CultureInfo.InvariantCulture, out var parsed))
             {
-                time = dt.TimeOfDay;
+                time = parsed;
                 return true;
             }
-            
-            // Try hh:mm format
-            if (DateTime.TryParseExact(timeString, "hh:mm", CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt2))
-            {
-                time = dt2.TimeOfDay;
-                return true;
-            }
-            
-            // Try standard TimeSpan parse
-            if (TimeSpan.TryParse(timeString, out var ts))
-            {
-                time = ts;
-                return true;
-            }
-            
-            // Try manual parsing HH:mm
-            var parts = timeString.Split(':');
-            if (parts.Length == 2 && int.TryParse(parts[0], out var hours) && int.TryParse(parts[1], out var minutes))
-            {
-                if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60)
-                {
-                    time = new TimeSpan(hours, minutes, 0);
-                    return true;
-                }
-            }
-            
+
             return false;
         }
 
@@ -139,12 +122,23 @@ namespace DentalApp.Desktop.ViewModels
 
         public event Action<bool>? SaveCompleted;
 
-        public AppointmentFormViewModel(AppointmentService appointmentService, PatientService patientService, Appointment? appointment = null)
+        private readonly ApiService? _apiService;
+
+        public AppointmentFormViewModel(
+            AppointmentService appointmentService,
+            PatientService patientService,
+            Appointment? appointment = null,
+            ApiService? apiService = null,
+            User? currentUser = null,
+            bool isDentist = false)
         {
             _appointmentService = appointmentService;
+            _apiService = apiService;
+            _isDentist = isDentist;
+            _currentUserId = currentUser?.Id;
             _appointment = appointment ?? new Appointment 
             { 
-                Id = 0, // Ensure ID is 0 for new appointments
+                Id = 0, // Yeni randevular için ID'nin 0 olduğundan emin ol
                 AppointmentDate = DateTime.Today,
                 StartTime = new TimeSpan(9, 0, 0),
                 EndTime = new TimeSpan(10, 0, 0),
@@ -152,7 +146,7 @@ namespace DentalApp.Desktop.ViewModels
             };
             _isEditMode = appointment != null && appointment.Id > 0;
             
-            // Safely format TimeSpan to string (TimeSpan doesn't support "HH" format, use "hh" or manual formatting)
+            // TimeSpan'i güvenli biçimde string'e dönüştür (TimeSpan "HH" formatını desteklemez; "hh" veya manuel biçimlendirme kullan)
             try
             {
                 var hours = _appointment.StartTime.Hours;
@@ -180,13 +174,13 @@ namespace DentalApp.Desktop.ViewModels
             SaveCommand = new RelayCommand(async _ => await SaveAppointmentAsync(), _ => !IsBusy && IsValid());
             CancelCommand = new RelayCommand(_ => SaveCompleted?.Invoke(false));
 
-            // Initialize status options
+            // Durum seçeneklerini başlat
             StatusOptions.Add(new Helpers.StatusItem { Value = "scheduled", Text = "Planlandı" });
             StatusOptions.Add(new Helpers.StatusItem { Value = "confirmed", Text = "Onaylandı" });
             StatusOptions.Add(new Helpers.StatusItem { Value = "completed", Text = "Tamamlandı" });
             StatusOptions.Add(new Helpers.StatusItem { Value = "cancelled", Text = "İptal Edildi" });
 
-            // Initialize appointment type options
+            // Randevu türü seçeneklerini başlat
             AppointmentTypeOptions.Add("Muayene");
             AppointmentTypeOptions.Add("Temizlik");
             AppointmentTypeOptions.Add("Dolgu");
@@ -196,11 +190,11 @@ namespace DentalApp.Desktop.ViewModels
             AppointmentTypeOptions.Add("Ortodonti");
             AppointmentTypeOptions.Add("Kontrol");
 
-            // Initialize time options (08:00 to 21:00 in 30-minute intervals)
+            // Saat seçeneklerini başlat (08:00 - 21:00 arası 30 dakikalık aralıklarla)
             for (int hour = 8; hour <= 21; hour++)
             {
                 TimeOptions.Add($"{hour:D2}:00");
-                if (hour < 21) // Don't add :30 for 21:00
+                if (hour < 21) // 21:00 için :30 ekleme
                 {
                     TimeOptions.Add($"{hour:D2}:30");
                 }
@@ -214,26 +208,59 @@ namespace DentalApp.Desktop.ViewModels
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"AppointmentFormViewModel Constructor Error: {ex}");
-                // Don't show message box in constructor, just log
             }
         }
         
-        private Task LoadDentistsAsync()
+        private async Task LoadDentistsAsync()
         {
+            if (_apiService == null)
+            {
+                Dentists.Clear();
+                return;
+            }
             try
             {
-                // TODO: Load from /api/users?role=dentist when API is ready
-                // For now, use placeholder data - using same class from AppointmentsViewModel
-                Dentists.Clear();
-                Dentists.Add(new DentistInfo { Id = 1, Name = "Dr. Ahmet Yılmaz", Email = "ahmet@example.com" });
-                Dentists.Add(new DentistInfo { Id = 2, Name = "Dr. Ayşe Demir", Email = "ayse@example.com" });
-                Dentists.Add(new DentistInfo { Id = 3, Name = "Dr. Mehmet Kaya", Email = "mehmet@example.com" });
+                if (_isDentist && _currentUserId.HasValue)
+                {
+                    var self = await _apiService.GetAsync<User>($"/users/{_currentUserId.Value}");
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        Dentists.Clear();
+                        if (self != null)
+                        {
+                            Dentists.Add(new DentistInfo
+                            {
+                                Id = self.Id,
+                                Name = $"Dr. {self.FullName}",
+                                Email = self.Email ?? string.Empty
+                            });
+                            if (Appointment.DentistId <= 0)
+                            {
+                                Appointment.DentistId = self.Id;
+                            }
+                        }
+                    });
+                    return;
+                }
+
+                var response = await _apiService.GetAsync<UsersResponse>("/users?limit=500&role=dentist");
+                var list = response?.Users ?? new List<User>();
+                var dentistList = list
+                    .Where(u => u.Roles.Contains("dentist"))
+                    .Select(u => new DentistInfo { Id = u.Id, Name = $"Dr. {u.FullName}", Email = u.Email ?? "" })
+                    .ToList();
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    Dentists.Clear();
+                    foreach (var d in dentistList)
+                        Dentists.Add(d);
+                });
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading dentists: {ex}");
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => Dentists.Clear());
             }
-            return Task.CompletedTask;
         }
 
         private async Task LoadPatientsAsync(PatientService patientService)
@@ -256,8 +283,8 @@ namespace DentalApp.Desktop.ViewModels
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading patients: {ex}");
-                // Don't show message box in async method, just log
-                // The error will be visible when user tries to select a patient
+                // Asenkron metotta mesaj kutusu gösterme, sadece günlüğe yaz
+                // Hata, kullanıcı bir hasta seçmeye çalıştığında görünür olacak
             }
         }
 
@@ -273,7 +300,7 @@ namespace DentalApp.Desktop.ViewModels
             IsBusy = true;
             try
             {
-                // Validate required fields
+                // Zorunlu alanları doğrula
                 if (Appointment.PatientId <= 0)
                 {
                     System.Windows.MessageBox.Show("Lütfen bir hasta seçin.", "Hata", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
@@ -281,7 +308,7 @@ namespace DentalApp.Desktop.ViewModels
                     return;
                 }
                 
-                // Validate and ensure times are set correctly
+                // Saatlerin doğru ayarlandığını doğrula ve garanti et
                 if (string.IsNullOrWhiteSpace(StartTimeString) || !TryParseTime(StartTimeString, out var startTime))
                 {
                     System.Windows.MessageBox.Show("Lütfen geçerli bir başlangıç saati girin (HH:mm formatında, örn: 09:00).", "Hata", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
@@ -298,13 +325,13 @@ namespace DentalApp.Desktop.ViewModels
                 }
                 Appointment.EndTime = endTime;
                 
-                // Ensure status is set (default to scheduled if not set)
+                // Durumun ayarlandığından emin ol (ayarlanmamışsa varsayılan: scheduled)
                 if (string.IsNullOrWhiteSpace(Appointment.Status))
                 {
                     Appointment.Status = "scheduled";
                 }
                 
-                // Debug: Log appointment data before sending
+                // Hata ayıklama: Göndermeden önce randevu verisini günlüğe yaz
                 System.Diagnostics.Debug.WriteLine($"[AppointmentFormViewModel] Saving appointment:");
                 System.Diagnostics.Debug.WriteLine($"  PatientId: {Appointment.PatientId}");
                 System.Diagnostics.Debug.WriteLine($"  AppointmentDate: {Appointment.AppointmentDate:yyyy-MM-dd}");
@@ -314,14 +341,14 @@ namespace DentalApp.Desktop.ViewModels
                 System.Diagnostics.Debug.WriteLine($"  AppointmentType: {Appointment.AppointmentType}");
                 
                 Appointment? savedAppointment;
-                // Check both IsEditMode and Appointment.Id to ensure we don't try to update a new appointment
+                // Yeni bir randevuyu güncellemeye çalışmamak için hem IsEditMode hem de Appointment.Id kontrol edilir
                 if (IsEditMode && Appointment.Id > 0)
                 {
                     savedAppointment = await _appointmentService.UpdateAppointmentAsync(Appointment);
                 }
                 else
                 {
-                    // Ensure ID is 0 for new appointments
+                    // Yeni randevular için ID'nin 0 olduğundan emin ol
                     Appointment.Id = 0;
                     savedAppointment = await _appointmentService.CreateAppointmentAsync(Appointment);
                 }
@@ -338,8 +365,8 @@ namespace DentalApp.Desktop.ViewModels
             }
             catch (Services.UnauthorizedException)
             {
-                // UnauthorizedException is handled by MainViewModel via ApiService.OnUnauthorized
-                throw; // Re-throw to let MainViewModel handle it
+                // UnauthorizedException, ApiService.OnUnauthorized üzerinden MainViewModel tarafından işlenir
+                throw; // MainViewModel'in işlemesi için yeniden fırlat
             }
             catch (Exception ex)
             {

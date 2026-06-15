@@ -19,27 +19,46 @@ describe('Auth login', () => {
 
   it('returns a JWT for the seeded admin user', async () => {
     const passwordHash = bcrypt.hashSync('123456', 10);
-    db.query.mockResolvedValueOnce({
-      rows: [
-        {
-          id: 1,
-          email: 'admin@mail.com',
-          password_hash: passwordHash,
-          roles: 'admin',
-        },
-      ],
-    });
+    db.query
+      // checkAccountLock
+      .mockResolvedValueOnce({
+        rows: [{ failed_login_attempts: 0, account_locked_until: null }],
+      })
+      // get user
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 1,
+            email: 'admin@mail.com',
+            password_hash: passwordHash,
+            roles: 'admin',
+            email_verified: true,
+            deleted_at: null,
+            last_login_at: null,
+            first_name: 'Admin',
+            last_name: 'User',
+            phone: '',
+            tc_no: '',
+            created_at: new Date().toISOString(),
+          },
+        ],
+      })
+      // resetFailedAttempts
+      .mockResolvedValueOnce({ rows: [] })
+      // update last login
+      .mockResolvedValueOnce({ rows: [] })
+      // store refresh token
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] })
+      // audit login success
+      .mockResolvedValueOnce({ rows: [] });
 
     const res = await request(app)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({ email: 'admin@mail.com', password: '123456' });
 
-    expect(db.query).toHaveBeenCalledWith(
-      'SELECT id, email, password_hash, roles FROM users WHERE email = $1',
-      ['admin@mail.com'],
-    );
     expect(res.status).toBe(200);
-    expect(res.body.token).toBeDefined();
+    expect(res.body.accessToken).toBeDefined();
+    expect(res.body.refreshToken).toBeDefined();
+    expect(res.body.user).toBeDefined();
   });
 });
-

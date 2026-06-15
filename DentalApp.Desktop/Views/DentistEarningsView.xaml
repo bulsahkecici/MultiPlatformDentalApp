@@ -40,7 +40,7 @@
                                            HorizontalAlignment="Center" 
                                            Margin="0,0,0,15"
                                            Foreground="{StaticResource BulkaMediumBlue}"/>
-                    <TextBlock Text="{Binding TotalTurnover, StringFormat='{}{0:N2} ₺'}" 
+                    <TextBlock Text="{Binding TotalTurnover, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                              Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
@@ -71,7 +71,7 @@
                                            HorizontalAlignment="Center" 
                                            Margin="0,0,0,15"
                                            Foreground="{StaticResource BulkaLightGreen}"/>
-                    <TextBlock Text="{Binding PaidTurnoverShare, StringFormat='{}{0:N2} ₺'}" 
+                    <TextBlock Text="{Binding PaidTurnoverShare, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                              Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
@@ -101,7 +101,7 @@
                                            HorizontalAlignment="Center" 
                                            Margin="0,0,0,15"
                                            Foreground="{StaticResource BulkaDarkBlue}"/>
-                    <TextBlock Text="{Binding TotalEarnings, StringFormat='{}{0:N2} ₺'}" 
+                    <TextBlock Text="{Binding TotalEarnings, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" 
                              Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
@@ -130,6 +130,35 @@
                 </StackPanel>
             </materialDesign:Card>
         </UniformGrid>
+
+        <materialDesign:Card Grid.Row="2" Margin="10" Padding="20" Background="White">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Text="Tamamlanan Tedaviler"
+                           Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                           Foreground="{StaticResource BulkaDarkBlue}"
+                           FontWeight="Bold"
+                           Margin="0,0,0,15"/>
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding Treatments}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          MaxHeight="300"
+                          Style="{StaticResource MaterialDesignDataGrid}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Tarih" Binding="{Binding TreatmentDate, StringFormat='{}{0:dd.MM.yyyy}'}" Width="100"/>
+                        <DataGridTextColumn Header="Hasta" Binding="{Binding PatientFullName}" Width="*"/>
+                        <DataGridTextColumn Header="Tedavi" Binding="{Binding TreatmentType}" Width="*"/>
+                        <DataGridTextColumn Header="Maliyet" Binding="{Binding Cost, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" Width="100"/>
+                        <DataGridTextColumn Header="Kazanç" Binding="{Binding Earnings, Converter={StaticResource DecimalToTurkishStringConverter}, ConverterParameter=' ₺'}" Width="100"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </materialDesign:Card>
 
         <ProgressBar Grid.Row="2" 
                      Style="{StaticResource MaterialDesignCircularProgressBar}" 

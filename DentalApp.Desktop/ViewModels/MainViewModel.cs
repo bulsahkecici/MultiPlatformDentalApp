@@ -2,6 +2,7 @@ using DentalApp.Desktop.Helpers;
 using DentalApp.Desktop.Models;
 using DentalApp.Desktop.Services;
 using DentalApp.Desktop.Views;
+using MaterialDesignThemes.Wpf;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
@@ -46,6 +47,8 @@ namespace DentalApp.Desktop.ViewModels
         public ICommand NavigateToSMSCommand { get; }
         public ICommand LogoutCommand { get; }
 
+        private readonly FinancialService _financialService;
+
         public MainViewModel()
         {
             _apiService = new ApiService();
@@ -55,6 +58,7 @@ namespace DentalApp.Desktop.ViewModels
             _appointmentService = new AppointmentService(_apiService);
             _treatmentService = new TreatmentService(_apiService);
             _institutionAgreementService = new InstitutionAgreementService(_apiService);
+            _financialService = new FinancialService(_apiService);
 
             NavigateToDashboardCommand = new RelayCommand(_ => ShowDashboard());
             NavigateToPatientsCommand = new RelayCommand(_ => ShowPatients());
@@ -73,12 +77,12 @@ namespace DentalApp.Desktop.ViewModels
 
         private void HandleUnauthorized()
         {
-            // Clear authentication state
+            // Kimlik doğrulama durumunu temizle
             _authService.Logout();
             OnPropertyChanged(nameof(IsAuthenticated));
             OnPropertyChanged(nameof(CurrentUser));
             
-            // Show message and redirect to login
+            // Mesaj göster ve giriş ekranına yönlendir
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
                 System.Windows.MessageBox.Show(
@@ -110,7 +114,7 @@ namespace DentalApp.Desktop.ViewModels
         {
             try
             {
-                var dashboardVM = new DashboardViewModel(_patientService, _appointmentService, _treatmentService, _apiService, IsPatron, IsSecretary, IsDentist);
+                var dashboardVM = new DashboardViewModel(_patientService, _appointmentService, _treatmentService, _apiService, _financialService, IsPatron, IsSecretary, IsDentist);
                 // Randevu kartına tıklandığında tedavi detaylarını aç
                 dashboardVM.AppointmentCardClicked += async (appointment) =>
                 {
@@ -163,7 +167,7 @@ namespace DentalApp.Desktop.ViewModels
                 };
                 
                 CurrentView = dashboardVM;
-                // Load data asynchronously without blocking UI
+                // Arayüzü bloke etmeden veriyi asenkron yükle
                 _ = dashboardVM.LoadDashboardDataAsync();
             }
             catch (Exception ex)
@@ -186,7 +190,13 @@ namespace DentalApp.Desktop.ViewModels
 
         private void ShowAppointments()
         {
-            var appointmentsVM = new AppointmentsViewModel(_appointmentService, _patientService, _apiService);
+            var appointmentsVM = new AppointmentsViewModel(
+                _appointmentService, 
+                _patientService, 
+                _apiService,
+                CurrentUser,
+                IsSecretary,
+                IsDentist);
             appointmentsVM.AddAppointmentRequested += (appointment) => ShowAppointmentForm(appointment);
             appointmentsVM.EditAppointmentRequested += (appointment) => ShowAppointmentForm(appointment);
             _ = appointmentsVM.LoadAppointmentsAsync();
@@ -218,7 +228,7 @@ namespace DentalApp.Desktop.ViewModels
             dialog.Owner = Application.Current.MainWindow;
             dialog.ShowDialog();
             
-            // Refresh patients list if we're on patients view
+            // Hastalar görünümündeysek hasta listesini yenile
             if (CurrentView is PatientsViewModel patientsVM)
             {
                 _ = patientsVM.LoadPatientsAsync();
@@ -231,14 +241,20 @@ namespace DentalApp.Desktop.ViewModels
             {
                 System.Diagnostics.Debug.WriteLine($"[ShowAppointmentForm] Opening appointment form. IsEditMode: {appointment != null && appointment.Id > 0}");
                 
-                var formVM = new AppointmentFormViewModel(_appointmentService, _patientService, appointment);
+                var formVM = new AppointmentFormViewModel(
+                    _appointmentService,
+                    _patientService,
+                    appointment,
+                    _apiService,
+                    CurrentUser,
+                    IsDentist);
                 var dialog = new AppointmentFormDialog(formVM);
                 dialog.Owner = Application.Current.MainWindow;
                 var result = dialog.ShowDialog();
                 
                 System.Diagnostics.Debug.WriteLine($"[ShowAppointmentForm] Dialog closed. Result: {result}, CurrentView type: {CurrentView?.GetType().Name}");
                 
-                // Refresh appointments list and slots if we're on appointments view
+                // Randevular görünümündeysek randevu listesini ve hücreleri yenile
                 // DialogResult true ise randevu başarıyla kaydedildi
                 if (result == true && CurrentView is AppointmentsViewModel appointmentsVM)
                 {
@@ -279,7 +295,7 @@ namespace DentalApp.Desktop.ViewModels
                 dialog.Owner = Application.Current.MainWindow;
                 var result = dialog.ShowDialog();
                 
-                // Refresh treatments list if we're on treatments view
+                // Tedaviler görünümündeysek tedavi listesini yenile
                 if (CurrentView is TreatmentsViewModel treatmentsVM)
                 {
                     _ = treatmentsVM.LoadTreatmentsAsync();
@@ -295,7 +311,7 @@ namespace DentalApp.Desktop.ViewModels
         private void ShowDentistEarnings()
         {
             if (!IsDentist) return;
-            var earningsVM = new DentistEarningsViewModel(_apiService);
+            var earningsVM = new DentistEarningsViewModel(_financialService, _authService);
             CurrentView = earningsVM;
             _ = earningsVM.LoadEarningsAsync();
         }
@@ -322,22 +338,18 @@ namespace DentalApp.Desktop.ViewModels
 
         private void ShowProsthesis()
         {
-            // Placeholder - Yakında
-            System.Windows.MessageBox.Show(
-                "Protez İş Süreçleri modülü yakında eklenecektir.",
-                "Yakında",
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Information);
+            CurrentView = new ComingSoonViewModel(
+                "Protez İş Süreçleri",
+                "Protez laboratuvar takibi, iş emri oluşturma, prova ve teslim süreçleri bu modülde yönetilebilecek.",
+                PackIconKind.Tooth);
         }
 
         private void ShowSMS()
         {
-            // Placeholder - Yakında
-            System.Windows.MessageBox.Show(
-                "SMS gönderme özelliği yakında eklenecektir.",
-                "Yakında",
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Information);
+            CurrentView = new ComingSoonViewModel(
+                "SMS Bildirimleri",
+                "Randevu hatırlatmaları, tedavi bilgilendirmeleri ve toplu SMS gönderimi bu modülde yer alacak.",
+                PackIconKind.Message);
         }
 
         private void ShowInstitutionAgreements()

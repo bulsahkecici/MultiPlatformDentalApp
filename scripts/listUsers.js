@@ -5,11 +5,11 @@ const { parseRolesCsv } = require('../src/utils/roles');
 async function listUsers() {
   try {
     const result = await pool.query(
-      'SELECT id, email, roles FROM users WHERE deleted_at IS NULL ORDER BY id'
+      'SELECT id, email, roles FROM users WHERE deleted_at IS NULL ORDER BY id',
     );
-    
+
     console.log('\n=== KULLANICILAR VE ROLLERİ ===\n');
-    
+
     if (result.rows.length === 0) {
       console.log('Veritabanında kullanıcı bulunamadı.');
     } else {
@@ -22,7 +22,7 @@ async function listUsers() {
         console.log('---');
       });
     }
-    
+
     await pool.end();
   } catch (err) {
     console.error('Hata:', err.message);

@@ -48,7 +48,7 @@ namespace DentalApp.Desktop.Services
 
         public async Task<Appointment?> CreateAppointmentAsync(Appointment appointment)
         {
-            // Validate required fields
+            // Zorunlu alanları doğrula
             if (appointment.PatientId <= 0)
             {
                 throw new ArgumentException("Patient ID is required");
@@ -59,11 +59,11 @@ namespace DentalApp.Desktop.Services
                 throw new ArgumentException("Appointment date is required");
             }
             
-            // Format TimeSpan manually (HH:mm:ss format)
+            // TimeSpan'i manuel biçimlendir (HH:mm:ss formatı)
             var startTimeStr = $"{appointment.StartTime.Hours:D2}:{appointment.StartTime.Minutes:D2}:{appointment.StartTime.Seconds:D2}";
             var endTimeStr = $"{appointment.EndTime.Hours:D2}:{appointment.EndTime.Minutes:D2}:{appointment.EndTime.Seconds:D2}";
             
-            // Ensure status is set
+            // Durumun ayarlandığından emin ol
             var status = string.IsNullOrWhiteSpace(appointment.Status) ? "scheduled" : appointment.Status;
             
             var request = new
@@ -86,7 +86,7 @@ namespace DentalApp.Desktop.Services
 
         public async Task<Appointment?> UpdateAppointmentAsync(Appointment appointment)
         {
-            // Format TimeSpan manually (HH:mm:ss format)
+            // TimeSpan'i manuel biçimlendir (HH:mm:ss formatı)
             var startTimeStr = $"{appointment.StartTime.Hours:D2}:{appointment.StartTime.Minutes:D2}:{appointment.StartTime.Seconds:D2}";
             var endTimeStr = $"{appointment.EndTime.Hours:D2}:{appointment.EndTime.Minutes:D2}:{appointment.EndTime.Seconds:D2}";
             
