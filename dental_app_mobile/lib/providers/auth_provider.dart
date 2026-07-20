@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../core/api_client.dart';
 import '../core/api_repository.dart';
+import '../core/mobile_access_policy.dart';
 import '../core/socket_service.dart';
 import '../models/models.dart';
 
@@ -35,6 +36,14 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> login(String email, String password) async {
     try {
       final response = await _repository.login(email, password);
+      final access = MobileAccessPolicy.forUser(response.user);
+      if (!access.isSupported) {
+        await _client.clearTokens();
+        throw ApiException(
+          'Mobil uygulamaya yalnızca patron ve diş hekimi hesapları giriş yapabilir.',
+          statusCode: 403,
+        );
+      }
       await _client.saveTokens(response.accessToken, response.refreshToken);
       _currentUser = response.user;
       _isAuthenticated = true;
@@ -55,6 +64,10 @@ class AuthProvider extends ChangeNotifier {
         return;
       }
       final user = await _repository.me();
+      if (!MobileAccessPolicy.forUser(user).isSupported) {
+        await _client.clearTokens();
+        return;
+      }
       _currentUser = user;
       _isAuthenticated = true;
       final token = _client.accessToken;

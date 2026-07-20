@@ -4,15 +4,12 @@ import 'package:provider/provider.dart';
 import '../../core/api_client.dart';
 import '../../core/api_repository.dart';
 import '../../models/models.dart';
-import '../../providers/auth_provider.dart';
+import 'patient_detail_screen.dart';
 import 'patient_form_screen.dart';
 
-/// Hasta listesi: arama + sonsuz kaydırma + ekleme/düzenleme.
-/// Dişhekimi rolü salt okunur görür (canEdit=false), silme sadece admin.
+/// Diş hekimi hasta listesi: arama, ekleme ve detay/geçmiş erişimi.
 class PatientsScreen extends StatefulWidget {
-  final bool canEdit;
-
-  const PatientsScreen({super.key, this.canEdit = true});
+  const PatientsScreen({super.key});
 
   @override
   State<PatientsScreen> createState() => _PatientsScreenState();
@@ -94,39 +91,17 @@ class _PatientsScreenState extends State<PatientsScreen> {
     if (changed == true) _load(reset: true);
   }
 
-  Future<void> _delete(Patient patient) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Hastayı Sil'),
-        content: Text(
-            '${patient.fullName} silinecek (arşivlenecek). Emin misiniz?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Vazgeç')),
-          FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Sil')),
-        ],
+  Future<void> _openDetails(Patient patient) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => PatientDetailScreen(patientId: patient.id),
       ),
     );
-    if (confirmed != true || !mounted) return;
-    try {
-      await context.read<ApiRepository>().deletePatient(patient.id);
-      _load(reset: true);
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.message)));
-    }
+    if (mounted) _load(reset: true);
   }
 
   @override
   Widget build(BuildContext context) {
-    final isAdmin =
-        context.watch<AuthProvider>().currentUser?.isAdmin ?? false;
-
     return Scaffold(
       body: Column(
         children: [
@@ -157,8 +132,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
                             children: const [
                               Padding(
                                 padding: EdgeInsets.all(32),
-                                child:
-                                    Center(child: Text('Hasta bulunamadı.')),
+                                child: Center(child: Text('Hasta bulunamadı.')),
                               ),
                             ],
                           )
@@ -183,15 +157,8 @@ class _PatientsScreenState extends State<PatientsScreen> {
                                 ),
                                 title: Text(patient.fullName),
                                 subtitle: Text(patient.phone ?? '-'),
-                                trailing: isAdmin && widget.canEdit
-                                    ? IconButton(
-                                        icon: const Icon(Icons.delete_outline),
-                                        onPressed: () => _delete(patient),
-                                      )
-                                    : null,
-                                onTap: widget.canEdit
-                                    ? () => _openForm(patient: patient)
-                                    : () => _openForm(patient: patient),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () => _openDetails(patient),
                               );
                             },
                           ),
@@ -199,12 +166,10 @@ class _PatientsScreenState extends State<PatientsScreen> {
           ),
         ],
       ),
-      floatingActionButton: widget.canEdit
-          ? FloatingActionButton(
-              onPressed: () => _openForm(),
-              child: const Icon(Icons.person_add),
-            )
-          : null,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _openForm(),
+        child: const Icon(Icons.person_add),
+      ),
     );
   }
 }

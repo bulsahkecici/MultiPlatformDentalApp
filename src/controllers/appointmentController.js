@@ -156,7 +156,9 @@ async function createAppointment(req, res, next) {
               p.last_name as patient_last_name,
               p.email as patient_email,
               p.phone as patient_phone,
-              u.email as dentist_email
+              u.email as dentist_email,
+              u.first_name as dentist_first_name,
+              u.last_name as dentist_last_name
              FROM appointments a
              LEFT JOIN patients p ON a.patient_id = p.id
              LEFT JOIN users u ON a.dentist_id = u.id
@@ -319,7 +321,9 @@ async function getAppointments(req, res, next) {
         a.*,
         p.first_name as patient_first_name,
         p.last_name as patient_last_name,
-        u.email as dentist_email
+        u.email as dentist_email,
+        u.first_name as dentist_first_name,
+        u.last_name as dentist_last_name
        FROM appointments a
        LEFT JOIN patients p ON a.patient_id = p.id
        LEFT JOIN users u ON a.dentist_id = u.id
@@ -358,7 +362,9 @@ async function getAppointmentById(req, res, next) {
         p.last_name as patient_last_name,
         p.email as patient_email,
         p.phone as patient_phone,
-        u.email as dentist_email
+        u.email as dentist_email,
+        u.first_name as dentist_first_name,
+        u.last_name as dentist_last_name
        FROM appointments a
        LEFT JOIN patients p ON a.patient_id = p.id
        LEFT JOIN users u ON a.dentist_id = u.id

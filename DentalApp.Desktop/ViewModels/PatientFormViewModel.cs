@@ -31,15 +31,17 @@ namespace DentalApp.Desktop.ViewModels
                 if (SetProperty(ref _patient, value))
                 {
                     OnPropertyChanged(nameof(PatientAge));
-                    // DateOfBirth değişikliklerini dinlemek için Patient property'sini yeniden set et
-                    if (value != null)
-                    {
-                        // DateOfBirth değiştiğinde yaşı güncellemek için bir timer veya başka bir mekanizma kullanabiliriz
-                        // Şimdilik sadece property değiştiğinde güncelliyoruz
-                    }
                 }
             }
         }
+
+        /// <summary>
+        /// Patient sınıfı INotifyPropertyChanged uygulamıyor; DatePicker'da DateOfBirth
+        /// değiştiğinde aynı Patient referansı üzerinde değer değiştiği için Patient
+        /// setter'ındaki SetProperty referans eşitliğinden dolayı hiçbir şey tetiklemez.
+        /// Bu yüzden code-behind, tarih değiştiğinde bu metodu doğrudan çağırır.
+        /// </summary>
+        public void RefreshPatientAge() => OnPropertyChanged(nameof(PatientAge));
         
         public int? PatientAge
         {
@@ -158,6 +160,7 @@ namespace DentalApp.Desktop.ViewModels
             Countries.Clear();
             var countries = new[]
             {
+                "Türkiye",
                 "Almanya", "Amerika Birleşik Devletleri", "Avustralya", "Avusturya", "Azerbaycan",
                 "Belçika", "Birleşik Arap Emirlikleri", "Birleşik Krallık", "Bulgaristan", "Danimarka",
                 "Fransa", "Hollanda", "İspanya", "İsveç", "İsviçre", "İtalya", "Kanada", "Katar",

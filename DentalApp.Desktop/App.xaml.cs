@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Markup;
 using System.IO;
 using System.Globalization;
 using System.Threading;
@@ -20,6 +21,15 @@ namespace DentalApp.Desktop
             Thread.CurrentThread.CurrentUICulture = turkishCulture;
             CultureInfo.DefaultThreadCurrentCulture = turkishCulture;
             CultureInfo.DefaultThreadCurrentUICulture = turkishCulture;
+
+            // WPF Binding'lerdeki StringFormat (ör. para birimi, sayı ayırıcıları),
+            // Thread culture'ı değil FrameworkElement.Language'ı kullanır ve bu
+            // varsayılan olarak en-US'dir — Thread culture'ı tr-TR yapmak tek başına
+            // yetmez. Bu satır olmadan tüm StringFormat çıktıları (14,265.00 gibi)
+            // İngilizce formatta kalır.
+            FrameworkElement.LanguageProperty.OverrideMetadata(
+                typeof(FrameworkElement),
+                new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(turkishCulture.IetfLanguageTag)));
 
             DispatcherUnhandledException += (s, args) =>
             {

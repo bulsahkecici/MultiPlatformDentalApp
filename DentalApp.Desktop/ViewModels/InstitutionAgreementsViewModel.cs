@@ -17,6 +17,7 @@ namespace DentalApp.Desktop.ViewModels
         private Models.InstitutionAgreement? _selectedAgreement;
         private string _newCategoryName = string.Empty;
         private decimal _newCategoryDiscount;
+        private string _generalDiscountInput = string.Empty;
 
         public ObservableCollection<Models.InstitutionAgreement> Agreements { get; } = new();
         public ObservableCollection<Models.CategoryDiscount> CategoryDiscounts { get; } = new();
@@ -35,6 +36,7 @@ namespace DentalApp.Desktop.ViewModels
                 if (SetProperty(ref _selectedAgreement, value))
                 {
                     LoadCategoryDiscounts();
+                    GeneralDiscountInput = string.Empty;
                 }
             }
         }
@@ -51,9 +53,16 @@ namespace DentalApp.Desktop.ViewModels
             set => SetProperty(ref _newCategoryDiscount, value);
         }
 
+        public string GeneralDiscountInput
+        {
+            get => _generalDiscountInput;
+            set => SetProperty(ref _generalDiscountInput, value);
+        }
+
         public ICommand LoadAgreementsCommand { get; }
         public ICommand AddCategoryDiscountCommand { get; }
         public ICommand DeleteCategoryDiscountCommand { get; }
+        public ICommand ApplyGeneralDiscountCommand { get; }
         public ICommand RefreshCommand { get; }
 
         public InstitutionAgreementsViewModel(InstitutionAgreementService service)
@@ -62,8 +71,10 @@ namespace DentalApp.Desktop.ViewModels
             LoadAgreementsCommand = new RelayCommand(async _ => await LoadAgreementsAsync(), _ => !IsBusy);
             AddCategoryDiscountCommand = new RelayCommand(async _ => await AddCategoryDiscountAsync(), 
                 _ => SelectedAgreement != null && !string.IsNullOrWhiteSpace(NewCategoryName) && NewCategoryDiscount > 0 && !IsBusy);
-            DeleteCategoryDiscountCommand = new RelayCommand<Models.CategoryDiscount>(async cd => await DeleteCategoryDiscountAsync(cd), 
+            DeleteCategoryDiscountCommand = new RelayCommand<Models.CategoryDiscount>(async cd => await DeleteCategoryDiscountAsync(cd),
                 _ => SelectedAgreement != null && !IsBusy);
+            ApplyGeneralDiscountCommand = new RelayCommand(async _ => await ApplyGeneralDiscountAsync(),
+                _ => SelectedAgreement != null && !IsBusy && !string.IsNullOrWhiteSpace(GeneralDiscountInput));
             RefreshCommand = new RelayCommand(async _ => await LoadAgreementsAsync(), _ => !IsBusy);
 
             _ = LoadAgreementsAsync();
@@ -146,6 +157,56 @@ namespace DentalApp.Desktop.ViewModels
             catch (Exception ex)
             {
                 MessageBox.Show($"Kategori indirimi eklenirken hata: {ex.Message}", "Hata", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private async Task ApplyGeneralDiscountAsync()
+        {
+            if (SelectedAgreement == null)
+                return;
+
+            if (!decimal.TryParse(GeneralDiscountInput, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.CurrentCulture, out var discount) || discount < 0)
+            {
+                MessageBox.Show("Geçerli bir indirim oranı girin.", "Hata", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            IsBusy = true;
+            try
+            {
+                SelectedAgreement.DiscountPercentage = discount;
+
+                // Genel indirim girildiğinde, mevcut tüm kategori indirimleri de aynı orana senkronize edilir.
+                if (SelectedAgreement.CategoryDiscounts != null)
+                {
+                    foreach (var key in SelectedAgreement.CategoryDiscounts.Keys.ToList())
+                    {
+                        SelectedAgreement.CategoryDiscounts[key] = discount;
+                    }
+                }
+
+                var updated = await _service.UpdateInstitutionAgreementAsync(SelectedAgreement.Id, SelectedAgreement);
+
+                var index = Agreements.IndexOf(SelectedAgreement);
+                if (index >= 0)
+                {
+                    Agreements[index] = updated;
+                    SelectedAgreement = updated;
+                }
+
+                GeneralDiscountInput = string.Empty;
+
+                MessageBox.Show("Genel indirim tüm kategorilere uygulandı.", "Başarılı",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Genel indirim uygulanırken hata: {ex.Message}", "Hata",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally

@@ -69,8 +69,8 @@
                             <DataGridTextColumn Header="Kurum Adı" 
                                                Binding="{Binding InstitutionName}" 
                                                Width="*"/>
-                            <DataGridTextColumn Header="Genel İndirim %" 
-                                               Binding="{Binding DiscountPercentage, StringFormat='{}{0:0.##}%'}" 
+                            <DataGridTextColumn Header="Genel İndirim"
+                                               Binding="{Binding GeneralDiscountDisplay}"
                                                Width="Auto"/>
                         </DataGrid.Columns>
                     </DataGrid>
@@ -83,20 +83,58 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
                     <!-- Header -->
-                    <TextBlock Grid.Row="0" 
-                              Text="Kategori Bazlı İndirimler" 
-                              Style="{StaticResource MaterialDesignHeadline6TextBlock}" 
+                    <TextBlock Grid.Row="0"
+                              Text="Kategori Bazlı İndirimler"
+                              Style="{StaticResource MaterialDesignHeadline6TextBlock}"
                               Foreground="{StaticResource BulkaMediumBlue}"
                               FontWeight="Bold"
                               Margin="0,0,0,15"/>
 
+                    <!-- Genel İndirim -->
+                    <materialDesign:Card Grid.Row="1"
+                                        Padding="15"
+                                        Margin="0,0,0,15"
+                                        Background="{StaticResource SurfaceMuted}"
+                                        Visibility="{Binding SelectedAgreement, Converter={StaticResource ObjectToVisibilityConverter}}">
+                        <StackPanel>
+                            <TextBlock Text="Genel İndirim"
+                                      FontWeight="SemiBold"
+                                      Margin="0,0,0,10"
+                                      Foreground="{StaticResource BulkaDarkBlue}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0"
+                                        Text="{Binding GeneralDiscountInput, UpdateSourceTrigger=PropertyChanged}"
+                                        materialDesign:HintAssist.Hint="Genel İndirim % (tüm kategorilere uygulanır)"
+                                        Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
+                                <Button Grid.Column="2"
+                                       Command="{Binding ApplyGeneralDiscountCommand}"
+                                       Style="{StaticResource MaterialDesignRaisedButton}"
+                                       Background="{StaticResource BulkaMediumBlue}"
+                                       Foreground="White"
+                                       Content="UYGULA"
+                                       Height="40"/>
+                            </Grid>
+                            <TextBlock Text="Bu değer girilip uygulandığında tüm kategoriler için aynı indirim oranı geçerli olur. Kategoriler farklı oranlara sahipse Kurum Listesi'nde 'Değişken' gösterilir."
+                                      Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                      Foreground="{StaticResource InkMuted}"
+                                      TextWrapping="Wrap"
+                                      Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </materialDesign:Card>
+
                     <!-- Add New Category Discount -->
-                    <materialDesign:Card Grid.Row="1" 
-                                        Padding="15" 
+                    <materialDesign:Card Grid.Row="2"
+                                        Padding="15"
                                         Margin="0,0,0,15"
                                         Background="{StaticResource BulkaLightBlue}">
                         <StackPanel>
@@ -138,12 +176,13 @@
                     </materialDesign:Card>
 
                     <!-- Category Discounts List -->
-                    <DataGrid Grid.Row="2" 
-                             ItemsSource="{Binding CategoryDiscounts}" 
-                             AutoGenerateColumns="False" 
+                    <DataGrid Grid.Row="3"
+                             ItemsSource="{Binding CategoryDiscounts}"
+                             AutoGenerateColumns="False"
                              CanUserAddRows="False"
                              CanUserDeleteRows="False"
                              IsReadOnly="True"
+                             Visibility="{Binding CategoryDiscounts.Count, Converter={StaticResource NonZeroToVisibilityConverter}}"
                              materialDesign:DataGridAssist.CellPadding="10"
                              materialDesign:DataGridAssist.ColumnHeaderPadding="10">
                         <DataGrid.Columns>
@@ -170,10 +209,10 @@
                     </DataGrid>
 
                     <!-- Empty State -->
-                    <StackPanel Grid.Row="2" 
-                               HorizontalAlignment="Center" 
+                    <StackPanel Grid.Row="3"
+                               HorizontalAlignment="Center"
                                VerticalAlignment="Center"
-                               Visibility="{Binding CategoryDiscounts.Count, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                               Visibility="{Binding CategoryDiscounts.Count, Converter={StaticResource ZeroToVisibilityConverter}}">
                         <materialDesign:PackIcon Kind="InformationOutline" 
                                                 Width="48" 
                                                 Height="48" 

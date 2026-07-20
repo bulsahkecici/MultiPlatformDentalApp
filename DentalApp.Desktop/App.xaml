@@ -21,14 +21,27 @@
             <SolidColorBrush x:Key="BulkaLightGreen" Color="#90EE90"/>
             <SolidColorBrush x:Key="BulkaGradientStart" Color="#E6F2FF"/>
             <SolidColorBrush x:Key="BulkaGradientEnd" Color="#FFFFFF"/>
-            
+
+            <!-- Nötr metin/yüzey tonları (web tarafındaki ink/surface token ölçeğiyle aynı) -->
+            <SolidColorBrush x:Key="InkPrimary" Color="#0F172A"/>
+            <SolidColorBrush x:Key="InkSecondary" Color="#334155"/>
+            <SolidColorBrush x:Key="InkMuted" Color="#64748B"/>
+            <SolidColorBrush x:Key="InkBorder" Color="#E2E8F0"/>
+            <SolidColorBrush x:Key="SurfaceMuted" Color="#F8FAFC"/>
+            <SolidColorBrush x:Key="PageBackground" Color="#F1F5F9"/>
+
+            <!-- Durum renkleri (web tarafındaki success/warn/danger tonlarıyla aynı) -->
+            <SolidColorBrush x:Key="SuccessBrush" Color="#16A34A"/>
+            <SolidColorBrush x:Key="WarnBrush" Color="#D97706"/>
+            <SolidColorBrush x:Key="DangerBrush" Color="#DC2626"/>
+
             <!-- Gradient Brush -->
             <LinearGradientBrush x:Key="BulkaGradientBrush" StartPoint="0,0" EndPoint="0,1">
                 <GradientStop Color="#E6F2FF" Offset="0"/>
                 <GradientStop Color="#FFFFFF" Offset="0.5"/>
                 <GradientStop Color="#E6F2FF" Offset="1"/>
             </LinearGradientBrush>
-            
+
             <!-- Global Converters -->
             <helpers:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
             <helpers:StatusToTurkishConverter x:Key="StatusToTurkishConverter"/>
@@ -38,12 +51,36 @@
             <helpers:DateToColorConverter x:Key="DateToColorConverter"/>
             <helpers:BooleanToBrushConverter x:Key="BooleanToBrushConverter"/>
             <helpers:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
+            <helpers:ZeroToVisibilityConverter x:Key="ZeroToVisibilityConverter"/>
+            <helpers:NonZeroToVisibilityConverter x:Key="NonZeroToVisibilityConverter"/>
+            <helpers:ObjectToVisibilityConverter x:Key="ObjectToVisibilityConverter"/>
+            <helpers:ObjectToCollapsedConverter x:Key="ObjectToCollapsedConverter"/>
+            <helpers:AppointmentTypeToTurkishConverter x:Key="AppointmentTypeToTurkishConverter"/>
+            <helpers:GenderToTurkishConverter x:Key="GenderToTurkishConverter"/>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-            
+
             <!-- Global DatePicker Style for Turkish -->
             <Style TargetType="DatePicker">
                 <Setter Property="Language" Value="tr-TR"/>
             </Style>
+
+            <!-- Sayfa başlığı (her view'ın en üstündeki "Kontrol Paneli" / "Hasta Yönetimi" vb.) -->
+            <Style x:Key="PageTitleText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="26"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Foreground" Value="{StaticResource BulkaDarkBlue}"/>
+            </Style>
+
+            <!-- Boş liste mesajı (ör. "Henüz randevu yok") -->
+            <Style x:Key="EmptyStateText" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{StaticResource InkMuted}"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+                <Setter Property="TextAlignment" Value="Center"/>
+                <Setter Property="HorizontalAlignment" Value="Center"/>
+                <Setter Property="Margin" Value="20"/>
+            </Style>
+
         </ResourceDictionary>
     </Application.Resources>
 </Application>

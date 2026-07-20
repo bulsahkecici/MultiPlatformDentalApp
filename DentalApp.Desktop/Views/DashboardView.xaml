@@ -134,36 +134,56 @@
                              Foreground="Gray"
                              TextWrapping="Wrap"
                              Margin="0,0,0,10"/>
-                    <ListView ItemsSource="{Binding UpcomingAppointmentsList}" 
+                    <ListView ItemsSource="{Binding UpcomingAppointmentsList}"
                              MaxHeight="500"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto">
+                             Padding="0,0,4,0"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Padding" Value="0"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <materialDesign:Card Margin="0,0,0,10" Padding="10" 
-                                                   Background="{Binding AppointmentDate, Converter={StaticResource DateToColorConverter}}"
-                                                   Cursor="Hand"
-                                                   MouseLeftButtonDown="AppointmentCard_MouseLeftButtonDown">
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding AppointmentDateTime, StringFormat='{}{0:dddd, dd MMMM yyyy HH:mm}', ConverterCulture='tr-TR'}" 
-                                                 Style="{StaticResource MaterialDesignBody1TextBlock}"
-                                                 FontWeight="Bold"
-                                                 Foreground="{StaticResource BulkaDarkBlue}"/>
-                                        <TextBlock Text="{Binding PatientFullName}" 
-                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                                 Foreground="{StaticResource BulkaMediumBlue}"
-                                                 FontWeight="SemiBold"
-                                                 Margin="0,5,0,0"/>
-                                        <TextBlock Text="{Binding DentistEmail, StringFormat='Doktor: {0}'}" 
-                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                                 Foreground="{StaticResource BulkaMediumBlue}"
-                                                 Margin="0,2,0,0"/>
-                                        <TextBlock Text="{Binding AppointmentType, StringFormat='Tip: {0}'}" 
-                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                                 Foreground="Gray"
-                                                 Margin="0,2,0,0"
-                                                 Visibility="{Binding AppointmentType, Converter={StaticResource NullToBooleanConverter}}"/>
-                                    </StackPanel>
-                                </materialDesign:Card>
+                                <Border Margin="0,0,4,12" Padding="12" CornerRadius="8"
+                                        Background="{Binding AppointmentDate, Converter={StaticResource DateToColorConverter}}"
+                                        BorderBrush="{StaticResource InkBorder}" BorderThickness="1"
+                                        Cursor="Hand"
+                                        MouseLeftButtonDown="AppointmentCard_MouseLeftButtonDown">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="4"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" CornerRadius="2" Background="{StaticResource BulkaMediumBlue}" Margin="0,0,10,0"/>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="{Binding AppointmentDateTime, StringFormat='{}{0:dddd, dd MMMM yyyy HH:mm}', ConverterCulture='tr-TR'}"
+                                                     FontSize="13"
+                                                     FontWeight="Bold"
+                                                     Foreground="{StaticResource InkPrimary}"
+                                                     TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding PatientFullName}"
+                                                     FontSize="15"
+                                                     FontWeight="SemiBold"
+                                                     Foreground="{StaticResource BulkaDarkBlue}"
+                                                     TextWrapping="Wrap"
+                                                     Margin="0,5,0,0"/>
+                                            <TextBlock Text="{Binding DentistDisplayName, StringFormat='Doktor: {0}'}"
+                                                     FontSize="12"
+                                                     Foreground="{StaticResource InkSecondary}"
+                                                     TextTrimming="CharacterEllipsis"
+                                                     ToolTip="{Binding DentistDisplayName}"
+                                                     Margin="0,3,0,0"/>
+                                            <TextBlock Text="{Binding AppointmentType, Converter={StaticResource AppointmentTypeToTurkishConverter}, StringFormat='Tip: {0}'}"
+                                                     FontSize="12"
+                                                     Foreground="{StaticResource InkMuted}"
+                                                     Margin="0,2,0,0"
+                                                     Visibility="{Binding AppointmentType, Converter={StaticResource ObjectToVisibilityConverter}}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
@@ -188,16 +208,65 @@
                     </StackPanel>
                 </materialDesign:Card>
                 
-                <materialDesign:Card Padding="20" Background="White" Margin="0,0,0,20">
-                    <Calendar SelectedDate="{Binding CurrentDate}" 
-                            IsTodayHighlighted="True"
-                            HorizontalAlignment="Center"
-                            Language="tr-TR"/>
+                <materialDesign:Card Padding="15" Background="White" Margin="0,0,0,20">
+                    <StackPanel>
+                        <TextBlock Text="Hızlı Erişim"
+                                 Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                 Foreground="{StaticResource BulkaDarkBlue}"
+                                 FontWeight="Bold"
+                                 Margin="0,0,0,12"/>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="56"/>
+                                <RowDefinition Height="56"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Button Grid.Row="0" Grid.Column="0" Margin="3"
+                                    Command="{Binding DataContext.NavigateToAppointmentsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Style="{StaticResource MaterialDesignOutlinedButton}">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="Calendar" Width="20" Height="20" Margin="0,0,6,0" Foreground="{StaticResource BulkaMediumBlue}"/>
+                                    <TextBlock Text="Randevu" Foreground="{StaticResource BulkaDarkBlue}"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Button Grid.Row="0" Grid.Column="1" Margin="3"
+                                    Command="{Binding DataContext.NavigateToPatientsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Style="{StaticResource MaterialDesignOutlinedButton}">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="Account" Width="20" Height="20" Margin="0,0,6,0" Foreground="{StaticResource BulkaMediumBlue}"/>
+                                    <TextBlock Text="Hasta" Foreground="{StaticResource BulkaDarkBlue}"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Button Grid.Row="1" Grid.Column="0" Margin="3"
+                                    Command="{Binding DataContext.NavigateToPaymentsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Style="{StaticResource MaterialDesignOutlinedButton}">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="Cash" Width="20" Height="20" Margin="0,0,6,0" Foreground="{StaticResource BulkaMediumBlue}"/>
+                                    <TextBlock Text="Finans" Foreground="{StaticResource BulkaDarkBlue}"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Button Grid.Row="1" Grid.Column="1" Margin="3"
+                                    Command="{Binding DataContext.NavigateToInstitutionAgreementsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Style="{StaticResource MaterialDesignOutlinedButton}">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="Domain" Width="20" Height="20" Margin="0,0,6,0" Foreground="{StaticResource BulkaMediumBlue}"/>
+                                    <TextBlock Text="Kurum" Foreground="{StaticResource BulkaDarkBlue}"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
                 </materialDesign:Card>
-                
+
                 <materialDesign:Card Padding="20" Background="White">
                     <StackPanel>
-                        <TextBlock Text="Bugünkü İstatistikler" 
+                        <TextBlock Text="Bugünkü İstatistikler"
                                  Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
                                  Foreground="{StaticResource BulkaDarkBlue}"
                                  FontWeight="Bold"
@@ -249,27 +318,49 @@
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
                              Margin="0,0,0,15"/>
-                    <ListView ItemsSource="{Binding UpcomingAppointmentsList}" 
+                    <ListView ItemsSource="{Binding UpcomingAppointmentsList}"
                              MaxHeight="500"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto">
+                             Padding="0,0,4,0"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Padding" Value="0"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <materialDesign:Card Margin="0,0,0,10" Padding="10"
-                                                   Cursor="Hand"
-                                                   MouseLeftButtonDown="AppointmentCard_MouseLeftButtonDown">
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding AppointmentDateTime, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
-                                                 Style="{StaticResource MaterialDesignBody1TextBlock}"
-                                                 FontWeight="Bold"
-                                                 Foreground="{StaticResource BulkaDarkBlue}"/>
-                                        <TextBlock Text="{Binding PatientFullName}" 
-                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                                 Foreground="{StaticResource BulkaMediumBlue}"/>
-                                        <TextBlock Text="{Binding DentistEmail, StringFormat='Doktor: {0}'}" 
-                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                                 Foreground="{StaticResource BulkaMediumBlue}"/>
-                                    </StackPanel>
-                                </materialDesign:Card>
+                                <Border Margin="0,0,4,12" Padding="12" CornerRadius="8"
+                                        Background="White"
+                                        BorderBrush="{StaticResource InkBorder}" BorderThickness="1"
+                                        Cursor="Hand"
+                                        MouseLeftButtonDown="AppointmentCard_MouseLeftButtonDown">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="4"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" CornerRadius="2" Background="{StaticResource BulkaMediumBlue}" Margin="0,0,10,0"/>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="{Binding AppointmentDateTime, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}"
+                                                     FontSize="13"
+                                                     FontWeight="Bold"
+                                                     Foreground="{StaticResource InkPrimary}"/>
+                                            <TextBlock Text="{Binding PatientFullName}"
+                                                     FontSize="15"
+                                                     FontWeight="SemiBold"
+                                                     Foreground="{StaticResource BulkaDarkBlue}"
+                                                     Margin="0,5,0,0"/>
+                                            <TextBlock Text="{Binding DentistDisplayName, StringFormat='Doktor: {0}'}"
+                                                     FontSize="12"
+                                                     Foreground="{StaticResource InkSecondary}"
+                                                     TextTrimming="CharacterEllipsis"
+                                                     ToolTip="{Binding DentistDisplayName}"
+                                                     Margin="0,3,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>

@@ -24,9 +24,7 @@ namespace DentalApp.Desktop.Views
         {
             if (DataContext is PatientFormViewModel vm)
             {
-                // Patient.DateOfBirth değişti, yaşı güncelle
-                var patient = vm.Patient;
-                vm.Patient = patient; // Property set ederek PatientAge'ı güncelle
+                vm.RefreshPatientAge();
             }
         }
     }

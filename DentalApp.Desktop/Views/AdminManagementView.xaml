@@ -21,8 +21,8 @@
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*" MinWidth="380"/>
-                <ColumnDefinition Width="10"/>
-                <ColumnDefinition Width="1.4*" MinWidth="520"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="1.8*" MinWidth="650"/>
             </Grid.ColumnDefinitions>
             
             <!-- Sol Panel: Kullanıcı Ekleme Formu -->
@@ -44,79 +44,69 @@
                              FontWeight="Bold"
                              Margin="0,0,0,20"/>
                     
-                    <UniformGrid Columns="3" Rows="1" Margin="0,0,0,0">
-                        <materialDesign:Card Margin="5" Padding="20" 
+                    <Grid Margin="0,0,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <materialDesign:Card Grid.Column="0" Margin="3" Height="72"
                                            Background="{Binding IsDentistSelected, Converter={StaticResource BooleanToBrushConverter}, ConverterParameter='#E3F2FD|White'}"
                                            BorderBrush="{Binding IsDentistSelected, Converter={StaticResource BooleanToBrushConverter}, ConverterParameter='#1976D2|#E0E0E0'}"
                                            BorderThickness="2"
                                            Cursor="Hand"
                                            MouseLeftButtonDown="DentistCard_MouseLeftButtonDown">
-                            <StackPanel HorizontalAlignment="Center">
-                                <materialDesign:PackIcon Kind="Doctor" Width="48" Height="48" 
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="Doctor" Width="22" Height="22"
                                                        Foreground="{StaticResource BulkaMediumBlue}"
-                                                       HorizontalAlignment="Center"
-                                                       Margin="0,0,0,10"/>
-                                <TextBlock Text="Doktor" 
-                                         Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                                       VerticalAlignment="Center"
+                                                       Margin="0,0,5,0"/>
+                                <TextBlock Text="Doktor"
+                                         FontSize="14"
                                          Foreground="{StaticResource BulkaDarkBlue}"
                                          FontWeight="Bold"
-                                         HorizontalAlignment="Center"/>
-                                <TextBlock Text="Diş hekimi ekle" 
-                                         Style="{StaticResource MaterialDesignBody2TextBlock}" 
-                                         Foreground="Gray"
-                                         HorizontalAlignment="Center"
-                                         Margin="0,5,0,0"/>
+                                         VerticalAlignment="Center"/>
                             </StackPanel>
                         </materialDesign:Card>
-                        
-                        <materialDesign:Card Margin="5" Padding="20" 
+
+                        <materialDesign:Card Grid.Column="1" Margin="3" Height="72"
                                            Background="{Binding IsSecretarySelected, Converter={StaticResource BooleanToBrushConverter}, ConverterParameter='#E8F5E9|White'}"
                                            BorderBrush="{Binding IsSecretarySelected, Converter={StaticResource BooleanToBrushConverter}, ConverterParameter='#388E3C|#E0E0E0'}"
                                            BorderThickness="2"
                                            Cursor="Hand"
                                            MouseLeftButtonDown="SecretaryCard_MouseLeftButtonDown">
-                            <StackPanel HorizontalAlignment="Center">
-                                <materialDesign:PackIcon Kind="AccountTie" Width="48" Height="48" 
-                                                       Foreground="{StaticResource BulkaLightGreen}"
-                                                       HorizontalAlignment="Center"
-                                                       Margin="0,0,0,10"/>
-                                <TextBlock Text="Sekreter" 
-                                         Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AccountTie" Width="22" Height="22"
+                                                       Foreground="#2E7D32"
+                                                       VerticalAlignment="Center"
+                                                       Margin="0,0,5,0"/>
+                                <TextBlock Text="Sekreter"
+                                         FontSize="14"
                                          Foreground="{StaticResource BulkaDarkBlue}"
                                          FontWeight="Bold"
-                                         HorizontalAlignment="Center"/>
-                                <TextBlock Text="Sekreter ekle" 
-                                         Style="{StaticResource MaterialDesignBody2TextBlock}" 
-                                         Foreground="Gray"
-                                         HorizontalAlignment="Center"
-                                         Margin="0,5,0,0"/>
+                                         VerticalAlignment="Center"/>
                             </StackPanel>
                         </materialDesign:Card>
-                        
-                        <materialDesign:Card Margin="5" Padding="20" 
+
+                        <materialDesign:Card Grid.Column="2" Margin="3" Height="72"
                                            Background="{Binding IsPatronSelected, Converter={StaticResource BooleanToBrushConverter}, ConverterParameter='#FFF3E0|White'}"
                                            BorderBrush="{Binding IsPatronSelected, Converter={StaticResource BooleanToBrushConverter}, ConverterParameter='#F57C00|#E0E0E0'}"
                                            BorderThickness="2"
                                            Cursor="Hand"
                                            MouseLeftButtonDown="PatronCard_MouseLeftButtonDown">
-                            <StackPanel HorizontalAlignment="Center">
-                                <materialDesign:PackIcon Kind="AccountStar" Width="48" Height="48" 
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AccountStar" Width="22" Height="22"
                                                        Foreground="#FF9800"
-                                                       HorizontalAlignment="Center"
-                                                       Margin="0,0,0,10"/>
-                                <TextBlock Text="Patron" 
-                                         Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                                                       VerticalAlignment="Center"
+                                                       Margin="0,0,5,0"/>
+                                <TextBlock Text="Patron"
+                                         FontSize="14"
                                          Foreground="{StaticResource BulkaDarkBlue}"
                                          FontWeight="Bold"
-                                         HorizontalAlignment="Center"/>
-                                <TextBlock Text="Patron ekle" 
-                                         Style="{StaticResource MaterialDesignBody2TextBlock}" 
-                                         Foreground="Gray"
-                                         HorizontalAlignment="Center"
-                                         Margin="0,5,0,0"/>
+                                         VerticalAlignment="Center"/>
                             </StackPanel>
                         </materialDesign:Card>
-                    </UniformGrid>
+                    </Grid>
                 </StackPanel>
                 
                     <!-- Doktor Formu -->
@@ -396,7 +386,7 @@
         </materialDesign:Card>
         
         <!-- Sağ Panel: Mevcut Kullanıcılar Listesi -->
-        <materialDesign:Card Grid.Column="2" Padding="20" Background="White" MinWidth="480">
+        <materialDesign:Card Grid.Column="2" Padding="20" Background="White" MinWidth="650">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -465,14 +455,14 @@
                         MinHeight="260"
                         Style="{StaticResource MaterialDesignDataGrid}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Ad Soyad" Binding="{Binding FullName}" Width="140" MinWidth="100"/>
-                        <DataGridTextColumn Header="E-posta" Binding="{Binding Email}" Width="*" MinWidth="120"/>
-                        <DataGridTextColumn Header="Rol" Binding="{Binding RoleDisplay}" Width="90" MinWidth="70"/>
-                        <DataGridTextColumn Header="Telefon" Binding="{Binding Phone}" Width="110" MinWidth="90"/>
-                        <DataGridTextColumn Header="TC No" Binding="{Binding TCNo}" Width="100" MinWidth="80"/>
-                        <DataGridTextColumn Header="Kayıt" Binding="{Binding CreatedAtDisplay}" Width="120" MinWidth="100"/>
-                        <DataGridTextColumn Header="Son Giriş" Binding="{Binding LastLoginAtDisplay}" Width="120" MinWidth="100"/>
-                        <DataGridCheckBoxColumn Header="E-posta ✓" Binding="{Binding EmailVerified}" Width="75"/>
+                        <DataGridTextColumn Header="Ad Soyad" Binding="{Binding FullName}" Width="1.3*" MinWidth="110"/>
+                        <DataGridTextColumn Header="E-posta" Binding="{Binding Email}" Width="1.7*" MinWidth="150"/>
+                        <DataGridTextColumn Header="Rol" Binding="{Binding RoleDisplay}" Width="0.8*" MinWidth="75"/>
+                        <DataGridTextColumn Header="Telefon" Binding="{Binding Phone}" Width="1*" MinWidth="95"/>
+                        <DataGridTextColumn Header="TC No" Binding="{Binding TCNo}" Width="1*" MinWidth="90"/>
+                        <DataGridTextColumn Header="Kayıt" Binding="{Binding CreatedAtDisplay}" Width="0.9*" MinWidth="85"/>
+                        <DataGridTextColumn Header="Son Giriş" Binding="{Binding LastLoginAtDisplay}" Width="0.9*" MinWidth="85"/>
+                        <DataGridCheckBoxColumn Header="E-posta ✓" Binding="{Binding EmailVerified}" Width="Auto" MinWidth="70"/>
                         <DataGridTemplateColumn Header="İşlemler" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>

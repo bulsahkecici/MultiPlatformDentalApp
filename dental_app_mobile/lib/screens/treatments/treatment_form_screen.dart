@@ -12,8 +12,13 @@ import '../../widgets/tooth_chart.dart';
 /// Tedavi ekleme/düzenleme formu: diş şeması + TDB tarife seçici.
 class TreatmentFormScreen extends StatefulWidget {
   final Treatment? treatment;
+  final Patient? initialPatient;
 
-  const TreatmentFormScreen({super.key, this.treatment});
+  const TreatmentFormScreen({
+    super.key,
+    this.treatment,
+    this.initialPatient,
+  });
 
   @override
   State<TreatmentFormScreen> createState() => _TreatmentFormScreenState();
@@ -38,6 +43,7 @@ class _TreatmentFormScreenState extends State<TreatmentFormScreen> {
   void initState() {
     super.initState();
     final t = widget.treatment;
+    _patient = widget.initialPatient;
     _typeController = TextEditingController(text: t?.treatmentType ?? '');
     _costController =
         TextEditingController(text: t?.cost?.toStringAsFixed(2) ?? '');

@@ -3,14 +3,12 @@ import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../providers/notification_provider.dart';
-import '../admin/admin_screen.dart';
-import '../agreements/agreements_screen.dart';
+import '../../core/mobile_access_policy.dart';
 import '../appointments/appointments_screen.dart';
 import '../dashboard/dashboard_screen.dart';
-import '../earnings/earnings_screen.dart';
+import '../financial/financial_overview_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../patients/patients_screen.dart';
-import '../payments/payments_screen.dart';
 import '../treatments/treatments_screen.dart';
 
 class _MenuEntry {
@@ -22,10 +20,9 @@ class _MenuEntry {
 }
 
 /// Rol bazlı ana kabuk: Drawer navigasyonu + bildirim rozeti.
-/// Rol matrisi web app.routes.ts / desktop MainWindow ile aynıdır:
-///  - admin: her şey
-///  - secretary: hasta/randevu/tedavi/ödeme/anlaşmalar
-///  - dentist: hasta (salt okunur)/randevu/tedavi/kazançlarım
+/// Mobil rol matrisi:
+///  - patron (admin): finansal durum ve randevular, tamamen salt okunur
+///  - diş hekimi: kendi randevuları ile hasta bilgisi/geçmişi işlemleri
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -47,30 +44,20 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   List<_MenuEntry> _menuFor(AuthProvider auth) {
-    final user = auth.currentUser;
-    final isAdmin = user?.isAdmin ?? false;
-    final isSecretary = user?.isSecretary ?? false;
-    final isDentist = user?.isDentist ?? false;
-    final canViewPayments = isAdmin || isSecretary;
+    final access = MobileAccessPolicy.forUser(auth.currentUser);
 
     return [
-      _MenuEntry('Kontrol Paneli', Icons.dashboard, () => const DashboardScreen()),
-      _MenuEntry('Hastalar', Icons.people,
-          () => PatientsScreen(canEdit: !isDentist)),
+      _MenuEntry(
+          'Kontrol Paneli', Icons.dashboard, () => const DashboardScreen()),
       _MenuEntry('Randevular', Icons.event, () => const AppointmentsScreen()),
-      _MenuEntry('Tedaviler', Icons.medical_services,
-          () => const TreatmentsScreen()),
-      if (canViewPayments)
-        _MenuEntry('Ödemeler', Icons.payment, () => const PaymentsScreen()),
-      if (canViewPayments)
-        _MenuEntry('Anlaşmalı Kurumlar', Icons.business,
-            () => const AgreementsScreen()),
-      if (isDentist)
-        _MenuEntry('Kazançlarım', Icons.attach_money,
-            () => const EarningsScreen()),
-      if (isAdmin)
-        _MenuEntry('Kullanıcı Yönetimi', Icons.admin_panel_settings,
-            () => const AdminScreen()),
+      if (access.canViewFinancials)
+        _MenuEntry('Finansal Durum', Icons.account_balance_wallet,
+            () => const FinancialOverviewScreen()),
+      if (access.canManagePatients)
+        _MenuEntry('Hastalar', Icons.people, () => const PatientsScreen()),
+      if (access.canManageTreatments)
+        _MenuEntry('Tedaviler', Icons.medical_services,
+            () => const TreatmentsScreen()),
     ];
   }
 
@@ -99,7 +86,10 @@ class _HomeShellState extends State<HomeShell> {
               ),
               onPressed: () {
                 Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const NotificationsScreen(),
+                  builder: (_) => NotificationsScreen(
+                    readOnly:
+                        MobileAccessPolicy.forUser(auth.currentUser).isOwner,
+                  ),
                 ));
               },
             ),
@@ -133,6 +123,11 @@ class _HomeShellState extends State<HomeShell> {
                   Text(
                     auth.currentUser?.displayName ?? '',
                     style: const TextStyle(color: Colors.white70),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    MobileAccessPolicy.forUser(auth.currentUser).roleLabel,
+                    style: const TextStyle(color: Colors.white60, fontSize: 12),
                   ),
                 ],
               ),

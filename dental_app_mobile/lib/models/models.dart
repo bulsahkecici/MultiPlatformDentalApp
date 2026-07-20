@@ -185,10 +185,11 @@ class Patient {
       );
 
   Map<String, dynamic> toJson() => {
-        'first_name': firstName,
-        'last_name': lastName,
+        // createPatient camelCase bekler; updatePatient iki biçimi de kabul eder.
+        'firstName': firstName,
+        'lastName': lastName,
         if (dateOfBirth != null && dateOfBirth!.isNotEmpty)
-          'date_of_birth': dateOfBirth,
+          'dateOfBirth': dateOfBirth,
         if (gender != null && gender!.isNotEmpty) 'gender': gender,
         if (email != null && email!.isNotEmpty) 'email': email,
         if (phone != null && phone!.isNotEmpty) 'phone': phone,
@@ -198,7 +199,7 @@ class Patient {
         if (allergies != null && allergies!.isNotEmpty)
           'allergies': allergies,
         if (medicalConditions != null && medicalConditions!.isNotEmpty)
-          'medical_conditions': medicalConditions,
+          'medicalConditions': medicalConditions,
       };
 }
 

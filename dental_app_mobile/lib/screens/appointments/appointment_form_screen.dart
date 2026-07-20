@@ -5,14 +5,22 @@ import 'package:provider/provider.dart';
 import '../../core/api_client.dart';
 import '../../core/api_repository.dart';
 import '../../models/models.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/patient_picker.dart';
 
 /// Yeni randevu formu.
 /// Backend çakışma kontrolü yapar; 409 dönerse mesaj gösterilir.
 class AppointmentFormScreen extends StatefulWidget {
   final DateTime initialDate;
+  final Appointment? appointment;
+  final Patient? initialPatient;
 
-  const AppointmentFormScreen({super.key, required this.initialDate});
+  const AppointmentFormScreen({
+    super.key,
+    required this.initialDate,
+    this.appointment,
+    this.initialPatient,
+  });
 
   @override
   State<AppointmentFormScreen> createState() => _AppointmentFormScreenState();
@@ -20,20 +28,49 @@ class AppointmentFormScreen extends StatefulWidget {
 
 class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
   Patient? _patient;
-  DentistSummary? _dentist;
-  List<DentistSummary> _dentists = [];
   late DateTime _date;
   TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
   int _durationMinutes = 30;
   final _typeController = TextEditingController();
   final _notesController = TextEditingController();
+  String _status = 'scheduled';
   bool _saving = false;
+
+  bool get _isEdit => widget.appointment != null;
 
   @override
   void initState() {
     super.initState();
-    _date = widget.initialDate;
-    _loadDentists();
+    final appointment = widget.appointment;
+    _date = appointment == null
+        ? widget.initialDate
+        : DateTime.tryParse(appointment.appointmentDate) ?? widget.initialDate;
+    _patient = widget.initialPatient;
+    if (appointment != null) {
+      _patient = Patient(
+        id: appointment.patientId,
+        firstName: appointment.patientFirstName,
+        lastName: appointment.patientLastName,
+      );
+      _startTime = _parseTime(appointment.startTime);
+      final end = _parseTime(appointment.endTime);
+      final duration = (end.hour * 60 + end.minute) -
+          (_startTime.hour * 60 + _startTime.minute);
+      if ([15, 30, 45, 60, 90, 120].contains(duration)) {
+        _durationMinutes = duration;
+      }
+      _typeController.text = appointment.appointmentType ?? '';
+      _notesController.text = appointment.notes ?? '';
+      _status = appointment.status;
+    }
+  }
+
+  TimeOfDay _parseTime(String value) {
+    final parts = value.split(':');
+    return TimeOfDay(
+      hour: int.tryParse(parts.first) ?? 9,
+      minute: parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0,
+    );
   }
 
   @override
@@ -41,16 +78,6 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
     _typeController.dispose();
     _notesController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadDentists() async {
-    try {
-      final dentists = await context.read<ApiRepository>().getDentists();
-      if (!mounted) return;
-      setState(() => _dentists = dentists);
-    } catch (_) {
-      // Liste yüklenemezse hekim seçimi opsiyonel kalır
-    }
   }
 
   String _formatTime(TimeOfDay time) =>
@@ -70,18 +97,32 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
     }
     setState(() => _saving = true);
     try {
-      await context.read<ApiRepository>().createAppointment(Appointment(
-            id: 0,
-            patientId: _patient!.id,
-            dentistId: _dentist?.id,
-            appointmentDate: DateFormat('yyyy-MM-dd').format(_date),
-            startTime: _formatTime(_startTime),
-            endTime: _formatTime(_endTime),
-            appointmentType: _typeController.text.trim().isEmpty
-                ? null
-                : _typeController.text.trim(),
-            notes: _notesController.text.trim(),
-          ));
+      final repo = context.read<ApiRepository>();
+      final appointmentType = _typeController.text.trim();
+      final notes = _notesController.text.trim();
+      if (_isEdit) {
+        await repo.updateAppointment(widget.appointment!.id, {
+          'appointmentDate': DateFormat('yyyy-MM-dd').format(_date),
+          'startTime': _formatTime(_startTime),
+          'endTime': _formatTime(_endTime),
+          'appointmentType': appointmentType.isEmpty ? null : appointmentType,
+          'notes': notes,
+          'status': _status,
+        });
+      } else {
+        final currentUser = context.read<AuthProvider>().currentUser;
+        await repo.createAppointment(Appointment(
+          id: 0,
+          patientId: _patient!.id,
+          // Diş hekimi mobilde yalnızca kendi adına randevu oluşturur.
+          dentistId: currentUser?.id,
+          appointmentDate: DateFormat('yyyy-MM-dd').format(_date),
+          startTime: _formatTime(_startTime),
+          endTime: _formatTime(_endTime),
+          appointmentType: appointmentType.isEmpty ? null : appointmentType,
+          notes: notes,
+        ));
+      }
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } on ApiException catch (e) {
@@ -97,7 +138,7 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Yeni Randevu'),
+        title: Text(_isEdit ? 'Randevuyu Düzenle' : 'Yeni Randevu'),
         backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
       ),
@@ -109,28 +150,16 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
             child: ListTile(
               leading: const Icon(Icons.person),
               title: Text(_patient?.fullName ?? 'Hasta seçin *'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                final selected = await showPatientPicker(context);
-                if (selected != null) setState(() => _patient = selected);
-              },
+              trailing: _isEdit ? null : const Icon(Icons.chevron_right),
+              onTap: _isEdit
+                  ? null
+                  : () async {
+                      final selected = await showPatientPicker(context);
+                      if (selected != null) setState(() => _patient = selected);
+                    },
             ),
           ),
           const SizedBox(height: 8),
-          // Dişhekimi seçimi
-          DropdownButtonFormField<DentistSummary>(
-            initialValue: _dentist,
-            decoration: const InputDecoration(
-              labelText: 'Dişhekimi',
-              border: OutlineInputBorder(),
-            ),
-            items: _dentists
-                .map((d) => DropdownMenuItem(
-                    value: d, child: Text(d.displayName)))
-                .toList(),
-            onChanged: (v) => setState(() => _dentist = v),
-          ),
-          const SizedBox(height: 12),
           // Tarih
           Card(
             child: ListTile(
@@ -140,7 +169,7 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
                 final picked = await showDatePicker(
                   context: context,
                   initialDate: _date,
-                  firstDate: DateTime.now().subtract(const Duration(days: 1)),
+                  firstDate: DateTime(2020),
                   lastDate: DateTime(2035),
                 );
                 if (picked != null) setState(() => _date = picked);
@@ -182,8 +211,7 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
                     DropdownMenuItem(value: 90, child: Text('1,5 saat')),
                     DropdownMenuItem(value: 120, child: Text('2 saat')),
                   ],
-                  onChanged: (v) =>
-                      setState(() => _durationMinutes = v ?? 30),
+                  onChanged: (v) => setState(() => _durationMinutes = v ?? 30),
                 ),
               ),
             ],
@@ -197,6 +225,24 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
             ),
           ),
           const SizedBox(height: 12),
+          if (_isEdit) ...[
+            DropdownButtonFormField<String>(
+              initialValue: _status,
+              decoration: const InputDecoration(
+                labelText: 'Durum',
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'scheduled', child: Text('Planlandı')),
+                DropdownMenuItem(value: 'confirmed', child: Text('Onaylandı')),
+                DropdownMenuItem(value: 'completed', child: Text('Tamamlandı')),
+                DropdownMenuItem(value: 'no_show', child: Text('Gelmedi')),
+              ],
+              onChanged: (value) =>
+                  setState(() => _status = value ?? 'scheduled'),
+            ),
+            const SizedBox(height: 12),
+          ],
           TextField(
             controller: _notesController,
             decoration: const InputDecoration(
@@ -214,7 +260,7 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.event_available),
-            label: const Text('Randevu Oluştur'),
+            label: Text(_isEdit ? 'Değişiklikleri Kaydet' : 'Randevu Oluştur'),
           ),
         ],
       ),

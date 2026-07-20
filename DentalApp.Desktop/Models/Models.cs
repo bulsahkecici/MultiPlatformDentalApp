@@ -245,10 +245,27 @@ namespace DentalApp.Desktop.Models
         
         [JsonProperty("dentist_email")]
         public string? DentistEmail { get; set; }
-        
+
+        [JsonProperty("dentist_first_name")]
+        public string? DentistFirstName { get; set; }
+
+        [JsonProperty("dentist_last_name")]
+        public string? DentistLastName { get; set; }
+
         [JsonIgnore]
         public string PatientFullName => $"{PatientFirstName} {PatientLastName}".Trim();
-        
+
+        /// <summary>Ad/soyad varsa "Ad Soyad", yoksa e-postaya düşer (backend eski kayıtlarda isim döndürmeyebilir).</summary>
+        [JsonIgnore]
+        public string DentistDisplayName
+        {
+            get
+            {
+                var fullName = $"{DentistFirstName} {DentistLastName}".Trim();
+                return string.IsNullOrWhiteSpace(fullName) ? (DentistEmail ?? "-") : fullName;
+            }
+        }
+
         [JsonIgnore]
         public DateTime AppointmentDateTime => AppointmentDate.Date.Add(StartTime);
     }
@@ -429,12 +446,32 @@ namespace DentalApp.Desktop.Models
         
         [JsonProperty("category_discounts")]
         public Dictionary<string, decimal>? CategoryDiscounts { get; set; }
-        
+
         [JsonProperty("created_at")]
         public DateTime? CreatedAt { get; set; }
-        
+
         [JsonProperty("updated_at")]
         public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// Kategori bazlı indirimler tanımlı değilse DiscountPercentage'ı, hepsi aynı
+        /// orandaysa o ortak oranı, kategoriler arasında farklı oranlar varsa "Değişken"
+        /// metnini gösterir (tek bir "genel indirim" sayısı artık yanıltıcı olur).
+        /// </summary>
+        [JsonIgnore]
+        public string GeneralDiscountDisplay
+        {
+            get
+            {
+                if (CategoryDiscounts == null || CategoryDiscounts.Count == 0)
+                    return $"{DiscountPercentage.ToString("0.##", System.Globalization.CultureInfo.CurrentCulture)}%";
+
+                var distinctValues = CategoryDiscounts.Values.Distinct().ToList();
+                return distinctValues.Count == 1
+                    ? $"{distinctValues[0].ToString("0.##", System.Globalization.CultureInfo.CurrentCulture)}%"
+                    : "Değişken";
+            }
+        }
     }
 
     public class CategoryDiscount

@@ -117,56 +117,29 @@
                                  Foreground="{StaticResource BulkaDarkBlue}"
                                  FontWeight="Bold"
                                  Margin="0,0,0,15"
-                                 Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}"/>
-                        
-                        <TextBlock Text="Hasta seçin" 
+                                 Visibility="{Binding SelectedPatient, Converter={StaticResource ObjectToVisibilityConverter}}"/>
+
+                        <TextBlock Text="Hasta seçin"
                                  Style="{StaticResource MaterialDesignBody1TextBlock}"
                                  Foreground="Gray"
                                  Margin="0,20,0,0"
-                                 Visibility="{Binding SelectedPatient, Converter={StaticResource InverseBooleanConverter}}"/>
-                        
+                                 Visibility="{Binding SelectedPatient, Converter={StaticResource ObjectToCollapsedConverter}}"/>
+
                         <!-- Hasta Bilgileri -->
-                        <Expander Header="Hasta Bilgileri" 
+                        <Expander Header="Hasta Bilgileri"
                                 IsExpanded="True"
                                 Margin="0,0,0,10"
-                                Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}">
+                                Visibility="{Binding SelectedPatient, Converter={StaticResource ObjectToVisibilityConverter}}">
                             <StackPanel Margin="10,10,0,10">
-                                <TextBlock Margin="0,5,0,5">
-                                    <Run Text="Ad Soyad: " FontWeight="Bold"/>
-                                    <Run Text="{Binding SelectedPatient.FullName}"/>
-                                </TextBlock>
-                                <TextBlock Margin="0,5,0,5">
-                                    <Run Text="E-posta: " FontWeight="Bold"/>
-                                    <Run Text="{Binding SelectedPatient.Email}"/>
-                                </TextBlock>
-                                <TextBlock Margin="0,5,0,5">
-                                    <Run Text="Telefon: " FontWeight="Bold"/>
-                                    <Run Text="{Binding SelectedPatient.Phone}"/>
-                                </TextBlock>
-                                <TextBlock Margin="0,5,0,5">
-                                    <Run Text="Adres: " FontWeight="Bold"/>
-                                    <Run Text="{Binding SelectedPatient.Address}"/>
-                                </TextBlock>
-                                <TextBlock Margin="0,5,0,5">
-                                    <Run Text="Şehir: " FontWeight="Bold"/>
-                                    <Run Text="{Binding SelectedPatient.City}"/>
-                                </TextBlock>
-                                <TextBlock Margin="0,5,0,5">
-                                    <Run Text="Ülke: " FontWeight="Bold"/>
-                                    <Run Text="{Binding SelectedPatient.Country}"/>
-                                </TextBlock>
-                                <TextBlock Margin="0,5,0,5">
-                                    <Run Text="Doğum Tarihi: " FontWeight="Bold"/>
-                                    <Run Text="{Binding SelectedPatient.DateOfBirth, StringFormat='{}{0:dd.MM.yyyy}'}"/>
-                                </TextBlock>
-                                <TextBlock Margin="0,5,0,5">
-                                    <Run Text="Cinsiyet: " FontWeight="Bold"/>
-                                    <Run Text="{Binding SelectedPatient.Gender}"/>
-                                </TextBlock>
-                                <TextBlock Margin="0,5,0,5">
-                                    <Run Text="Kan Grubu: " FontWeight="Bold"/>
-                                    <Run Text="{Binding SelectedPatient.BloodType}"/>
-                                </TextBlock>
+                                <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.FullName, StringFormat='Ad Soyad: {0}'}"/>
+                                <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.Email, StringFormat='E-posta: {0}'}"/>
+                                <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.Phone, StringFormat='Telefon: {0}'}"/>
+                                <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.Address, StringFormat='Adres: {0}'}"/>
+                                <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.City, StringFormat='Şehir: {0}'}"/>
+                                <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.Country, StringFormat='Ülke: {0}'}"/>
+                                <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.DateOfBirth, StringFormat='Doğum Tarihi: {0:dd.MM.yyyy}'}"/>
+                                <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.Gender, Converter={StaticResource GenderToTurkishConverter}, StringFormat='Cinsiyet: {0}'}"/>
+                                <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.BloodType, StringFormat='Kan Grubu: {0}'}"/>
                             </StackPanel>
                         </Expander>
                         
@@ -174,7 +147,7 @@
                         <Expander Header="Geçmiş Randevular" 
                                 IsExpanded="True"
                                 Margin="0,0,0,10"
-                                Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}">
+                                Visibility="{Binding SelectedPatient, Converter={StaticResource ObjectToVisibilityConverter}}">
                             <DataGrid ItemsSource="{Binding PatientAppointments}"
                                     AutoGenerateColumns="False"
                                     CanUserAddRows="False"
@@ -193,7 +166,7 @@
                         <Expander Header="Yapılan Tedaviler" 
                                 IsExpanded="True"
                                 Margin="0,0,0,10"
-                                Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}">
+                                Visibility="{Binding SelectedPatient, Converter={StaticResource ObjectToVisibilityConverter}}">
                             <DataGrid ItemsSource="{Binding PatientTreatments}"
                                     AutoGenerateColumns="False"
                                     CanUserAddRows="False"

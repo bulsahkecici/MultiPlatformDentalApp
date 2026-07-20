@@ -4,10 +4,12 @@ import 'package:provider/provider.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_repository.dart';
+import '../../core/mobile_access_policy.dart';
 import '../../models/models.dart';
+import '../../providers/auth_provider.dart';
 import 'appointment_form_screen.dart';
 
-/// Günlük randevu listesi: tarih seçici + iptal + yeni randevu.
+/// Günlük randevu listesi. Patron için salt okunur, diş hekimi için işlemli.
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
 
@@ -105,22 +107,41 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     }
   }
 
-  Future<void> _openForm() async {
-    final created = await Navigator.of(context).push<bool>(
+  Future<void> _openForm({Appointment? appointment}) async {
+    final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => AppointmentFormScreen(initialDate: _selectedDate),
+        builder: (_) => AppointmentFormScreen(
+          initialDate: _selectedDate,
+          appointment: appointment,
+        ),
       ),
     );
-    if (created == true) _load();
+    if (changed == true) _load();
   }
 
   @override
   Widget build(BuildContext context) {
     final dateLabel = DateFormat('d MMMM yyyy, EEEE', 'tr_TR');
+    final canEdit = MobileAccessPolicy.forUser(
+      context.watch<AuthProvider>().currentUser,
+    ).canManageAppointments;
 
     return Scaffold(
       body: Column(
         children: [
+          if (!canEdit)
+            Container(
+              width: double.infinity,
+              color: Theme.of(context).colorScheme.primaryContainer,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: const Row(
+                children: [
+                  Icon(Icons.visibility_outlined, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(child: Text('Patron görünümü salt okunurdur.')),
+                ],
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
@@ -180,8 +201,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                                     horizontal: 12, vertical: 4),
                                 child: ListTile(
                                   leading: Column(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
                                         appt.startTime.substring(0, 5),
@@ -213,14 +233,36 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                                         appt.cancellationReason != null)
                                       'İptal: ${appt.cancellationReason}',
                                   ].join(' · ')),
-                                  trailing: cancelled
-                                      ? const Icon(Icons.event_busy,
-                                          color: Colors.red)
-                                      : IconButton(
-                                          icon: const Icon(Icons.cancel_outlined),
-                                          tooltip: 'İptal et',
-                                          onPressed: () => _cancel(appt),
-                                        ),
+                                  trailing: !canEdit
+                                      ? (cancelled
+                                          ? const Icon(Icons.event_busy,
+                                              color: Colors.red)
+                                          : null)
+                                      : cancelled
+                                          ? const Icon(Icons.event_busy,
+                                              color: Colors.red)
+                                          : PopupMenuButton<String>(
+                                              onSelected: (action) {
+                                                if (action == 'edit') {
+                                                  _openForm(appointment: appt);
+                                                } else if (action == 'cancel') {
+                                                  _cancel(appt);
+                                                }
+                                              },
+                                              itemBuilder: (_) => const [
+                                                PopupMenuItem(
+                                                  value: 'edit',
+                                                  child: Text('Düzenle'),
+                                                ),
+                                                PopupMenuItem(
+                                                  value: 'cancel',
+                                                  child: Text('İptal et'),
+                                                ),
+                                              ],
+                                            ),
+                                  onTap: canEdit && !cancelled
+                                      ? () => _openForm(appointment: appt)
+                                      : null,
                                 ),
                               );
                             },
@@ -229,10 +271,12 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openForm,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: canEdit
+          ? FloatingActionButton(
+              onPressed: () => _openForm(),
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 }

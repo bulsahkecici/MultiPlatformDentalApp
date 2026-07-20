@@ -182,10 +182,10 @@
                                                 <Setter Property="IsEnabled" Value="True"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding Status}" Value="Occupied">
-                                                <Setter Property="Background" Value="#DC2626"/>
+                                                <Setter Property="Background" Value="#3B82F6"/>
                                                 <Setter Property="Foreground" Value="White"/>
                                                 <Setter Property="BorderThickness" Value="1"/>
-                                                <Setter Property="BorderBrush" Value="#B91C1C"/>
+                                                <Setter Property="BorderBrush" Value="#2563EB"/>
                                                 <Setter Property="IsEnabled" Value="True"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding Status}" Value="Unavailable">
@@ -199,18 +199,18 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Button.Style>
-                                <StackPanel>
-                                    <TextBlock Text="{Binding TimeString}" 
-                                             FontSize="9"
-                                             HorizontalAlignment="Center"
-                                             Margin="0,0,0,2"/>
-                                    <TextBlock Text="{Binding PatientName}" 
-                                             FontSize="8"
+                                <Grid ToolTipService.ShowOnDisabled="True">
+                                    <Grid.ToolTip>
+                                        <ToolTip Content="{Binding PatientName}" Visibility="{Binding PatientName, Converter={StaticResource ObjectToVisibilityConverter}}"/>
+                                    </Grid.ToolTip>
+                                    <TextBlock Text="{Binding PatientName}"
+                                             FontSize="11"
                                              FontWeight="Bold"
-                                             TextWrapping="Wrap"
-                                             HorizontalAlignment="Center"
                                              TextTrimming="CharacterEllipsis"
-                                             MaxWidth="100">
+                                             TextWrapping="NoWrap"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center"
+                                             MaxWidth="110">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -222,26 +222,7 @@
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
-                                    <TextBlock Text="{Binding AppointmentType}" 
-                                             FontSize="7"
-                                             FontStyle="Italic"
-                                             TextWrapping="Wrap"
-                                             HorizontalAlignment="Center"
-                                             TextTrimming="CharacterEllipsis"
-                                             MaxWidth="100"
-                                             Margin="0,1,0,0">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Status}" Value="Occupied">
-                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </StackPanel>
+                                </Grid>
                             </Button>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>

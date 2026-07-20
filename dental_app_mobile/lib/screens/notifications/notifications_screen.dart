@@ -5,7 +5,9 @@ import '../../providers/notification_provider.dart';
 
 /// Bildirim merkezi: liste + okundu işaretleme.
 class NotificationsScreen extends StatefulWidget {
-  const NotificationsScreen({super.key});
+  final bool readOnly;
+
+  const NotificationsScreen({super.key, this.readOnly = false});
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
@@ -46,7 +48,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
         actions: [
-          if (provider.notifications.isNotEmpty)
+          if (!widget.readOnly && provider.notifications.isNotEmpty)
             TextButton(
               onPressed: () => provider.markAllRead(),
               child: const Text(
@@ -56,49 +58,62 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () => provider.loadNotifications(),
-        child: provider.notifications.isEmpty
-            ? ListView(
-                children: const [
-                  Padding(
-                    padding: EdgeInsets.all(32),
-                    child: Center(child: Text('Bildirim yok.')),
-                  ),
-                ],
-              )
-            : ListView.builder(
-                itemCount: provider.notifications.length,
-                itemBuilder: (context, i) {
-                  final notification = provider.notifications[i];
-                  return ListTile(
-                    leading: Icon(
-                      _iconFor(notification.type),
-                      color: notification.isRead
-                          ? Colors.grey
-                          : const Color(0xFF1E3A8A),
+      body: Column(
+        children: [
+          if (widget.readOnly)
+            Container(
+              width: double.infinity,
+              color: Theme.of(context).colorScheme.primaryContainer,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: const Text('Patron görünümü salt okunurdur.'),
+            ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () => provider.loadNotifications(),
+              child: provider.notifications.isEmpty
+                  ? ListView(
+                      children: const [
+                        Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Center(child: Text('Bildirim yok.')),
+                        ),
+                      ],
+                    )
+                  : ListView.builder(
+                      itemCount: provider.notifications.length,
+                      itemBuilder: (context, i) {
+                        final notification = provider.notifications[i];
+                        return ListTile(
+                          leading: Icon(
+                            _iconFor(notification.type),
+                            color: notification.isRead
+                                ? Colors.grey
+                                : const Color(0xFF1E3A8A),
+                          ),
+                          title: Text(
+                            notification.title,
+                            style: TextStyle(
+                              fontWeight: notification.isRead
+                                  ? FontWeight.normal
+                                  : FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Text(notification.message),
+                          trailing: Text(
+                            notification.createdAt.length >= 10
+                                ? notification.createdAt.substring(0, 10)
+                                : notification.createdAt,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          onTap: widget.readOnly || notification.isRead
+                              ? null
+                              : () => provider.markRead(notification.id),
+                        );
+                      },
                     ),
-                    title: Text(
-                      notification.title,
-                      style: TextStyle(
-                        fontWeight: notification.isRead
-                            ? FontWeight.normal
-                            : FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: Text(notification.message),
-                    trailing: Text(
-                      notification.createdAt.length >= 10
-                          ? notification.createdAt.substring(0, 10)
-                          : notification.createdAt,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    onTap: notification.isRead
-                        ? null
-                        : () => provider.markRead(notification.id),
-                  );
-                },
-              ),
+            ),
+          ),
+        ],
       ),
     );
   }

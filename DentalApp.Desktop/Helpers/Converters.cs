@@ -38,6 +38,32 @@ namespace DentalApp.Desktop.Helpers
             => throw new NotImplementedException();
     }
 
+    /// <summary>Bir koleksiyonun Count'unu boş-durum mesajı göstermek için kullanır: 0 -> Visible, aksi -> Collapsed.</summary>
+    public class ZeroToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is int count)
+                return count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            return Visibility.Collapsed;
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
+
+    /// <summary>ZeroToVisibilityConverter'ın tersi: liste doluyken asıl içeriği (ör. DataGrid) gösterir.</summary>
+    public class NonZeroToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is int count)
+                return count == 0 ? Visibility.Collapsed : Visibility.Visible;
+            return Visibility.Collapsed;
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
+
     public class BooleanToTextConverter : IValueConverter
     {
         public string TrueText { get; set; } = "Yes";
@@ -103,6 +129,82 @@ namespace DentalApp.Desktop.Helpers
         {
             throw new NotImplementedException();
         }
+    }
+
+    /// <summary>Bir nesne null değilse Visible, null ise Collapsed döner (Visibility hedefleri için).</summary>
+    public class ObjectToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            => value != null ? Visibility.Visible : Visibility.Collapsed;
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
+
+    /// <summary>ObjectToVisibilityConverter'ın tersi: null ise Visible (ör. "seçim yapın" mesajı), null değilse Collapsed.</summary>
+    public class ObjectToCollapsedConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            => value != null ? Visibility.Collapsed : Visibility.Visible;
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
+
+    public class GenderToTurkishConverter : IValueConverter
+    {
+        private static readonly Dictionary<string, string> Translations = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { "male", "Erkek" },
+            { "female", "Kadın" },
+            { "other", "Diğer" }
+        };
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is string gender && !string.IsNullOrWhiteSpace(gender))
+            {
+                return Translations.TryGetValue(gender.Trim(), out var translation) ? translation : gender;
+            }
+            return value?.ToString() ?? string.Empty;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
+
+    public class AppointmentTypeToTurkishConverter : IValueConverter
+    {
+        private static readonly Dictionary<string, string> Translations = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { "extraction", "Çekim" },
+            { "filling", "Dolgu" },
+            { "cleaning", "Temizlik" },
+            { "checkup", "Muayene" },
+            { "examination", "Muayene" },
+            { "consultation", "Muayene" },
+            { "root_canal", "Kanal Tedavisi" },
+            { "root canal", "Kanal Tedavisi" },
+            { "orthodontics", "Ortodonti" },
+            { "prosthesis", "Protez" },
+            { "prosthetics", "Protez" },
+            { "control", "Kontrol" },
+            { "whitening", "Diş Beyazlatma" },
+            { "surgery", "Cerrahi" },
+            { "implant", "İmplant" }
+        };
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is string type && !string.IsNullOrWhiteSpace(type))
+            {
+                return Translations.TryGetValue(type.Trim(), out var translation) ? translation : type;
+            }
+            return value?.ToString() ?? string.Empty;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
     }
 
     public class ToothNumberEqualityConverter : IMultiValueConverter
@@ -204,18 +306,42 @@ namespace DentalApp.Desktop.Helpers
         }
     }
     
+    /// <summary>
+    /// true/false değerini bir fırçaya çevirir. ConverterParameter "trueRenk|falseRenk"
+    /// biçiminde verilirse (ör. "#E3F2FD|White") o renkler kullanılır; parametre
+    /// verilmezse TrueBrush/FalseBrush (varsayılan Yeşil/Kırmızı) kullanılır.
+    /// </summary>
     public class BooleanToBrushConverter : IValueConverter
     {
         public System.Windows.Media.Brush TrueBrush { get; set; } = System.Windows.Media.Brushes.Green;
         public System.Windows.Media.Brush FalseBrush { get; set; } = System.Windows.Media.Brushes.Red;
 
+        private static readonly System.Windows.Media.BrushConverter BrushParser = new();
+
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is bool boolValue)
+            var boolValue = value is bool b && b;
+
+            if (parameter is string paramString && paramString.Contains('|'))
             {
-                return boolValue ? TrueBrush : FalseBrush;
+                var parts = paramString.Split('|', 2);
+                var colorText = boolValue ? parts[0] : parts[1];
+                try
+                {
+                    var brush = BrushParser.ConvertFromString(colorText) as System.Windows.Media.Brush;
+                    if (brush != null)
+                    {
+                        brush.Freeze();
+                        return brush;
+                    }
+                }
+                catch (FormatException)
+                {
+                    // Geçersiz renk metni - aşağıdaki varsayılana düş
+                }
             }
-            return FalseBrush;
+
+            return boolValue ? TrueBrush : FalseBrush;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

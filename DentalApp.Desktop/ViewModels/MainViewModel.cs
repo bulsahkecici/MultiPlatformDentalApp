@@ -85,22 +85,40 @@ namespace DentalApp.Desktop.ViewModels
             ShowLogin();
         }
 
+        private bool _isHandlingUnauthorized;
+
         private void HandleUnauthorized()
         {
+            // Çıkış yapıldıktan hemen sonra birden fazla istek aynı anda 401 dönebilir
+            // (ör. panoda henüz süren birkaç yükleme). Bu durumda aynı uyarı kutusu
+            // art arda/yığılarak açılmasın diye tek seferlik işleniyor.
+            if (_isHandlingUnauthorized || CurrentView is LoginViewModel)
+            {
+                return;
+            }
+            _isHandlingUnauthorized = true;
+
             // Clear authentication state
             _authService.Logout();
             OnPropertyChanged(nameof(IsAuthenticated));
             OnPropertyChanged(nameof(CurrentUser));
-            
+
             // Show message and redirect to login
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
-                System.Windows.MessageBox.Show(
-                    "Oturum süresi doldu veya yetkiniz yok. Lütfen tekrar giriş yapın.",
-                    "Oturum Sonlandı",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Warning);
-                ShowLogin();
+                try
+                {
+                    System.Windows.MessageBox.Show(
+                        "Oturum süresi doldu veya yetkiniz yok. Lütfen tekrar giriş yapın.",
+                        "Oturum Sonlandı",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Warning);
+                    ShowLogin();
+                }
+                finally
+                {
+                    _isHandlingUnauthorized = false;
+                }
             });
         }
 

@@ -78,15 +78,19 @@ assets/
 
 ## Rol bazlı özellik erişimi
 
-`home_shell.dart` menüsü backend'deki rol modeliyle birebir eşleşir:
+Mobil uygulamaya yalnızca patron (`admin`) ve diş hekimi (`dentist`) hesapları
+girebilir. Sekreter hesabı mobilde desteklenmez.
 
-| Özellik | admin | secretary | dentist |
-|---|---|---|---|
-| Kontrol Paneli, Randevular, Tedaviler | ✓ | ✓ | ✓ |
-| Hastalar | ✓ (düzenle) | ✓ (düzenle) | ✓ (salt okunur) |
-| Ödemeler, Anlaşmalı Kurumlar | ✓ | ✓ | — |
-| Kazançlarım | — | — | ✓ |
-| Kullanıcı Yönetimi | ✓ | — | — |
+| Özellik | Patron | Diş hekimi |
+|---|---|---|
+| Kontrol paneli | ✓ (salt okunur) | ✓ |
+| Randevular | ✓ (salt okunur) | ✓ (kendi randevularında işlem) |
+| Finansal durum | ✓ (salt okunur) | — |
+| Hasta bilgileri ve geçmişi | — | ✓ (görüntüle/düzenle) |
+| Tedaviler | — | ✓ (görüntüle/düzenle) |
+
+Mobil patron arayüzü hiçbir ödeme, plan onayı, kullanıcı yönetimi veya klinik
+kayıt değiştirme işlemi sunmaz.
 
 ## Gerçek zamanlı bildirimler
 

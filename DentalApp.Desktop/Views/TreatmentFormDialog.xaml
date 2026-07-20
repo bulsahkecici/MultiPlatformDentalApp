@@ -47,13 +47,13 @@
                     <TextBlock Text="Tedavi Türü (Kategori Seçimi)" 
                              Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
                              Margin="0,10,0,5"
-                             Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}"/>
+                             Visibility="{Binding SelectedPatient, Converter={StaticResource ObjectToVisibilityConverter}}"/>
                     <TextBlock Text="{Binding Treatment.TreatmentType}" 
                              Style="{StaticResource MaterialDesignBody1TextBlock}" 
                              Foreground="{StaticResource BulkaDarkBlue}"
                              FontWeight="Bold"
                              Margin="0,0,0,10"
-                             Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}"/>
+                             Visibility="{Binding SelectedPatient, Converter={StaticResource ObjectToVisibilityConverter}}"/>
 
                 <TextBlock Text="Seçilen Dişler:" 
                          Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
@@ -61,7 +61,7 @@
                 <TextBlock Text="{Binding SelectedToothNumber, StringFormat='Diş: {0}'}" 
                          Style="{StaticResource MaterialDesignBody1TextBlock}" 
                          Margin="0,0,0,10"
-                         Visibility="{Binding SelectedTeeth.Count, Converter={StaticResource NullToBooleanConverter}}"/>
+                         Visibility="{Binding SelectedTeeth.Count, Converter={StaticResource NonZeroToVisibilityConverter}}"/>
 
                 <!-- Diş Şeması -->
                 <TextBlock Text="Diş Şeması" 
@@ -166,7 +166,7 @@
                 <TextBlock Text="Maliyet bilgisi sadece Patron ve Sekreter tarafından görüntülenebilir." 
                          Style="{StaticResource MaterialDesignBody2TextBlock}" 
                          Foreground="Gray"
-                         Visibility="{Binding CanViewPrices, Converter={StaticResource InverseBooleanConverter}}"
+                         Visibility="{Binding CanViewPrices, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
                          Margin="0,0,0,10"
                          TextWrapping="Wrap"/>
 
@@ -201,7 +201,7 @@
                         <TextBlock Text="Kategori Seçin" 
                                    Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
                                    Margin="0,0,0,5"
-                                   Visibility="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}"/>
+                                   Visibility="{Binding SelectedPatient, Converter={StaticResource ObjectToVisibilityConverter}}"/>
                         <ComboBox ItemsSource="{Binding Categories}"
                                  SelectedItem="{Binding SelectedCategory}"
                                  DisplayMemberPath="Name"
@@ -230,7 +230,7 @@
                                 <GridViewColumn Header="Fiyat (KDV Dahil)" Width="120">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding PriceInclVat, StringFormat='{}{0:F2} ₺'}"
+                                            <TextBlock Text="{Binding PriceInclVat, StringFormat='{}{0:N2} ₺'}"
                                                        Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
@@ -266,7 +266,7 @@
                                     <StackPanel Grid.Column="0">
                                         <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
                                         <TextBlock Text="{Binding Code, StringFormat='Kod: {0}'}" FontSize="11"/>
-                                        <TextBlock Text="{Binding Price, StringFormat='Fiyat: {0:F2} ₺'}" 
+                                        <TextBlock Text="{Binding Price, StringFormat='Fiyat: {0:N2} ₺'}" 
                                                  FontSize="11"
                                                  Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                     </StackPanel>
@@ -302,7 +302,7 @@
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock Text="{Binding Name}" Grid.Column="0"/>
-                                                    <TextBlock Text="{Binding Price, StringFormat='{}{0:F2} ₺'}" 
+                                                    <TextBlock Text="{Binding Price, StringFormat='{}{0:N2} ₺'}" 
                                                              Grid.Column="1"
                                                              Margin="10,0,0,0"
                                                              Foreground="{StaticResource BulkaMediumBlue}"
@@ -324,7 +324,7 @@
                         <TextBlock Text="Toplam Tutar" 
                                  Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
                                  Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding TotalCost, StringFormat='{}{0:F2} ₺'}" 
+                        <TextBlock Text="{Binding TotalCost, StringFormat='{}{0:N2} ₺'}" 
                                  Style="{StaticResource MaterialDesignHeadline6TextBlock}" 
                                  Foreground="{StaticResource BulkaDarkBlue}"
                                  FontWeight="Bold"
@@ -335,13 +335,13 @@
                                  Foreground="Gray"
                                  Margin="0,5,0,0"
                                  Visibility="{Binding HasDiscount, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                        <TextBlock Text="{Binding TotalDiscount, StringFormat='İndirim: -{0:F2} ₺'}" 
+                        <TextBlock Text="{Binding TotalDiscount, StringFormat='İndirim: -{0:N2} ₺'}" 
                                  Style="{StaticResource MaterialDesignBody1TextBlock}" 
                                  Foreground="Green"
                                  FontWeight="SemiBold"
                                  Margin="0,5,0,0"
                                  Visibility="{Binding HasDiscount, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                        <TextBlock Text="{Binding TotalCostWithDiscount, StringFormat='İndirimli Toplam: {0:F2} ₺'}" 
+                        <TextBlock Text="{Binding TotalCostWithDiscount, StringFormat='İndirimli Toplam: {0:N2} ₺'}" 
                                  Style="{StaticResource MaterialDesignHeadline6TextBlock}" 
                                  Foreground="Green"
                                  FontWeight="Bold"
