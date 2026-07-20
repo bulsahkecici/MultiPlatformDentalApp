@@ -1,4 +1,4 @@
-const { query } = require('../db');
+const { query, withTransaction } = require('../db');
 const { AppError } = require('../utils/errorResponder');
 const { logDataEvent, AuditEventType } = require('../utils/auditLogger');
 const { getClientIp } = require('../middlewares/accountLockout');
@@ -237,6 +237,20 @@ async function updateTreatment(req, res, next) {
     const treatmentId = parseInt(req.params.id, 10);
     const updates = req.body || {};
 
+    // Diş hekimi sadece kendi tedavisini güncelleyebilir (IDOR koruması)
+    if (isDentist(req)) {
+      const ownership = await query(
+        'SELECT dentist_id FROM treatments WHERE id = $1',
+        [treatmentId],
+      );
+      if (ownership.rows.length === 0) {
+        return next(new AppError('Treatment not found', 404));
+      }
+      if (ownership.rows[0].dentist_id !== req.user.sub) {
+        return next(new AppError('Forbidden', 403));
+      }
+    }
+
     // Build update query
     const allowedFields = [
       'treatment_date',
@@ -346,48 +360,52 @@ async function createTreatmentPlan(req, res, next) {
       );
     }
 
-    // Create treatment plan
-    const planResult = await query(
-      `INSERT INTO treatment_plans (
+    // Plan + kalemleri tek transaction'da oluştur — bir kalem eklemesi
+    // başarısız olursa yarım kalmış (kalemsiz) bir plan oluşmasın.
+    const { plan, items: insertedItems } = await withTransaction(
+      async (client) => {
+        const planResult = await client.query(
+          `INSERT INTO treatment_plans (
                 patient_id, dentist_id, title, description, status,
                 created_by, updated_by, created_at, updated_at
             ) VALUES ($1, $2, $3, $4, 'pending', $5, $5, NOW(), NOW())
             RETURNING *`,
-      [
-        patientId,
-        dentistId || req.user.sub,
-        title,
-        description || null,
-        req.user.sub,
-      ],
-    );
+          [
+            patientId,
+            dentistId || req.user.sub,
+            title,
+            description || null,
+            req.user.sub,
+          ],
+        );
 
-    const plan = planResult.rows[0];
+        const createdPlan = planResult.rows[0];
 
-    // Create treatment plan items
-    const itemPromises = items.map((item) => {
-      return query(
-        `INSERT INTO treatment_plan_items (
+        // Aynı client üzerinde sırayla çalıştır (pg Client eşzamanlı sorguyu
+        // desteklemez); herhangi biri başarısız olursa transaction geri alınır.
+        for (const item of items) {
+          await client.query(
+            `INSERT INTO treatment_plan_items (
                     treatment_plan_id, tooth_number, treatment_type, cost, currency, notes, created_at, updated_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-                RETURNING *`,
-        [
-          plan.id,
-          item.toothNumber,
-          item.treatmentType,
-          item.cost || 0,
-          item.currency || 'TRY',
-          item.notes || null,
-        ],
-      );
-    });
+                ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())`,
+            [
+              createdPlan.id,
+              item.toothNumber,
+              item.treatmentType,
+              item.cost || 0,
+              item.currency || 'TRY',
+              item.notes || null,
+            ],
+          );
+        }
 
-    await Promise.all(itemPromises);
+        const itemsResult = await client.query(
+          'SELECT * FROM treatment_plan_items WHERE treatment_plan_id = $1',
+          [createdPlan.id],
+        );
 
-    // Get all items for response
-    const itemsResult = await query(
-      'SELECT * FROM treatment_plan_items WHERE treatment_plan_id = $1',
-      [plan.id],
+        return { plan: createdPlan, items: itemsResult.rows };
+      },
     );
 
     const ipAddress = getClientIp(req);
@@ -406,7 +424,7 @@ async function createTreatmentPlan(req, res, next) {
     return res.status(201).json({
       plan: {
         ...plan,
-        items: itemsResult.rows,
+        items: insertedItems,
       },
     });
   } catch (err) {

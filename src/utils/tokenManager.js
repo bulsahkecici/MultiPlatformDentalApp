@@ -40,7 +40,20 @@ function generateSecureToken() {
 }
 
 /**
- * Store refresh token in database
+ * SHA-256 hash of a token for at-rest storage.
+ * Tokens are high-entropy random/JWT strings, so a fast unsalted hash is
+ * sufficient (unlike passwords) — the goal is to prevent a DB-only leak
+ * (backup, SQLi read, misconfigured replica) from yielding directly usable
+ * session/reset tokens. Raw token never touches storage.
+ * @param {string} token
+ * @returns {string} Hex-encoded SHA-256 digest
+ */
+function hashToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+/**
+ * Store refresh token in database (hashed — raw token never persisted)
  * @param {number} userId - User ID
  * @param {string} token - Refresh token
  * @param {string} userAgent - User agent string
@@ -53,13 +66,13 @@ async function storeRefreshToken(userId, token, userAgent, ipAddress) {
   await query(
     `INSERT INTO refresh_tokens (user_id, token, expires_at, user_agent, ip_address)
      VALUES ($1, $2, $3, $4, $5)`,
-    [userId, token, expiresAt, userAgent, ipAddress],
+    [userId, hashToken(token), expiresAt, userAgent, ipAddress],
   );
 }
 
 /**
  * Verify refresh token exists in database and is not expired
- * @param {string} token - Refresh token
+ * @param {string} token - Refresh token (raw, as received from client)
  * @returns {Promise<Object|null>} Token data or null if invalid
  */
 async function verifyRefreshToken(token) {
@@ -68,7 +81,7 @@ async function verifyRefreshToken(token) {
      FROM refresh_tokens rt
      JOIN users u ON rt.user_id = u.id
      WHERE rt.token = $1 AND rt.revoked_at IS NULL AND rt.expires_at > NOW()`,
-    [token],
+    [hashToken(token)],
   );
 
   if (result.rows.length === 0) {
@@ -87,12 +100,12 @@ async function verifyRefreshToken(token) {
 
 /**
  * Revoke refresh token (logout)
- * @param {string} token - Refresh token to revoke
+ * @param {string} token - Refresh token to revoke (raw)
  * @returns {Promise<void>}
  */
 async function revokeRefreshToken(token) {
   await query('UPDATE refresh_tokens SET revoked_at = NOW() WHERE token = $1', [
-    token,
+    hashToken(token),
   ]);
 }
 
@@ -108,38 +121,42 @@ async function cleanupExpiredTokens() {
 }
 
 /**
- * Generate email verification token and store in database
+ * Generate email verification token and store in database (hashed).
+ * Returns the RAW token — this is what goes in the emailed link; only its
+ * hash is persisted.
  * @param {number} userId - User ID
- * @returns {Promise<string>} Verification token
+ * @returns {Promise<string>} Verification token (raw)
  */
 async function generateEmailVerificationToken(userId) {
   const token = generateSecureToken();
   const expiresAt = new Date(Date.now() + EMAIL_VERIFICATION_EXPIRY);
 
   await query(
-    `UPDATE users 
+    `UPDATE users
      SET email_verification_token = $1, email_verification_expires = $2
      WHERE id = $3`,
-    [token, expiresAt, userId],
+    [hashToken(token), expiresAt, userId],
   );
 
   return token;
 }
 
 /**
- * Generate password reset token and store in database
+ * Generate password reset token and store in database (hashed).
+ * Returns the RAW token — this is what goes in the emailed link; only its
+ * hash is persisted.
  * @param {number} userId - User ID
- * @returns {Promise<string>} Reset token
+ * @returns {Promise<string>} Reset token (raw)
  */
 async function generatePasswordResetToken(userId) {
   const token = generateSecureToken();
   const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY);
 
   await query(
-    `UPDATE users 
+    `UPDATE users
      SET password_reset_token = $1, password_reset_expires = $2
      WHERE id = $3`,
-    [token, expiresAt, userId],
+    [hashToken(token), expiresAt, userId],
   );
 
   return token;
@@ -147,16 +164,16 @@ async function generatePasswordResetToken(userId) {
 
 /**
  * Verify email verification token
- * @param {string} token - Verification token
+ * @param {string} token - Verification token (raw, as received from client)
  * @returns {Promise<Object|null>} User data or null if invalid
  */
 async function verifyEmailVerificationToken(token) {
   const result = await query(
-    `SELECT id, email FROM users 
-     WHERE email_verification_token = $1 
+    `SELECT id, email FROM users
+     WHERE email_verification_token = $1
      AND email_verification_expires > NOW()
      AND email_verified = false`,
-    [token],
+    [hashToken(token)],
   );
 
   return result.rows.length > 0 ? result.rows[0] : null;
@@ -164,15 +181,15 @@ async function verifyEmailVerificationToken(token) {
 
 /**
  * Verify password reset token
- * @param {string} token - Reset token
+ * @param {string} token - Reset token (raw, as received from client)
  * @returns {Promise<Object|null>} User data or null if invalid
  */
 async function verifyPasswordResetToken(token) {
   const result = await query(
-    `SELECT id, email FROM users 
-     WHERE password_reset_token = $1 
+    `SELECT id, email FROM users
+     WHERE password_reset_token = $1
      AND password_reset_expires > NOW()`,
-    [token],
+    [hashToken(token)],
   );
 
   return result.rows.length > 0 ? result.rows[0] : null;

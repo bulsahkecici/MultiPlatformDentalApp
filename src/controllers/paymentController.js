@@ -1,4 +1,4 @@
-const { query } = require('../db');
+const { query, withTransaction } = require('../db');
 const { AppError } = require('../utils/errorResponder');
 const { logDataEvent, AuditEventType } = require('../utils/auditLogger');
 const { getClientIp } = require('../middlewares/accountLockout');
@@ -177,73 +177,82 @@ async function processPayment(req, res, next) {
       );
     }
 
-    // Get treatment plan if provided
-    let dentistId = null;
-    let dentistCommission = null;
+    // Ödeme kaydı + hasta borcu güncellemesi tek transaction'da yapılır:
+    // ikinci sorgu başarısız olursa ödeme de kaydedilmemiş olmalı (aksi halde
+    // para alınmış görünüp borç düşmemiş bir tutarsızlık oluşur).
+    const payment = await withTransaction(async (client) => {
+      // Get treatment plan if provided
+      let dentistId = null;
+      let dentistCommission = null;
 
-    if (treatmentPlanId) {
-      const planResult = await query(
-        'SELECT dentist_id, total_estimated_cost FROM treatment_plans WHERE id = $1',
-        [treatmentPlanId],
-      );
+      if (treatmentPlanId) {
+        const planResult = await client.query(
+          'SELECT dentist_id, total_estimated_cost FROM treatment_plans WHERE id = $1',
+          [treatmentPlanId],
+        );
 
-      if (planResult.rows.length > 0) {
-        const plan = planResult.rows[0];
-        dentistId = plan.dentist_id;
+        if (planResult.rows.length > 0) {
+          const plan = planResult.rows[0];
+          dentistId = plan.dentist_id;
 
-        // Calculate dentist commission if dentist has commission_rate
-        if (dentistId) {
-          const dentistResult = await query(
-            'SELECT commission_rate FROM users WHERE id = $1',
-            [dentistId],
-          );
-          if (
-            dentistResult.rows.length > 0 &&
-            dentistResult.rows[0].commission_rate
-          ) {
-            const commissionRate = parseFloat(
-              dentistResult.rows[0].commission_rate,
+          // Calculate dentist commission if dentist has commission_rate
+          if (dentistId) {
+            const dentistResult = await client.query(
+              'SELECT commission_rate FROM users WHERE id = $1',
+              [dentistId],
             );
-            dentistCommission = (amount * commissionRate) / 100;
+            if (
+              dentistResult.rows.length > 0 &&
+              dentistResult.rows[0].commission_rate
+            ) {
+              const commissionRate = parseFloat(
+                dentistResult.rows[0].commission_rate,
+              );
+              dentistCommission = (amount * commissionRate) / 100;
+            }
           }
         }
       }
-    }
 
-    // Create payment record
-    const paymentResult = await query(
-      `INSERT INTO payments (
-                patient_id, treatment_plan_id, amount, payment_method, 
+      // Create payment record
+      const paymentResult = await client.query(
+        `INSERT INTO payments (
+                patient_id, treatment_plan_id, amount, payment_method,
                 dentist_commission, dentist_id, notes, created_by, created_at, updated_at
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
             RETURNING *`,
-      [
-        patientId,
-        treatmentPlanId || null,
-        amount,
-        paymentMethod,
-        dentistCommission,
-        dentistId,
-        notes || null,
-        req.user.sub,
-      ],
-    );
+        [
+          patientId,
+          treatmentPlanId || null,
+          amount,
+          paymentMethod,
+          dentistCommission,
+          dentistId,
+          notes || null,
+          req.user.sub,
+        ],
+      );
 
-    // Update patient debt - properly calculate remaining debt after adding new payment
-    await query(
-      `INSERT INTO patient_debts (patient_id, total_debt, paid_amount, remaining_debt, updated_at)
-            VALUES ($1, 
+      // Update patient debt - properly calculate remaining debt after adding new payment
+      await client.query(
+        `INSERT INTO patient_debts (patient_id, total_debt, paid_amount, remaining_debt, updated_at)
+            VALUES ($1,
                 COALESCE((SELECT total_debt FROM patient_debts WHERE patient_id = $1), 0),
                 COALESCE((SELECT paid_amount FROM patient_debts WHERE patient_id = $1), 0) + $2,
-                GREATEST(0, COALESCE((SELECT total_debt FROM patient_debts WHERE patient_id = $1), 0) - 
+                GREATEST(0, COALESCE((SELECT total_debt FROM patient_debts WHERE patient_id = $1), 0) -
                            (COALESCE((SELECT paid_amount FROM patient_debts WHERE patient_id = $1), 0) + $2)),
                 NOW())
             ON CONFLICT (patient_id) DO UPDATE SET
                 paid_amount = patient_debts.paid_amount + $2,
                 remaining_debt = GREATEST(0, patient_debts.total_debt - (patient_debts.paid_amount + $2)),
                 updated_at = NOW()`,
-      [patientId, amount],
-    );
+        [patientId, amount],
+      );
+
+      return paymentResult.rows[0];
+    });
+
+    const dentistId = payment.dentist_id;
 
     await logDataEvent({
       eventType: AuditEventType.DATA_CREATED,
@@ -251,7 +260,7 @@ async function processPayment(req, res, next) {
       ipAddress: getClientIp(req),
       userAgent: req.headers['user-agent'] || '',
       resourceType: 'payment',
-      resourceId: paymentResult.rows[0].id,
+      resourceId: payment.id,
       changes: { patientId, amount, paymentMethod },
     });
 
@@ -261,7 +270,7 @@ async function processPayment(req, res, next) {
       title: 'Ödeme alındı',
       message: `Tutar: ${amount}`,
       data: {
-        paymentId: paymentResult.rows[0].id,
+        paymentId: payment.id,
         patientId,
         action: 'processed',
       },
@@ -273,7 +282,7 @@ async function processPayment(req, res, next) {
 
     return res.status(201).json({
       success: true,
-      payment: paymentResult.rows[0],
+      payment,
       message: 'Payment processed successfully',
     });
   } catch (err) {
@@ -331,41 +340,68 @@ async function approveTreatmentPlan(req, res, next) {
       return next(new AppError('Approval status is required', 400));
     }
 
-    // Calculate total cost from items
-    const itemsResult = await query(
-      'SELECT SUM(cost) as total FROM treatment_plan_items WHERE treatment_plan_id = $1',
-      [planId],
-    );
-    const totalCost = parseFloat(itemsResult.rows[0].total || 0);
+    // Onay + borç ekleme tek transaction'da ve İDEMPOTENT şekilde yapılır:
+    // UPDATE ... WHERE status = 'pending' sayesinde plan zaten
+    // onaylanmış/reddedilmişse hiçbir satır güncellenmez, dolayısıyla borç
+    // ikinci kez eklenemez (çift tıklama veya tekrarlanan istek koruması).
+    const outcome = await withTransaction(async (client) => {
+      const itemsResult = await client.query(
+        'SELECT SUM(cost) as total FROM treatment_plan_items WHERE treatment_plan_id = $1',
+        [planId],
+      );
+      const totalCost = parseFloat(itemsResult.rows[0].total || 0);
 
-    // Update plan status and total cost
-    const result = await query(
-      `UPDATE treatment_plans 
-            SET status = $1, 
+      const updateResult = await client.query(
+        `UPDATE treatment_plans
+            SET status = $1,
                 total_estimated_cost = $2,
                 updated_at = NOW()
-            WHERE id = $3
+            WHERE id = $3 AND status = 'pending'
             RETURNING *`,
-      [approved ? 'approved' : 'cancelled', totalCost, planId],
-    );
+        [approved ? 'approved' : 'cancelled', totalCost, planId],
+      );
 
-    if (result.rows.length === 0) {
-      return next(new AppError('Treatment plan not found', 404));
-    }
+      if (updateResult.rows.length === 0) {
+        // Ya plan yok ya da zaten pending dışında bir durumda — hangisi
+        // olduğunu ayırt etmek için ayrı bir kontrol yapıyoruz.
+        const existing = await client.query(
+          'SELECT status FROM treatment_plans WHERE id = $1',
+          [planId],
+        );
+        return {
+          conflict: true,
+          notFound: existing.rows.length === 0,
+          currentStatus: existing.rows[0]?.status,
+        };
+      }
 
-    // If approved, create/update patient debt
-    if (approved) {
-      const plan = result.rows[0];
-      await query(
-        `INSERT INTO patient_debts (patient_id, total_debt, paid_amount, remaining_debt, updated_at)
+      const plan = updateResult.rows[0];
+
+      if (approved) {
+        await client.query(
+          `INSERT INTO patient_debts (patient_id, total_debt, paid_amount, remaining_debt, updated_at)
                 VALUES ($1, $2, 0, $2, NOW())
                 ON CONFLICT (patient_id) DO UPDATE SET
                     total_debt = patient_debts.total_debt + $2,
                     remaining_debt = patient_debts.remaining_debt + $2,
                     updated_at = NOW()`,
-        [plan.patient_id, totalCost],
+          [plan.patient_id, totalCost],
+        );
+      }
+
+      return { conflict: false, plan };
+    });
+
+    if (outcome.conflict) {
+      if (outcome.notFound) {
+        return next(new AppError('Treatment plan not found', 404));
+      }
+      return next(
+        new AppError(`Treatment plan is already ${outcome.currentStatus}`, 409),
       );
     }
+
+    const { plan } = outcome;
 
     await logDataEvent({
       eventType: AuditEventType.DATA_MODIFIED,
@@ -378,12 +414,11 @@ async function approveTreatmentPlan(req, res, next) {
     });
 
     // Planın dişhekimine sonucu bildir (fire-and-forget)
-    const approvedPlan = result.rows[0];
-    if (approvedPlan.dentist_id && approvedPlan.dentist_id !== req.user.sub) {
-      notifyUser(approvedPlan.dentist_id, {
+    if (plan.dentist_id && plan.dentist_id !== req.user.sub) {
+      notifyUser(plan.dentist_id, {
         type: 'treatment_plan',
         title: approved ? 'Tedavi planı onaylandı' : 'Tedavi planı reddedildi',
-        message: approvedPlan.title || `Plan #${planId}`,
+        message: plan.title || `Plan #${planId}`,
         data: {
           treatmentPlanId: planId,
           action: approved ? 'approved' : 'cancelled',
@@ -393,7 +428,7 @@ async function approveTreatmentPlan(req, res, next) {
 
     return res.status(200).json({
       success: true,
-      plan: result.rows[0],
+      plan,
       message: `Treatment plan ${approved ? 'approved' : 'cancelled'}`,
     });
   } catch (err) {

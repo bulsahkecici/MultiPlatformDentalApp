@@ -1,4 +1,4 @@
-const { query } = require('../db');
+const { query, withTransaction } = require('../db');
 const { AppError } = require('../utils/errorResponder');
 const { logDataEvent, AuditEventType } = require('../utils/auditLogger');
 const { getClientIp } = require('../middlewares/accountLockout');
@@ -33,118 +33,113 @@ function emitAppointmentNotification(action, appointment, actorUserId) {
  * Create new appointment
  */
 async function createAppointment(req, res, next) {
-  try {
-    logger.info({ body: req.body, user: req.user }, 'Creating appointment');
+  const {
+    patientId,
+    dentistId,
+    appointmentDate,
+    startTime,
+    endTime,
+    appointmentType,
+    status,
+    notes,
+  } = req.body || {};
 
-    const {
+  // Not: notes hasta sağlık bilgisi içerebilir — loglara hiçbir zaman
+  // req.body'nin tamamı ya da notes alanı yazılmaz, sadece kimlik alanları.
+  logger.info(
+    {
       patientId,
-      dentistId,
+      dentistId: dentistId || req.user.sub,
       appointmentDate,
-      startTime,
-      endTime,
-      appointmentType,
-      status,
-      notes,
-    } = req.body || {};
+      createdBy: req.user.sub,
+    },
+    'Creating appointment',
+  );
 
-    // Validate required fields
-    if (!patientId || !appointmentDate || !startTime || !endTime) {
-      logger.warn(
-        { body: req.body },
-        'Missing required fields for appointment',
-      );
-      return next(
-        new AppError(
-          'Patient ID, appointment date, start time, and end time are required',
-          400,
-        ),
-      );
-    }
-
-    // Check for conflicts
-    const conflictCheck = await query(
-      `SELECT id FROM appointments 
-       WHERE dentist_id = $1 
-       AND appointment_date = $2 
-       AND status NOT IN ('cancelled', 'no_show')
-       AND (
-         (start_time <= $3 AND end_time > $3) OR
-         (start_time < $4 AND end_time >= $4) OR
-         (start_time >= $3 AND end_time <= $4)
-       )`,
-      [dentistId || req.user.sub, appointmentDate, startTime, endTime],
+  // Validate required fields
+  if (!patientId || !appointmentDate || !startTime || !endTime) {
+    return next(
+      new AppError(
+        'Patient ID, appointment date, start time, and end time are required',
+        400,
+      ),
     );
+  }
 
-    if (conflictCheck.rows.length > 0) {
-      return next(
-        new AppError(
+  // Validate time format
+  if (typeof startTime !== 'string' || !/^\d{2}:\d{2}:\d{2}$/.test(startTime)) {
+    return next(
+      new AppError(
+        `Invalid start time format. Expected HH:mm:ss, got: ${startTime} (type: ${typeof startTime})`,
+        400,
+      ),
+    );
+  }
+  if (typeof endTime !== 'string' || !/^\d{2}:\d{2}:\d{2}$/.test(endTime)) {
+    return next(
+      new AppError(
+        `Invalid end time format. Expected HH:mm:ss, got: ${endTime} (type: ${typeof endTime})`,
+        400,
+      ),
+    );
+  }
+
+  // Validate date format
+  if (
+    typeof appointmentDate !== 'string' ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(appointmentDate)
+  ) {
+    return next(
+      new AppError('Invalid appointment date format. Expected YYYY-MM-DD', 400),
+    );
+  }
+
+  const effectiveDentistId = dentistId || req.user.sub;
+  const insertParams = [
+    patientId,
+    effectiveDentistId,
+    appointmentDate,
+    startTime,
+    endTime,
+    appointmentType || null,
+    notes || null,
+    status || 'scheduled',
+    req.user.sub,
+    req.user.sub,
+  ];
+
+  try {
+    // Çakışma kontrolü + ekleme tek transaction içinde ve dişhekimi+tarih
+    // bazında bir advisory lock ile serileştirilir. Bu olmadan iki eşzamanlı
+    // istek çakışma kontrolünü birlikte geçip aynı slota iki randevu yazabilir
+    // (klasik TOCTOU yarış durumu).
+    const appointment = await withTransaction(async (client) => {
+      await client.query(
+        'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))',
+        [`appointment:${effectiveDentistId}:${appointmentDate}`],
+      );
+
+      const conflictCheck = await client.query(
+        `SELECT id FROM appointments
+         WHERE dentist_id = $1
+         AND appointment_date = $2
+         AND status NOT IN ('cancelled', 'no_show')
+         AND (
+           (start_time <= $3 AND end_time > $3) OR
+           (start_time < $4 AND end_time >= $4) OR
+           (start_time >= $3 AND end_time <= $4)
+         )`,
+        [effectiveDentistId, appointmentDate, startTime, endTime],
+      );
+
+      if (conflictCheck.rows.length > 0) {
+        throw new AppError(
           'Bu tarih ve saatte zaten hasta randevusu bulunmaktadır',
           409,
-        ),
-      );
-    }
+        );
+      }
 
-    // Validate time format
-    if (
-      typeof startTime !== 'string' ||
-      !/^\d{2}:\d{2}:\d{2}$/.test(startTime)
-    ) {
-      logger.warn(
-        { startTime, type: typeof startTime },
-        'Invalid start time format',
-      );
-      return next(
-        new AppError(
-          `Invalid start time format. Expected HH:mm:ss, got: ${startTime} (type: ${typeof startTime})`,
-          400,
-        ),
-      );
-    }
-    if (typeof endTime !== 'string' || !/^\d{2}:\d{2}:\d{2}$/.test(endTime)) {
-      logger.warn({ endTime, type: typeof endTime }, 'Invalid end time format');
-      return next(
-        new AppError(
-          `Invalid end time format. Expected HH:mm:ss, got: ${endTime} (type: ${typeof endTime})`,
-          400,
-        ),
-      );
-    }
-
-    // Validate date format
-    if (
-      typeof appointmentDate !== 'string' ||
-      !/^\d{4}-\d{2}-\d{2}$/.test(appointmentDate)
-    ) {
-      return next(
-        new AppError(
-          'Invalid appointment date format. Expected YYYY-MM-DD',
-          400,
-        ),
-      );
-    }
-
-    // Create appointment
-    let result;
-    const insertParams = [
-      patientId,
-      dentistId || req.user.sub,
-      appointmentDate,
-      startTime,
-      endTime,
-      appointmentType || null,
-      notes || null,
-      status || 'scheduled',
-      req.user.sub,
-      req.user.sub,
-    ];
-
-    logger.info(
-      { params: insertParams },
-      'Inserting appointment into database',
-    );
-
-    try {
-      result = await query(
+      const inserted = await client.query(
         `INSERT INTO appointments (
             patient_id, dentist_id, appointment_date, start_time, end_time,
             appointment_type, notes, status, created_by, updated_by, created_at, updated_at
@@ -153,71 +148,23 @@ async function createAppointment(req, res, next) {
         insertParams,
       );
 
-      // Get the created appointment with patient and dentist info
-      if (result.rows.length > 0) {
-        const appointmentId = result.rows[0].id;
-        result = await query(
-          `SELECT 
-                a.*,
-                p.first_name as patient_first_name,
-                p.last_name as patient_last_name,
-                p.email as patient_email,
-                p.phone as patient_phone,
-                u.email as dentist_email
-               FROM appointments a
-               LEFT JOIN patients p ON a.patient_id = p.id
-               LEFT JOIN users u ON a.dentist_id = u.id
-               WHERE a.id = $1`,
-          [appointmentId],
-        );
-      }
-    } catch (dbError) {
-      logger.error(
-        {
-          dbError: {
-            code: dbError.code,
-            message: dbError.message,
-            detail: dbError.detail,
-            constraint: dbError.constraint,
-          },
-          params: insertParams,
-        },
-        'Database error while creating appointment',
+      const appointmentId = inserted.rows[0].id;
+      const full = await client.query(
+        `SELECT
+              a.*,
+              p.first_name as patient_first_name,
+              p.last_name as patient_last_name,
+              p.email as patient_email,
+              p.phone as patient_phone,
+              u.email as dentist_email
+             FROM appointments a
+             LEFT JOIN patients p ON a.patient_id = p.id
+             LEFT JOIN users u ON a.dentist_id = u.id
+             WHERE a.id = $1`,
+        [appointmentId],
       );
-
-      // Handle database-specific errors
-      if (dbError.code === '23503') {
-        // Foreign key violation
-        return next(
-          new AppError(
-            `Invalid patient ID or dentist ID: ${dbError.detail || dbError.message}`,
-            400,
-          ),
-        );
-      }
-      if (dbError.code === '23505') {
-        // Unique violation
-        return next(
-          new AppError(
-            `Appointment conflict detected: ${dbError.detail || dbError.message}`,
-            409,
-          ),
-        );
-      }
-      if (dbError.code === '22007') {
-        // Invalid datetime format
-        return next(
-          new AppError(
-            `Invalid date or time format: ${dbError.detail || dbError.message}`,
-            400,
-          ),
-        );
-      }
-      // Re-throw to be caught by outer catch
-      throw dbError;
-    }
-
-    const appointment = result.rows[0];
+      return full.rows[0];
+    });
 
     const ipAddress = getClientIp(req);
     const userAgent = req.headers['user-agent'] || '';
@@ -236,6 +183,11 @@ async function createAppointment(req, res, next) {
 
     return res.status(201).json({ appointment });
   } catch (err) {
+    // Bilerek fırlatılan iş kuralı hataları (ör. 409 çakışma) doğrudan geçer
+    if (err instanceof AppError) {
+      return next(err);
+    }
+
     logger.error(
       {
         err: {
@@ -244,11 +196,40 @@ async function createAppointment(req, res, next) {
           detail: err.detail,
           constraint: err.constraint,
         },
-        body: req.body,
-        stack: err.stack,
+        patientId,
+        appointmentDate,
       },
       'Failed to create appointment',
     );
+
+    // Handle database-specific errors
+    if (err.code === '23503') {
+      // Foreign key violation
+      return next(
+        new AppError(
+          `Invalid patient ID or dentist ID: ${err.detail || err.message}`,
+          400,
+        ),
+      );
+    }
+    if (err.code === '23505') {
+      // Unique violation
+      return next(
+        new AppError(
+          `Appointment conflict detected: ${err.detail || err.message}`,
+          409,
+        ),
+      );
+    }
+    if (err.code === '22007') {
+      // Invalid datetime format
+      return next(
+        new AppError(
+          `Invalid date or time format: ${err.detail || err.message}`,
+          400,
+        ),
+      );
+    }
 
     // In development, show more details
     const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -389,6 +370,11 @@ async function getAppointmentById(req, res, next) {
       return next(new AppError('Appointment not found', 404));
     }
 
+    // Diş hekimi sadece kendi randevusunu görebilir (IDOR koruması)
+    if (isDentist(req) && result.rows[0].dentist_id !== req.user.sub) {
+      return next(new AppError('Forbidden', 403));
+    }
+
     return res.status(200).json({ appointment: result.rows[0] });
   } catch (err) {
     return next(new AppError('Failed to fetch appointment', 500));
@@ -401,6 +387,21 @@ async function getAppointmentById(req, res, next) {
 async function updateAppointment(req, res, next) {
   try {
     const appointmentId = parseInt(req.params.id, 10);
+
+    // Diş hekimi sadece kendi randevusunu güncelleyebilir (IDOR koruması)
+    if (isDentist(req)) {
+      const ownership = await query(
+        'SELECT dentist_id FROM appointments WHERE id = $1',
+        [appointmentId],
+      );
+      if (ownership.rows.length === 0) {
+        return next(new AppError('Appointment not found', 404));
+      }
+      if (ownership.rows[0].dentist_id !== req.user.sub) {
+        return next(new AppError('Forbidden', 403));
+      }
+    }
+
     const {
       appointmentDate,
       startTime,
@@ -503,6 +504,20 @@ async function cancelAppointment(req, res, next) {
     // Web istemcisi `reason`, desktop `cancellationReason` gönderir — ikisini de kabul et
     const body = req.body || {};
     const cancellationReason = body.cancellationReason ?? body.reason;
+
+    // Diş hekimi sadece kendi randevusunu iptal edebilir (IDOR koruması)
+    if (isDentist(req)) {
+      const ownership = await query(
+        'SELECT dentist_id FROM appointments WHERE id = $1',
+        [appointmentId],
+      );
+      if (ownership.rows.length === 0) {
+        return next(new AppError('Appointment not found', 404));
+      }
+      if (ownership.rows[0].dentist_id !== req.user.sub) {
+        return next(new AppError('Forbidden', 403));
+      }
+    }
 
     const result = await query(
       `UPDATE appointments 

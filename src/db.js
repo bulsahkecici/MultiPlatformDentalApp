@@ -21,6 +21,35 @@ async function query(text, params = []) {
   return pool.query(text, params);
 }
 
+/**
+ * Birden fazla yazmayı tek bir atomik işlemde çalıştırır.
+ * `fn` bir `client` alır (BEGIN yapılmış); `fn` içindeki tüm sorgular bu
+ * client üzerinden çalıştırılmalıdır (üstteki `query()` değil — o ayrı bir
+ * bağlantı kullanır ve aynı transaction'a dahil olmaz).
+ * `fn` hata fırlatırsa ROLLBACK yapılır ve hata olduğu gibi yeniden fırlatılır.
+ * @param {(client: import('pg').PoolClient) => Promise<T>} fn
+ * @returns {Promise<T>}
+ * @template T
+ */
+async function withTransaction(fn) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    try {
+      await client.query('ROLLBACK');
+    } catch (rollbackErr) {
+      logger.error({ err: rollbackErr }, 'Failed to rollback transaction');
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 async function pingDb() {
   try {
     await pool.query('SELECT 1');
@@ -31,4 +60,4 @@ async function pingDb() {
   }
 }
 
-module.exports = { pool, query, pingDb };
+module.exports = { pool, query, pingDb, withTransaction };
