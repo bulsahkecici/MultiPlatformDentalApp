@@ -1,6 +1,14 @@
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
 const config = require('./config');
 const logger = require('./utils/logger');
+
+// PostgreSQL DATE (OID 1082) varsayılan olarak yerel gece yarısı bir JS Date
+// nesnesine ayrıştırılır; bu nesne JSON'a çevrilirken toISOString() UTC'ye
+// kaydırır. UTC'nin doğusundaki (ör. Türkiye, UTC+3) sunucularda bu, her
+// appointment/treatment/doğum tarihinin API yanıtlarında bir gün geriye
+// kaymasına yol açar (örn. 2026-07-20 -> "2026-07-19T21:00:00.000Z"). DATE
+// kolonlarını ham 'YYYY-MM-DD' string olarak döndürerek bunu önlüyoruz.
+types.setTypeParser(1082, (val) => val);
 
 const pool = new Pool({
   host: config.db.host,

@@ -35,6 +35,7 @@ const AuditEventType = {
 
   TREATMENT_CREATED: 'treatment_created',
   TREATMENT_UPDATED: 'treatment_updated',
+  TREATMENT_DELETED: 'treatment_deleted',
 
   // Generic data events (institution_agreement, payment, etc.)
   DATA_CREATED: 'data_created',

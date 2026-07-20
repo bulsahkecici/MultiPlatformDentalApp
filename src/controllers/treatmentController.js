@@ -336,6 +336,54 @@ async function updateTreatment(req, res, next) {
 }
 
 /**
+ * Delete a treatment record
+ */
+async function deleteTreatment(req, res, next) {
+  try {
+    const treatmentId = parseInt(req.params.id, 10);
+
+    // Diş hekimi sadece kendi tedavisini silebilir (IDOR koruması)
+    if (isDentist(req)) {
+      const ownership = await query(
+        'SELECT dentist_id FROM treatments WHERE id = $1',
+        [treatmentId],
+      );
+      if (ownership.rows.length === 0) {
+        return next(new AppError('Treatment not found', 404));
+      }
+      if (ownership.rows[0].dentist_id !== req.user.sub) {
+        return next(new AppError('Forbidden', 403));
+      }
+    }
+
+    const result = await query(
+      'DELETE FROM treatments WHERE id = $1 RETURNING id',
+      [treatmentId],
+    );
+
+    if (result.rows.length === 0) {
+      return next(new AppError('Treatment not found', 404));
+    }
+
+    const ipAddress = getClientIp(req);
+    const userAgent = req.headers['user-agent'] || '';
+
+    await logDataEvent({
+      eventType: AuditEventType.TREATMENT_DELETED,
+      userId: req.user.sub,
+      ipAddress,
+      userAgent,
+      resourceType: 'treatment',
+      resourceId: treatmentId,
+    });
+
+    return res.status(204).send();
+  } catch (err) {
+    return next(new AppError('Failed to delete treatment', 500));
+  }
+}
+
+/**
  * Create treatment plan with multiple teeth and procedures
  */
 async function createTreatmentPlan(req, res, next) {
@@ -512,6 +560,7 @@ module.exports = {
   getTreatments,
   getTreatmentById,
   updateTreatment,
+  deleteTreatment,
   createTreatmentPlan,
   getTreatmentPlans,
 };

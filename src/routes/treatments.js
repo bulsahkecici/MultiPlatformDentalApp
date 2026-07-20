@@ -4,6 +4,7 @@ const {
   getTreatments,
   getTreatmentById,
   updateTreatment,
+  deleteTreatment,
   createTreatmentPlan,
   getTreatmentPlans,
 } = require('../controllers/treatmentController');
@@ -16,6 +17,7 @@ router.get('/api/treatments', requireAuth, getTreatments);
 router.post('/api/treatments', requireAuth, mutateLimiter, createTreatment);
 router.get('/api/treatments/:id', requireAuth, getTreatmentById);
 router.put('/api/treatments/:id', requireAuth, mutateLimiter, updateTreatment);
+router.delete('/api/treatments/:id', requireAuth, mutateLimiter, deleteTreatment);
 
 // Treatment plans
 router.get('/api/treatment-plans', requireAuth, getTreatmentPlans);
