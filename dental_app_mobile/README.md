@@ -1,265 +1,120 @@
-# Flutter Mobile Application - Dental Management System
+# Flutter Mobil Uygulama - Diş Kliniği Yönetim Sistemi
 
-## Overview
-Cross-platform mobile application (iOS & Android) for dental practice management built with Flutter.
+Web ve masaüstü istemcilerle aynı backend'i (`../src`) kullanan, rol bazlı
+tam kapsamlı bir Flutter mobil uygulaması.
 
-## Prerequisites
-- Flutter SDK 3.x
-- Dart SDK 3.x
-- Android Studio / Xcode for emulators
-- Backend API running on http://localhost:3000
+## Gereksinimler
 
-## Installation
+- Flutter SDK 3.44+ (proje kökündeki `flutter/` yerine ayrı bir konumda
+  kurulu olmalı — repoya dahil edilmez, bkz. kök `.gitignore`)
+- Android Studio (Android SDK) ve/veya Xcode (iOS, sadece macOS)
+- Çalışan bir backend (`../src` — bkz. kök `README.md`)
+
+## Kurulum
 
 ```bash
 cd dental_app_mobile
 flutter pub get
 ```
 
-## Running the App
+Platform klasörleri (`android/`, `ios/`, `windows/`) `flutter create .` ile
+üretildi ve repoya dahildir.
+
+## Çalıştırma
+
+API adresi derleme zamanında `--dart-define=API_URL=...` ile verilir
+(bkz. `lib/core/config.dart`). Varsayılan `http://10.0.2.2:3000`, Android
+emülatöründen host makinenin `localhost:3000` adresine işaret eder.
 
 ```bash
-# Run on connected device/emulator
+# Android emülatör (varsayılan adres yeterli)
 flutter run
 
-# Run on specific device
-flutter devices
-flutter run -d <device-id>
+# Fiziksel cihaz — bilgisayarınızın LAN IP'sini kullanın
+flutter run --dart-define=API_URL=http://192.168.1.20:3000
 
-# Run in release mode
-flutter run --release
+# Prod derleme
+flutter build apk --release --dart-define=API_URL=https://<DOMAIN>
 ```
 
-## Building
+## Mimari
+
+```
+lib/
+├── core/
+│   ├── config.dart          # API_URL (--dart-define ile)
+│   ├── api_client.dart      # Dio istemcisi: token saklama, 401→refresh→retry
+│   ├── api_repository.dart  # Tüm backend uçlarının tipli sarmalayıcısı
+│   └── socket_service.dart  # Socket.IO bildirim istemcisi
+├── models/
+│   └── models.dart          # User, Patient, Appointment, Treatment,
+│                             # PendingPlan, PatientDebt, EarningsSummary,
+│                             # InstitutionAgreement, AppNotification, ...
+│                             # (fromJson hem snake_case hem camelCase kabul eder)
+├── providers/
+│   ├── auth_provider.dart         # Oturum durumu, checkAuth (/api/auth/me)
+│   └── notification_provider.dart # Rozet sayısı + canlı bildirim akışı
+├── screens/
+│   ├── login_screen.dart
+│   ├── home/home_shell.dart       # Rol bazlı drawer navigasyonu
+│   ├── dashboard/                 # Bugünkü randevular + (admin) istatistik
+│   ├── patients/                  # Liste/arama + ekle/düzenle
+│   ├── appointments/              # Günlük liste + randevu formu
+│   ├── treatments/                # Liste + diş şeması + TDB tarife formu
+│   ├── payments/                  # Özet, plan onayı, tahsilat
+│   ├── earnings/                  # Dişhekimi kazanç ekranı
+│   ├── admin/                     # Kullanıcı yönetimi
+│   ├── agreements/                # Kurum anlaşmaları (salt görüntüleme)
+│   └── notifications/             # Bildirim merkezi
+└── widgets/
+    ├── patient_picker.dart        # Aramalı hasta seçici (bottom sheet)
+    ├── tooth_chart.dart           # FDI diş şeması (mouth_chart.png üzerine)
+    └── tariff_selector.dart       # TDB 2026 tarife seçici (bottom sheet)
+
+assets/
+├── images/mouth_chart.png            # Web/desktop ile aynı kaynak görsel
+└── data/tdb_2026_tarife_full.json    # Web/desktop ile aynı tarife verisi
+```
+
+## Rol bazlı özellik erişimi
+
+`home_shell.dart` menüsü backend'deki rol modeliyle birebir eşleşir:
+
+| Özellik | admin | secretary | dentist |
+|---|---|---|---|
+| Kontrol Paneli, Randevular, Tedaviler | ✓ | ✓ | ✓ |
+| Hastalar | ✓ (düzenle) | ✓ (düzenle) | ✓ (salt okunur) |
+| Ödemeler, Anlaşmalı Kurumlar | ✓ | ✓ | — |
+| Kazançlarım | — | — | ✓ |
+| Kullanıcı Yönetimi | ✓ | — | — |
+
+## Gerçek zamanlı bildirimler
+
+Backend Socket.IO v4 kullanır (`src/services/notificationHub.js`); mobil
+istemci `socket_io_client` paketiyle bağlanır (`lib/core/socket_service.dart`).
+Kimlik doğrulama JWT ile `handshake.auth.token` üzerinden yapılır. Web
+(`socket.io-client`) ve masaüstü (`SocketIOClient` NuGet) ile aynı protokol.
+
+## Paketler
+
+| Paket | Amaç |
+|---|---|
+| `provider` | State management |
+| `dio` | HTTP istemcisi (interceptor, timeout, 401 retry) |
+| `socket_io_client` | Gerçek zamanlı bildirimler |
+| `flutter_secure_storage` | Access/refresh token saklama |
+| `shared_preferences` | Token dışı basit yerel ayarlar |
+| `intl` | Türkçe tarih/para biçimlendirme |
+
+## Test
 
 ```bash
-# Android APK
-flutter build apk
-
-# Android App Bundle (for Play Store)
-flutter build appbundle
-
-# iOS (requires macOS)
-flutter build ios
+flutter test      # lib/models/models.dart fromJson testleri
+flutter analyze   # statik analiz — temiz olmalı
 ```
 
-## Project Structure
+## Bilinen sınırlamalar
 
-```
-dental_app_mobile/
-├── lib/
-│   ├── main.dart
-│   ├── models/
-│   │   └── models.dart          # Data models
-│   ├── services/
-│   │   ├── api_service.dart     # HTTP API client
-│   │   └── signalr_service.dart # Real-time notifications
-│   ├── providers/
-│   │   ├── auth_provider.dart   # Authentication state
-│   │   ├── patient_provider.dart
-│   │   └── appointment_provider.dart
-│   ├── screens/
-│   │   ├── auth/
-│   │   │   └── login_screen.dart
-│   │   ├── patients/
-│   │   │   ├── patient_list_screen.dart
-│   │   │   └── patient_details_screen.dart
-│   │   ├── appointments/
-│   │   │   └── appointment_list_screen.dart
-│   │   └── dashboard/
-│   │       └── dashboard_screen.dart
-│   ├── widgets/
-│   │   ├── custom_app_bar.dart
-│   │   ├── patient_card.dart
-│   │   └── loading_indicator.dart
-│   └── utils/
-│       ├── constants.dart
-│       └── validators.dart
-├── pubspec.yaml
-└── android/ios/
-```
-
-## Features Implemented
-
-### ✅ Core Infrastructure
-- **Models**: User, Patient, Appointment, Treatment
-- **API Service**: HTTP client with token management
-- **Auth Provider**: State management for authentication
-- **Project Structure**: Organized folder structure
-
-### 📋 To Be Implemented
-
-#### Screens
-- **Auth Screens**: Login, Register
-- **Patient Screens**: List, Details, Form
-- **Appointment Screens**: List, Calendar, Form
-- **Treatment Screens**: List, Form
-- **Dashboard**: Statistics and overview
-
-#### Providers
-- `PatientProvider` - Patient state management
-- `AppointmentProvider` - Appointment state management
-- `TreatmentProvider` - Treatment state management
-- `NotificationProvider` - Notification handling
-
-#### Services
-- `SignalRService` - Real-time notifications
-- `NotificationService` - Push notifications (FCM)
-
-#### Widgets
-- Custom app bar
-- Patient card
-- Appointment card
-- Loading indicators
-- Error dialogs
-
-## Dependencies
-
-### Core
-- **flutter**: SDK
-- **provider**: ^6.1.1 - State management
-
-### Networking
-- **http**: ^1.1.0 - HTTP client
-- **signalr_netcore**: ^1.3.6 - SignalR client
-
-### Storage
-- **shared_preferences**: ^2.2.2 - Local storage
-
-### Utilities
-- **json_annotation**: ^4.8.1 - JSON serialization
-- **intl**: ^0.18.1 - Internationalization
-
-## Configuration
-
-Update API URL in `lib/services/api_service.dart`:
-```dart
-ApiService({this.baseUrl = 'http://10.0.2.2:3000'}) // Android emulator
-// or
-ApiService({this.baseUrl = 'http://localhost:3000'}) // iOS simulator
-```
-
-## Usage Examples
-
-### Authentication
-```dart
-final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-await authProvider.login(email, password);
-
-if (authProvider.isAuthenticated) {
-  Navigator.pushReplacementNamed(context, '/dashboard');
-}
-```
-
-### Fetch Patients
-```dart
-final apiService = ApiService();
-final response = await apiService.get('/api/patients', params: {'limit': '20'});
-final patients = (response['patients'] as List)
-    .map((json) => Patient.fromJson(json))
-    .toList();
-```
-
-### Provider Setup
-```dart
-void main() {
-  final apiService = ApiService();
-  
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider(apiService)),
-        ChangeNotifierProvider(create: (_) => PatientProvider(apiService)),
-      ],
-      child: MyApp(),
-    ),
-  );
-}
-```
-
-## Material Design
-
-The app uses Material Design 3:
-```dart
-MaterialApp(
-  theme: ThemeData(
-    useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-  ),
-  home: LoginScreen(),
-);
-```
-
-## State Management
-
-Using Provider pattern:
-```dart
-class PatientProvider with ChangeNotifier {
-  List<Patient> _patients = [];
-  
-  List<Patient> get patients => _patients;
-  
-  Future<void> fetchPatients() async {
-    // Fetch from API
-    _patients = fetchedPatients;
-    notifyListeners();
-  }
-}
-```
-
-## Navigation
-
-```dart
-MaterialApp(
-  initialRoute: '/login',
-  routes: {
-    '/login': (context) => LoginScreen(),
-    '/dashboard': (context) => DashboardScreen(),
-    '/patients': (context) => PatientListScreen(),
-    '/appointments': (context) => AppointmentListScreen(),
-  },
-);
-```
-
-## Push Notifications (Firebase)
-
-1. Add Firebase to your project
-2. Configure `google-services.json` (Android) and `GoogleService-Info.plist` (iOS)
-3. Add `firebase_messaging` dependency
-4. Implement notification handling
-
-## Testing
-
-```bash
-# Run tests
-flutter test
-
-# Run integration tests
-flutter test integration_test
-```
-
-## Deployment
-
-### Android
-1. Update `android/app/build.gradle` with signing config
-2. Build: `flutter build appbundle`
-3. Upload to Google Play Console
-
-### iOS
-1. Configure signing in Xcode
-2. Build: `flutter build ios`
-3. Archive and upload to App Store Connect
-
-## Next Steps
-
-1. **Implement Screens**: Create UI for all features
-2. **Add Providers**: Implement state management for all entities
-3. **SignalR Integration**: Real-time notifications
-4. **Push Notifications**: Firebase Cloud Messaging
-5. **Offline Support**: Local database with sqflite
-6. **Testing**: Unit and widget tests
-7. **CI/CD**: Automated builds and deployments
-
-## License
-ISC
+- Kurum anlaşmaları ekranı salt görüntüleme; düzenleme web/desktop'ta yapılır.
+- Push notification (arka planda uygulama kapalıyken) entegrasyonu yok —
+  bildirimler yalnızca uygulama açıkken Socket.IO üzerinden anlık gelir.

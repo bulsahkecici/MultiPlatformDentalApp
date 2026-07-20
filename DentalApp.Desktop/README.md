@@ -1,165 +1,115 @@
-# WPF Desktop Application - Dental Management System
+# WPF Masaüstü Uygulaması - Diş Kliniği Yönetim Sistemi
 
-## Overview
-This is a WPF desktop application built with MVVM pattern for managing dental practice operations.
+MVVM mimarisiyle yazılmış, web ve mobil istemcilerle aynı backend'i
+(`../src`) kullanan tam kapsamlı bir masaüstü uygulaması.
 
-## Prerequisites
-- .NET 8.0 SDK or later
-- Visual Studio 2022 (recommended) or Visual Studio Code
-- Backend API running on http://localhost:3000
+## Gereksinimler
 
-## Project Structure
+- .NET 8.0 SDK veya üzeri
+- Visual Studio 2022 (önerilen) veya `dotnet` CLI
+- Çalışan bir backend (`../src` — bkz. kök `README.md`)
+- NuGet kaynağı olarak nuget.org tanımlı olmalı (`dotnet nuget list source`
+  ile kontrol edin; yalnızca "Microsoft Visual Studio Offline Packages"
+  varsa `dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org`)
+
+## Proje Yapısı
 
 ```
 DentalApp.Desktop/
-├── Models/              # Data models
-│   └── Models.cs        # User, Patient, Appointment, Treatment, Notification
-├── ViewModels/          # MVVM ViewModels (to be implemented)
+├── Models/
+│   ├── Models.cs            # User, Patient, Appointment, Treatment, ...
+│   ├── TariffModels.cs       # TDB tarife modelleri
+│   ├── ToothHotspot.cs       # Diş şeması hotspot koordinatları
+│   └── UserResponse.cs
+├── ViewModels/               # Her View için bir ViewModel (MVVM)
 │   ├── LoginViewModel.cs
-│   ├── MainViewModel.cs
-│   ├── PatientListViewModel.cs
-│   └── ...
-├── Views/               # XAML Views (to be implemented)
-│   ├── LoginWindow.xaml
-│   ├── MainWindow.xaml
-│   ├── PatientListView.xaml
-│   └── ...
-├── Services/            # Business services
-│   ├── ApiService.cs    # HTTP API client
-│   ├── AuthService.cs   # Authentication
-│   └── NotificationService.cs  # SignalR notifications
-├── Helpers/             # MVVM helpers
-│   ├── ObservableObject.cs  # Base class for ViewModels
-│   └── RelayCommand.cs      # ICommand implementation
-└── App.xaml             # Application entry point
+│   ├── MainViewModel.cs              # Navigasyon, rol bazlı erişim, bildirim
+│   ├── DashboardViewModel.cs         # Bugünkü randevular + finansal özet
+│   ├── PatientsViewModel.cs / PatientFormViewModel.cs
+│   ├── AppointmentsViewModel.cs / AppointmentFormViewModel.cs / AppointmentDetailsViewModel.cs
+│   ├── TreatmentsViewModel.cs / TreatmentFormViewModel.cs   # Diş şeması + tarife seçici
+│   ├── PaymentsViewModel.cs          # Tahsilat, plan onayı, borç/gelir özeti
+│   ├── DentistEarningsViewModel.cs   # Dişhekimi kazanç ekranı
+│   ├── AdminManagementViewModel.cs   # Kullanıcı yönetimi + istatistikler
+│   └── InstitutionAgreementsViewModel.cs
+├── Views/                    # XAML görünümleri (yukarıdaki ViewModel'lerle 1:1)
+├── Services/
+│   ├── ApiService.cs         # HTTP istemcisi; appsettings.json'dan adres okur
+│   ├── AuthService.cs        # Login/logout (logout backend'de refresh token iptal eder)
+│   ├── NotificationService.cs # Socket.IO istemcisi (SocketIOClient NuGet)
+│   ├── PatientService.cs / AppointmentService.cs / TreatmentService.cs
+│   ├── InstitutionAgreementService.cs / TariffService.cs
+│   └── UnauthorizedException.cs
+├── Helpers/
+│   ├── ObservableObject.cs   # INotifyPropertyChanged temel sınıfı
+│   ├── RelayCommand.cs       # ICommand implementasyonu
+│   ├── Converters.cs         # XAML value converter'ları
+│   └── StatusItem.cs
+├── Assets/                   # Logo, mouth_chart.png
+├── Data/tdb_2026_tarife_full.json
+├── appsettings.json           # ApiBaseUrl, SocketUrl (exe ile aynı klasörde)
+└── App.xaml / App.xaml.cs     # Uygulama girişi, global exception handler
 ```
 
-## Features Implemented
+## Yapılandırma
 
-### ✅ Core Infrastructure
-- **MVVM Pattern**: ObservableObject and RelayCommand helpers
-- **Data Models**: User, Patient, Appointment, Treatment, Notification
-- **API Service**: HTTP client for backend communication
-- **Auth Service**: Login/logout functionality
-- **Notification Service**: SignalR client for real-time updates
+Backend adresi `appsettings.json`'dan okunur (dosya yoksa `localhost:3000`
+varsayılanına düşer):
 
-### 📋 To Be Implemented
-
-#### ViewModels
-- `LoginViewModel` - Handle login form and authentication
-- `MainViewModel` - Main window navigation and state
-- `PatientListViewModel` - Display and manage patients
-- `PatientDetailsViewModel` - View/edit patient details
-- `AppointmentViewModel` - Schedule and manage appointments
-- `TreatmentViewModel` - Record and view treatments
-- `DashboardViewModel` - Statistics and overview
-
-#### Views (XAML)
-- `LoginWindow.xaml` - Login form
-- `MainWindow.xaml` - Main application window with navigation
-- `PatientListView.xaml` - Patient list with search
-- `PatientDetailsView.xaml` - Patient details form
-- `AppointmentView.xaml` - Appointment calendar and form
-- `TreatmentView.xaml` - Treatment records
-- `DashboardView.xaml` - Dashboard with charts
-
-## Building and Running
-
-### 1. Restore NuGet Packages
-```bash
-cd DentalApp.Desktop
-dotnet restore
-```
-
-### 2. Build the Project
-```bash
-dotnet build
-```
-
-### 3. Run the Application
-```bash
-dotnet run
-```
-
-Or open in Visual Studio and press F5.
-
-## NuGet Packages
-
-- **Microsoft.AspNetCore.SignalR.Client** (8.0.0) - SignalR client for real-time notifications
-- **Newtonsoft.Json** (13.0.3) - JSON serialization
-- **MaterialDesignThemes** (5.0.0) - Material Design UI components
-- **MaterialDesignColors** (3.0.0) - Material Design color palette
-
-## Configuration
-
-Update `ApiService.cs` to change the backend URL:
-```csharp
-public string BaseUrl { get; set; } = "http://localhost:3000";
-```
-
-## Example Usage
-
-### Login
-```csharp
-var apiService = new ApiService();
-var authService = new AuthService(apiService);
-
-bool success = await authService.LoginAsync("admin@mail.com", "Admin@123456");
-if (success)
+```json
 {
-    // Navigate to main window
+  "ApiBaseUrl": "http://localhost:3000/api",
+  "SocketUrl": "http://localhost:3000"
 }
 ```
 
-### Fetch Patients
-```csharp
-var response = await apiService.GetAsync<PatientsResponse>("/api/patients?limit=20");
-var patients = response.Patients;
+Prod dağıtımında bu dosyayı exe'nin yanına koyup gerçek sunucu adresiyle
+güncelleyin (bkz. kök `deploy/DEPLOYMENT.md`).
+
+## Derleme ve Çalıştırma
+
+```bash
+cd DentalApp.Desktop
+dotnet restore
+dotnet build
+dotnet run
 ```
 
-### Real-time Notifications
-```csharp
-var notificationService = new NotificationService();
-notificationService.NotificationReceived += (sender, notification) =>
-{
-    // Handle notification
-    MessageBox.Show(notification);
-};
+Veya Visual Studio'da açıp F5.
 
-await notificationService.ConnectAsync(accessToken);
-```
+## NuGet Paketleri
 
-## Next Steps
+- **SocketIOClient** (3.1.2) — Socket.IO v4 istemcisi (backend'le aynı
+  protokol; web `socket.io-client`, mobil `socket_io_client` ile eşleşir)
+- **Newtonsoft.Json** (13.0.3) — JSON serileştirme
+- **MaterialDesignThemes** (5.0.0) / **MaterialDesignColors** (3.0.0) —
+  Material Design arayüz bileşenleri
 
-1. **Implement ViewModels**: Create ViewModels for each view
-2. **Create XAML Views**: Design UI with Material Design
-3. **Add Navigation**: Implement navigation service
-4. **Data Binding**: Bind ViewModels to Views
-5. **Error Handling**: Add try-catch and user feedback
-6. **Testing**: Unit tests for ViewModels and Services
+## Rol bazlı erişim
 
-## Material Design Integration
+`MainViewModel` içindeki `IsAdmin`/`IsSecretary`/`IsDentist` bayrakları
+navigasyon menüsünü ve düzenleme yetkilerini belirler:
 
-The project includes MaterialDesignThemes. To use it:
+| Özellik | Admin/Patron | Sekreter | Dişhekimi |
+|---|---|---|---|
+| Kontrol Paneli, Randevular, Tedaviler | ✓ | ✓ | ✓ |
+| Hastalar | ✓ (düzenle) | ✓ (düzenle) | ✓ (salt okunur) |
+| Ödemeler, Kurum Anlaşmaları | ✓ | ✓ | — |
+| Kazançlarım | — | — | ✓ |
+| Kullanıcı Yönetimi | ✓ | — | — |
+| Protez İş Süreçleri, SMS | "Yakında" (placeholder) | | |
 
-1. Add to App.xaml:
-```xaml
-<Application.Resources>
-    <ResourceDictionary>
-        <ResourceDictionary.MergedDictionaries>
-            <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="DeepPurple" SecondaryColor="Lime" />
-            <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Defaults.xaml" />
-        </ResourceDictionary.MergedDictionaries>
-    </ResourceDictionary>
-</Application.Resources>
-```
+## Gerçek zamanlı bildirimler
 
-2. Use Material Design controls in XAML:
-```xaml
-<materialDesign:Card Padding="32" Margin="16">
-    <TextBox materialDesign:HintAssist.Hint="Email" />
-</materialDesign:Card>
-```
+`NotificationService`, `SocketIOClient` ile backend'in Socket.IO sunucusuna
+(`src/services/notificationHub.js`) `handshake.auth.token` üzerinden JWT
+kimlik doğrulamasıyla bağlanır; gelen bildirimler `MainViewModel` üzerinden
+bir Material Design Snackbar olarak gösterilir.
+
+## Test
+
+Ayrı bir test projesi yok; doğrulama `dotnet build` (0 hata/uyarı olmalı) ve
+manuel uçtan uca test ile yapılır (bkz. kök `README.md` → Testing).
 
 ## License
 ISC

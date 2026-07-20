@@ -1,146 +1,71 @@
-# Angular Web Application - Dental Management System
+# Angular Web Uygulaması - Diş Kliniği Yönetim Sistemi
 
-## Overview
-Modern Angular web application for dental practice management with real-time notifications.
+Standalone bileşen mimarisiyle yazılmış, masaüstü ve mobil istemcilerle aynı
+backend'i (`../src`) kullanan tam kapsamlı bir Angular uygulaması.
 
-## Prerequisites
-- Node.js 18+ and npm
-- Angular CLI (`npm install -g @angular/cli`)
-- Backend API running on http://localhost:3000
+## Gereksinimler
 
-## Installation
+- Node.js 18+ ve npm
+- Angular CLI (`npm install -g @angular/cli`, opsiyonel — `npx ng` de çalışır)
+- Çalışan bir backend (`../src` — bkz. kök `README.md`)
+
+## Kurulum ve Geliştirme
 
 ```bash
 cd dental-app-web
 npm install
+npm start          # ng serve — http://localhost:4200
 ```
-
-## Development Server
-
-```bash
-npm start
-# or
-ng serve
-```
-
-Navigate to `http://localhost:4200/`
 
 ## Build
 
 ```bash
-# Development build
-ng build
-
-# Production build
-ng build --configuration production
+npx ng build                                  # geliştirme build'i
+npx ng build --configuration production       # prod build (dist/dental-app-web/browser)
 ```
 
-## Project Structure
+Prod dağıtımından önce `src/environments/environment.prod.ts` içindeki
+`apiUrl`/`socketUrl` gerçek sunucu adresiyle güncellenmelidir (bkz. kök
+`deploy/DEPLOYMENT.md`).
+
+## Proje Yapısı
 
 ```
-dental-app-web/
-├── src/
-│   ├── app/
-│   │   ├── core/                 # Core module (singleton services)
-│   │   │   ├── services/
-│   │   │   │   ├── api.service.ts
-│   │   │   │   ├── auth.service.ts
-│   │   │   │   └── signalr.service.ts
-│   │   │   ├── guards/
-│   │   │   │   └── auth.guard.ts
-│   │   │   ├── interceptors/
-│   │   │   │   └── auth.interceptor.ts
-│   │   │   └── models/
-│   │   │       └── models.ts
-│   │   ├── features/             # Feature modules (to be implemented)
-│   │   │   ├── auth/
-│   │   │   ├── patients/
-│   │   │   ├── appointments/
-│   │   │   ├── treatments/
-│   │   │   └── dashboard/
-│   │   └── shared/               # Shared module (to be implemented)
-│   │       ├── components/
-│   │       └── pipes/
-│   ├── assets/
-│   ├── environments/
-│   └── styles.scss
-├── angular.json
-├── package.json
-└── tsconfig.json
+src/app/
+├── core/
+│   ├── services/
+│   │   ├── api.service.ts           # HttpClient sarmalayıcısı
+│   │   ├── auth.service.ts          # Login, token yönetimi, /auth/me ile oturum restore
+│   │   ├── socket.service.ts        # Socket.IO bildirim istemcisi
+│   │   ├── notification.service.ts  # Kalıcı bildirim REST uçları
+│   │   ├── patient.service.ts / appointment.service.ts / treatment.service.ts
+│   │   ├── payment.service.ts / dashboard.service.ts / tariff.service.ts
+│   │   ├── institution-agreement.service.ts / user.service.ts
+│   ├── guards/auth.guard.ts
+│   ├── interceptors/auth.interceptor.ts   # Bearer token ekler, 401'de logout
+│   ├── models/models.ts
+│   └── utils/data-mapper.ts               # snake_case ↔ camelCase dönüşümü
+├── features/
+│   ├── auth/login/
+│   ├── dashboard/
+│   ├── patients/
+│   ├── appointments/
+│   ├── treatments/
+│   ├── payments/           # Özet, plan onayı, tahsilat, kurum anlaşmaları
+│   ├── dentist-earnings/
+│   ├── admin/
+│   └── layout/main-layout/ # Rol bazlı sidenav + bildirim zili
+└── shared/components/
+    ├── tooth-chart/           # FDI diş şeması (mouth_chart.png üzerine)
+    ├── tariff-selector/       # TDB 2026 tarife seçici
+    ├── patient-form-dialog/
+    ├── appointment-form-dialog/
+    └── treatment-form-dialog/
 ```
 
-## Features Implemented
+## Yapılandırma
 
-### ✅ Core Services
-- **ApiService**: HTTP client wrapper for backend API
-- **AuthService**: Authentication with JWT tokens
-- **SignalRService**: Real-time notifications via SignalR
-- **AuthInterceptor**: Automatic token injection
-- **AuthGuard**: Route protection
-
-### ✅ Models
-- User, Patient, Appointment, Treatment, Notification interfaces
-- PaginatedResponse generic type
-
-### 📋 To Be Implemented
-
-#### Feature Modules
-
-**Auth Module**
-- Login component
-- Register component
-- Password reset component
-
-**Patients Module**
-- Patient list component
-- Patient details component
-- Patient form component
-- Patient service
-
-**Appointments Module**
-- Appointment list component
-- Appointment calendar component
-- Appointment form component
-- Appointment service
-
-**Treatments Module**
-- Treatment list component
-- Treatment form component
-- Treatment service
-
-**Dashboard Module**
-- Dashboard component with statistics
-- Charts and graphs
-
-#### Shared Components
-- Navbar
-- Sidebar
-- Notification toast
-- Loading spinner
-- Confirmation dialog
-
-## Dependencies
-
-### Core
-- **@angular/core** ^17.0.0
-- **@angular/router** ^17.0.0
-- **@angular/forms** ^17.0.0
-- **@angular/common** ^17.0.0
-
-### UI
-- **@angular/material** ^17.0.0 - Material Design components
-
-### Real-time
-- **@microsoft/signalr** ^8.0.0 - SignalR client
-
-### Utilities
-- **rxjs** ~7.8.0 - Reactive programming
-
-## Configuration
-
-### Environment Variables
-
-**development** (`src/environments/environment.ts`):
+**Geliştirme** (`src/environments/environment.ts`):
 ```typescript
 export const environment = {
   production: false,
@@ -149,105 +74,51 @@ export const environment = {
 };
 ```
 
-**production** (`src/environments/environment.prod.ts`):
+**Prod** (`src/environments/environment.prod.ts`) — dağıtımdan önce gerçek
+domain ile değiştirilmeli:
 ```typescript
 export const environment = {
   production: true,
-  apiUrl: 'https://your-api.com',
-  socketUrl: 'https://your-api.com'
+  apiUrl: 'https://<DOMAIN>',
+  socketUrl: 'https://<DOMAIN>'
 };
 ```
 
-## Usage Examples
+## Rol bazlı erişim
 
-### Authentication
-```typescript
-constructor(private authService: AuthService) {}
+`main-layout.component.ts`, `AuthService.currentUser$`'tan gelen rollere göre
+menüyü filtreler:
 
-login() {
-  this.authService.login(email, password).subscribe({
-    next: (response) => {
-      console.log('Logged in:', response.user);
-      // Navigate to dashboard
-    },
-    error: (error) => {
-      console.error('Login failed:', error);
-    }
-  });
-}
+| Özellik | Admin | Sekreter | Dişhekimi |
+|---|---|---|---|
+| Kontrol Paneli, Randevular, Tedaviler | ✓ | ✓ | ✓ |
+| Hastalar | ✓ | ✓ | ✓ (salt okunur) |
+| Ödemeler | ✓ | ✓ | — |
+| Kazançlarım | — | — | ✓ |
+| Kullanıcı Yönetimi | ✓ | — | — |
+
+## Gerçek zamanlı bildirimler
+
+Backend Socket.IO v4 kullanır; web istemcisi **`socket.io-client`** ile
+bağlanır (`core/services/socket.service.ts`) — masaüstü (`SocketIOClient`
+NuGet) ve mobil (`socket_io_client`) ile aynı protokol. Kimlik doğrulama JWT
+ile `auth: { token }` üzerinden yapılır. Bağlantı `main-layout.component.ts`
+içinde giriş sonrası kurulur; gelen bildirimler bir MatSnackBar + bildirim
+zili rozetiyle gösterilir.
+
+## Bağımlılıklar
+
+| Paket | Amaç |
+|---|---|
+| `@angular/*` ^18.2.14, `@angular/material` ^18 | Framework + UI bileşenleri |
+| `socket.io-client` ^4 | Gerçek zamanlı bildirimler |
+| `rxjs` ~7.8 | Reaktif programlama |
+
+## Test
+
+```bash
+ng test    # Karma/Jasmine
 ```
-
-### API Calls
-```typescript
-constructor(private apiService: ApiService) {}
-
-getPatients() {
-  this.apiService.get<any>('/api/patients', { limit: 20 }).subscribe({
-    next: (response) => {
-      this.patients = response.patients;
-    }
-  });
-}
-```
-
-### Real-time Notifications
-```typescript
-constructor(
-  private signalrService: SignalrService,
-  private authService: AuthService
-) {}
-
-ngOnInit() {
-  const token = this.authService.getAccessToken();
-  if (token) {
-    this.signalrService.connect(token);
-    
-    this.signalrService.notification$.subscribe(notification => {
-      console.log('New notification:', notification);
-      // Show toast notification
-    });
-  }
-}
-```
-
-## Material Design Setup
-
-Add to `app.component.ts` or `app.module.ts`:
-```typescript
-import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
-import { MatCardModule } from '@angular/material/card';
-// ... other material modules
-```
-
-## Routing Example
-
-```typescript
-const routes: Routes = [
-  { path: 'login', component: LoginComponent },
-  {
-    path: '',
-    canActivate: [AuthGuard],
-    children: [
-      { path: 'dashboard', component: DashboardComponent },
-      { path: 'patients', component: PatientListComponent },
-      { path: 'appointments', component: AppointmentListComponent },
-      { path: 'treatments', component: TreatmentListComponent },
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
-    ]
-  }
-];
-```
-
-## Next Steps
-
-1. **Create Feature Modules**: Implement auth, patients, appointments, treatments modules
-2. **Build Components**: Create UI components with Material Design
-3. **Add Routing**: Configure routing with lazy loading
-4. **Implement Forms**: Reactive forms for data entry
-5. **Add State Management**: Consider NgRx or Akita for complex state
-6. **Testing**: Unit tests and E2E tests
-7. **Deployment**: Build and deploy to hosting (Netlify, Vercel, etc.)
 
 ## License
 ISC

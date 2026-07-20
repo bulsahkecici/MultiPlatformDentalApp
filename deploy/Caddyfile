@@ -1,0 +1,46 @@
+# MultiPlatformDentalApp — Caddy reverse proxy yapılandırması (Windows/Linux ortak)
+#
+# Kullanım:
+#   1. <DOMAIN> yerine gerçek alan adınızı yazın
+#   2. C:/dentalapp-web yolunu Angular `ng build --configuration production`
+#      çıktısının kopyalandığı klasörle değiştirin
+#   3. caddy run --config deploy/Caddyfile
+#
+# Caddy, gerçek bir domain + erişilebilir 80/443 portu olduğu sürece
+# Let's Encrypt sertifikasını otomatik alır/yeniler (Certbot'a gerek yok) ve
+# reverse_proxy blokları websocket upgrade'ini (Socket.IO için) otomatik
+# yönetir — nginx'teki gibi elle Upgrade/Connection header'ı eklemeye
+# gerek yoktur.
+
+<DOMAIN> {
+	root * C:/dentalapp-web
+
+	# REST API → Node backend
+	handle /api/* {
+		reverse_proxy 127.0.0.1:3000
+	}
+
+	# Sağlık kontrolleri
+	handle /healthz {
+		reverse_proxy 127.0.0.1:3000
+	}
+	handle /readyz {
+		reverse_proxy 127.0.0.1:3000
+	}
+
+	# Socket.IO — websocket upgrade Caddy tarafından otomatik yönetilir
+	handle /socket.io/* {
+		reverse_proxy 127.0.0.1:3000
+	}
+
+	# Geri kalan her şey Angular SPA — bilinmeyen yol index.html'e düşer
+	handle {
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+	}
+}

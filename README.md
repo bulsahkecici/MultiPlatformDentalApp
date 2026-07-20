@@ -22,8 +22,9 @@ Gerçek zamanlı bildirimler tüm istemcilerde **Socket.IO** ile çalışır
 
 ## Deployment
 
-İnternet üzerinden VPS dağıtımı (nginx + HTTPS + PM2) için:
-[deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md)
+İnternet üzerinden dağıtım için: [deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md)
+— ana yol Windows (Caddy + NSSM), alternatif olarak Ubuntu/Linux VPS
+(nginx + PM2 + Certbot) adımları da dokümanda mevcut.
 
 ## Features
 
