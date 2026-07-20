@@ -440,6 +440,20 @@
                         <DataGridTextColumn Header="Kayıt" Binding="{Binding CreatedAtDisplay}" Width="120" MinWidth="100"/>
                         <DataGridTextColumn Header="Son Giriş" Binding="{Binding LastLoginAtDisplay}" Width="120" MinWidth="100"/>
                         <DataGridCheckBoxColumn Header="E-posta ✓" Binding="{Binding EmailVerified}" Width="75"/>
+                        <DataGridTemplateColumn Header="İşlemler" Width="90">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Command="{Binding DataContext.EditUserCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource MaterialDesignIconButton}" ToolTip="Düzenle">
+                                            <materialDesign:PackIcon Kind="Edit"/>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.DeleteUserCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource MaterialDesignIconButton}" ToolTip="Sil">
+                                            <materialDesign:PackIcon Kind="Delete" Foreground="#C62828"/>
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                     <DataGrid.RowStyle>
                         <Style TargetType="DataGridRow">

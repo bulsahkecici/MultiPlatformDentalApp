@@ -110,6 +110,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" 
                                                  Text="{Binding TreatmentDate, StringFormat=d}" 
@@ -131,6 +132,14 @@
                                                  Text="{Binding Status, Converter={StaticResource StatusToTurkishConverter}}" 
                                                  VerticalAlignment="Center"
                                                  Margin="10,0,0,0"/>
+                                        <Button Grid.Column="5"
+                                                Command="{Binding DataContext.DeleteTreatmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource MaterialDesignIconButton}"
+                                                ToolTip="Tedaviyi sil"
+                                                Margin="8,0,0,0">
+                                            <materialDesign:PackIcon Kind="Delete" Foreground="#C62828"/>
+                                        </Button>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

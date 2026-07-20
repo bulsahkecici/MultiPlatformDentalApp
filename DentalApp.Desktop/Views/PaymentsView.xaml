@@ -284,6 +284,14 @@
                                       Foreground="White"
                                       Width="150"
                                       Height="40"/>
+                                <Button Content="Reddet"
+                                      Command="{Binding RejectPlansCommand}"
+                                      Style="{StaticResource MaterialDesignOutlinedButton}"
+                                      Foreground="#C62828"
+                                      BorderBrush="#C62828"
+                                      Margin="10,0,0,0"
+                                      Width="120"
+                                      Height="40"/>
                             </StackPanel>
                         </Grid>
                     </materialDesign:Card>

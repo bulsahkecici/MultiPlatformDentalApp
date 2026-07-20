@@ -111,11 +111,24 @@
                               TextWrapping="Wrap"
                               Margin="0,0,0,15"
                               Visibility="{Binding HasNotes, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                    <TextBox Text="{Binding CancellationReason, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="İptal sebebi (opsiyonel)"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                             Margin="0,10,0,5"
+                             IsEnabled="{Binding CanCancel}"/>
                 </StackPanel>
             </ScrollViewer>
 
             <!-- Actions -->
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                <Button Content="İPTAL ET"
+                        Command="{Binding CancelCommand}"
+                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Foreground="#C62828"
+                        BorderBrush="#C62828"
+                        Margin="0,0,10,0"
+                        Width="120"/>
                 <Button Content="DÜZENLE" 
                        Command="{Binding EditCommand}" 
                        Style="{StaticResource MaterialDesignOutlinedButton}"

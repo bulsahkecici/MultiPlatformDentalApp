@@ -91,6 +91,8 @@ namespace DentalApp.Desktop.ViewModels
         public ICommand CancelCommand { get; }
         public ICommand SelectUserTypeCommand { get; }
         public ICommand LoadUsersCommand { get; }
+        public ICommand EditUserCommand { get; }
+        public ICommand DeleteUserCommand { get; }
 
         public AdminManagementViewModel(ApiService apiService)
         {
@@ -115,6 +117,8 @@ namespace DentalApp.Desktop.ViewModels
                 }
             });
             LoadUsersCommand = new RelayCommand(async _ => await LoadUsersAsync());
+            EditUserCommand = new RelayCommand<User>(async user => await EditUserAsync(user), user => user != null && !IsBusy);
+            DeleteUserCommand = new RelayCommand<User>(async user => await DeleteUserAsync(user), user => user != null && !IsBusy);
             
             // Load users on initialization
             _ = LoadUsersAsync();
@@ -311,6 +315,54 @@ namespace DentalApp.Desktop.ViewModels
             {
                 System.Diagnostics.Debug.WriteLine($"Kullanıcılar yüklenirken hata: {ex.Message}");
             }
+        }
+
+        private async Task EditUserAsync(User? user)
+        {
+            if (user == null) return;
+            var dialog = new Views.UserEditDialog(user.Email, user.Roles.FirstOrDefault())
+            {
+                Owner = Application.Current.MainWindow
+            };
+            if (dialog.ShowDialog() != true) return;
+
+            IsBusy = true;
+            try
+            {
+                if (!string.Equals(user.Email, dialog.Email, StringComparison.OrdinalIgnoreCase))
+                    await _apiService.PutAsync<object>($"/users/{user.Id}", new { email = dialog.Email });
+
+                if (user.Roles.Count != 1 || user.Roles[0] != dialog.Role)
+                    await _apiService.PutAsync<object>($"/users/{user.Id}/roles", new { roles = new[] { dialog.Role } });
+
+                await LoadUsersAsync();
+                MessageBox.Show("Kullanıcı güncellendi.", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Kullanıcı güncellenirken hata: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally { IsBusy = false; }
+        }
+
+        private async Task DeleteUserAsync(User? user)
+        {
+            if (user == null) return;
+            var result = MessageBox.Show($"{user.Email} kullanıcısını silmek istediğinize emin misiniz?", "Kullanıcı Silme Onayı", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result != MessageBoxResult.Yes) return;
+
+            IsBusy = true;
+            try
+            {
+                await _apiService.DeleteAsync($"/users/{user.Id}");
+                await LoadUsersAsync();
+                MessageBox.Show("Kullanıcı silindi.", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Kullanıcı silinirken hata: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally { IsBusy = false; }
         }
     }
     

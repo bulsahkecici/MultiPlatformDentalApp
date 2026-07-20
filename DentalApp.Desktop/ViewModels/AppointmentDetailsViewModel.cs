@@ -8,6 +8,7 @@ namespace DentalApp.Desktop.ViewModels
     public class AppointmentDetailsViewModel : ObservableObject
     {
         private Appointment _appointment;
+        private string? _cancellationReason;
 
         public Appointment Appointment
         {
@@ -40,17 +41,27 @@ namespace DentalApp.Desktop.ViewModels
         }
 
         public bool HasNotes => !string.IsNullOrWhiteSpace(Appointment?.Notes);
+        public bool CanCancel => Appointment?.Status != "cancelled" && Appointment?.Status != "completed";
+
+        public string? CancellationReason
+        {
+            get => _cancellationReason;
+            set => SetProperty(ref _cancellationReason, value);
+        }
 
         public ICommand EditCommand { get; }
+        public ICommand CancelCommand { get; }
         public ICommand CloseCommand { get; }
 
         public event Action? EditRequested;
+        public event Action<string?>? CancelRequested;
         public event Action? CloseRequested;
 
         public AppointmentDetailsViewModel(Appointment appointment)
         {
             _appointment = appointment;
             EditCommand = new RelayCommand(_ => EditRequested?.Invoke());
+            CancelCommand = new RelayCommand(_ => CancelRequested?.Invoke(CancellationReason), _ => CanCancel);
             CloseCommand = new RelayCommand(_ => CloseRequested?.Invoke());
         }
     }

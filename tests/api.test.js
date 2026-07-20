@@ -255,6 +255,28 @@ describe('Randevu yetkilendirme (IDOR koruması — diş hekimi sadece kendi ran
     expect(updateCall).toBeUndefined();
   });
 
+  it('PUT /api/appointments/:id — dentistId alanını dentist_id sütununa yazar', async () => {
+    db.query.mockImplementation((sql, params) => {
+      if (sql.includes('UPDATE appointments')) {
+        return Promise.resolve({ rows: [{ id: 14, dentist_id: params[0] }] });
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
+    });
+
+    const res = await request(app)
+      .put('/api/appointments/14')
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({ dentistId: 42 });
+
+    expect(res.status).toBe(200);
+    expect(res.body.appointment.dentist_id).toBe(42);
+    const updateCall = db.query.mock.calls.find(([sql]) =>
+      sql.includes('UPDATE appointments'),
+    );
+    expect(updateCall[0]).toContain('dentist_id = $1');
+    expect(updateCall[1]).toEqual([42, 1, 14]);
+  });
+
   it('PUT /api/appointments/:id/cancel — başka dişhekiminin randevusunu iptal edemez', async () => {
     db.query.mockImplementation((sql) => {
       if (sql.includes('SELECT dentist_id FROM appointments')) {

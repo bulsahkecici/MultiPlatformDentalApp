@@ -262,6 +262,14 @@ namespace DentalApp.Desktop.ViewModels
                     MaterialDesignThemes.Wpf.DialogHost.CloseDialogCommand.Execute(null, null);
                     EditAppointmentRequested?.Invoke(appointment);
                 };
+
+                detailsViewModel.CancelRequested += async reason =>
+                {
+                    if (await CancelAppointmentAsync(appointment, reason))
+                    {
+                        MaterialDesignThemes.Wpf.DialogHost.CloseDialogCommand.Execute(null, null);
+                    }
+                };
                 
                 // Close requested handler
                 detailsViewModel.CloseRequested += () =>
@@ -357,6 +365,12 @@ namespace DentalApp.Desktop.ViewModels
         {
             if (SelectedAppointment == null) return;
 
+            await CancelAppointmentAsync(SelectedAppointment, SelectedAppointment.CancellationReason);
+        }
+
+        private async Task<bool> CancelAppointmentAsync(Appointment appointment, string? reason)
+        {
+
             var result = MessageBox.Show(
                 $"Bu randevuyu iptal etmek istediğinize emin misiniz?",
                 "İptal Onayı",
@@ -368,9 +382,10 @@ namespace DentalApp.Desktop.ViewModels
                 try
                 {
                     IsBusy = true;
-                    await _appointmentService.CancelAppointmentAsync(SelectedAppointment.Id);
+                    await _appointmentService.CancelAppointmentAsync(appointment.Id, reason);
                     await LoadAppointmentsAsync();
                     MessageBox.Show("Randevu başarıyla iptal edildi.", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return true;
                 }
                 catch (Exception ex)
                 {
@@ -381,6 +396,8 @@ namespace DentalApp.Desktop.ViewModels
                     IsBusy = false;
                 }
             }
+
+            return false;
         }
     }
     

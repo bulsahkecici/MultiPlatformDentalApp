@@ -99,6 +99,7 @@ namespace DentalApp.Desktop.ViewModels
         public ICommand RefreshCommand { get; }
         public ICommand AddTreatmentCommand { get; }
         public ICommand EditTreatmentCommand { get; }
+        public ICommand DeleteTreatmentCommand { get; }
         public ICommand PreviousPageCommand { get; }
         public ICommand NextPageCommand { get; }
         public ICommand ClearFiltersCommand { get; }
@@ -127,6 +128,7 @@ namespace DentalApp.Desktop.ViewModels
                     MessageBox.Show($"Tedavi düzenlenirken hata: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }, _ => SelectedTreatment != null);
+            DeleteTreatmentCommand = new RelayCommand<Treatment>(async treatment => await DeleteTreatmentAsync(treatment), treatment => treatment != null && !IsBusy);
             PreviousPageCommand = new RelayCommand(async _ =>
             {
                 if (CurrentPage > 1)
@@ -225,6 +227,34 @@ namespace DentalApp.Desktop.ViewModels
             catch (Exception ex)
             {
                 MessageBox.Show($"Hastalar yüklenirken hata: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task DeleteTreatmentAsync(Treatment? treatment)
+        {
+            if (treatment == null) return;
+
+            var result = MessageBox.Show(
+                $"{treatment.PatientFullName} hastasına ait {treatment.TreatmentType} tedavisini silmek istediğinize emin misiniz?",
+                "Tedavi Silme Onayı",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            if (result != MessageBoxResult.Yes) return;
+
+            IsBusy = true;
+            try
+            {
+                await _treatmentService.DeleteTreatmentAsync(treatment.Id);
+                await LoadTreatmentsAsync();
+                MessageBox.Show("Tedavi başarıyla silindi.", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Tedavi silinirken hata: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
     }

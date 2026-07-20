@@ -15,6 +15,7 @@ namespace DentalApp.Desktop.ViewModels
         private readonly ApiService _apiService;
         private readonly PatientService _patientService;
         private readonly TariffService _tariffService;
+        private readonly InstitutionAgreementService _institutionAgreementService;
         private bool _isBusy;
         private bool _canViewPrices = true; // Patron ve Sekreter için true
         private bool _isSecretary = false; // Treatment plan approval sadece secretary'de
@@ -213,6 +214,7 @@ namespace DentalApp.Desktop.ViewModels
         public ICommand LoadAgreementsCommand { get; }
         public ICommand LoadPendingPlansCommand { get; }
         public ICommand ApprovePlansCommand { get; }
+        public ICommand RejectPlansCommand { get; }
         public ICommand ProcessPaymentCommand { get; }
         public ICommand RefreshCommand { get; }
 
@@ -221,12 +223,14 @@ namespace DentalApp.Desktop.ViewModels
             _apiService = apiService;
             _patientService = patientService;
             _tariffService = tariffService ?? new TariffService();
+            _institutionAgreementService = new InstitutionAgreementService(apiService);
             
             AddAgreementCommand = new RelayCommand(async _ => await AddAgreementAsync(), _ => !IsBusy && !string.IsNullOrWhiteSpace(NewAgreementName));
             EditAgreementCommand = new RelayCommand<InstitutionAgreement>(async a => await EditAgreementAsync(a));
             LoadAgreementsCommand = new RelayCommand(async _ => await LoadAgreementsAsync(), _ => !IsBusy);
             LoadPendingPlansCommand = new RelayCommand(async _ => await LoadPendingPlansAsync(), _ => !IsBusy);
-            ApprovePlansCommand = new RelayCommand(async _ => await ApprovePlansAsync(), _ => !IsBusy && PendingTreatmentPlans.Any(p => p.IsSelected));
+            ApprovePlansCommand = new RelayCommand(async _ => await DecidePlansAsync(true), _ => !IsBusy && PendingTreatmentPlans.Any(p => p.IsSelected));
+            RejectPlansCommand = new RelayCommand(async _ => await DecidePlansAsync(false), _ => !IsBusy && PendingTreatmentPlans.Any(p => p.IsSelected));
             ProcessPaymentCommand = new RelayCommand(async _ => await ProcessPaymentAsync(), _ => !IsBusy && SelectedPaymentPatient != null && PaymentAmount > 0);
             RefreshCommand = new RelayCommand(async _ => await LoadDataAsync(), _ => !IsBusy);
             
@@ -545,13 +549,39 @@ namespace DentalApp.Desktop.ViewModels
             }
         }
         
-        private Task EditAgreementAsync(InstitutionAgreement? agreement)
+        private async Task EditAgreementAsync(InstitutionAgreement? agreement)
         {
-            if (agreement == null) return Task.CompletedTask;
-            // TODO: Edit agreement dialog
-            System.Windows.MessageBox.Show("Düzenleme özelliği yakında eklenecek.", "Bilgi",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
-            return Task.CompletedTask;
+            if (agreement == null) return;
+            try
+            {
+                var current = (await _institutionAgreementService.GetInstitutionAgreementsAsync()).FirstOrDefault(a => a.Id == agreement.Id);
+                if (current == null) throw new Exception("Kurum anlaşması bulunamadı.");
+
+                var editable = new Models.InstitutionAgreement
+                {
+                    Id = current.Id,
+                    InstitutionName = current.InstitutionName,
+                    ContactPerson = current.ContactPerson,
+                    ContactPhone = current.ContactPhone,
+                    ContactEmail = current.ContactEmail,
+                    DiscountPercentage = current.DiscountPercentage,
+                    IsActive = current.IsActive,
+                    Notes = current.Notes,
+                    CategoryDiscounts = current.CategoryDiscounts == null ? null : new Dictionary<string, decimal>(current.CategoryDiscounts)
+                };
+                var dialog = new Views.AgreementEditDialog(editable) { Owner = Application.Current.MainWindow };
+                if (dialog.ShowDialog() != true) return;
+
+                IsBusy = true;
+                await _institutionAgreementService.UpdateInstitutionAgreementAsync(editable.Id, editable);
+                await LoadAgreementsAsync();
+                MessageBox.Show("Kurum anlaşması güncellendi.", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Anlaşma güncellenirken hata: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally { IsBusy = false; }
         }
         
         private async Task LoadPendingPlansAsync()
@@ -559,39 +589,32 @@ namespace DentalApp.Desktop.ViewModels
             IsBusy = true;
             try
             {
-                // TODO: Load from backend when API is ready
-                await Task.CompletedTask; // Placeholder for future API call
-                
-                // Placeholder data
+                var response = await _apiService.GetAsync<JObject>("/payments/pending-plans");
                 PendingTreatmentPlans.Clear();
-                var plan1 = new TreatmentPlanItem
+                foreach (var token in response?["plans"] as JArray ?? new JArray())
                 {
-                    Id = 1,
-                    PatientName = "Ahmet Yılmaz",
-                    DentistName = "Dr. Ayşe Demir",
-                    ProceduresCount = 3,
-                    TotalCost = 1500m,
-                    IsSelected = false,
-                    ParentViewModel = this
-                };
-                plan1.Procedures.Add(new ProcedureItem { Code = "D001", Name = "Dolgu", Price = 500m, Category = "Restoratif" });
-                plan1.Procedures.Add(new ProcedureItem { Code = "D002", Name = "Temizlik", Price = 400m, Category = "Profilaksi" });
-                plan1.Procedures.Add(new ProcedureItem { Code = "D003", Name = "Kanal Tedavisi", Price = 600m, Category = "Endodonti" });
-                PendingTreatmentPlans.Add(plan1);
-                
-                var plan2 = new TreatmentPlanItem
-                {
-                    Id = 2,
-                    PatientName = "Mehmet Kaya",
-                    DentistName = "Dr. Ahmet Yılmaz",
-                    ProceduresCount = 2,
-                    TotalCost = 800m,
-                    IsSelected = false,
-                    ParentViewModel = this
-                };
-                plan2.Procedures.Add(new ProcedureItem { Code = "D004", Name = "Çekim", Price = 300m, Category = "Cerrahi" });
-                plan2.Procedures.Add(new ProcedureItem { Code = "D005", Name = "Protez", Price = 500m, Category = "Protetik" });
-                PendingTreatmentPlans.Add(plan2);
+                    var items = token["items"] as JArray ?? new JArray();
+                    var plan = new TreatmentPlanItem
+                    {
+                        Id = token.Value<int>("id"),
+                        PatientName = token.Value<string>("patient_name") ?? "Bilinmeyen Hasta",
+                        DentistName = token.Value<string>("dentist_email") ?? "Atanmamış",
+                        ProceduresCount = items.Count,
+                        TotalCost = items.Sum(item => item.Value<decimal?>("cost") ?? 0m),
+                        ParentViewModel = this
+                    };
+                    foreach (var item in items)
+                    {
+                        plan.Procedures.Add(new ProcedureItem
+                        {
+                            Code = item.Value<string>("tooth_number") ?? string.Empty,
+                            Name = item.Value<string>("treatment_type") ?? "İşlem",
+                            Category = item.Value<string>("currency") ?? "TRY",
+                            Price = item.Value<decimal?>("cost") ?? 0m
+                        });
+                    }
+                    PendingTreatmentPlans.Add(plan);
+                }
                 
                 OnPropertyChanged(nameof(SelectedPlansTotal));
             }
@@ -606,7 +629,7 @@ namespace DentalApp.Desktop.ViewModels
             }
         }
         
-        private async Task ApprovePlansAsync()
+        private async Task DecidePlansAsync(bool approved)
         {
             var selectedPlans = PendingTreatmentPlans.Where(p => p.IsSelected).ToList();
             if (selectedPlans.Count == 0)
@@ -619,28 +642,25 @@ namespace DentalApp.Desktop.ViewModels
             IsBusy = true;
             try
             {
-                // TODO: Approve plans via API
-                await Task.CompletedTask; // Placeholder for future API call
+                foreach (var plan in selectedPlans)
+                    await _apiService.PostAsync<object>($"/payments/approve-plan/{plan.Id}", new { approved });
                 
                 var total = selectedPlans.Sum(p => p.TotalCost);
                 
                 System.Windows.MessageBox.Show(
-                    $"{selectedPlans.Count} tedavi planı onaylandı.\nToplam maliyet: {total:F2} ₺\n\nHasta borcu oluşturuldu.",
+                    approved
+                        ? $"{selectedPlans.Count} tedavi planı onaylandı.\nToplam maliyet: {total:F2} ₺\n\nHasta borcu oluşturuldu."
+                        : $"{selectedPlans.Count} tedavi planı reddedildi.",
                     "Başarılı",
                     System.Windows.MessageBoxButton.OK,
                     System.Windows.MessageBoxImage.Information);
                 
-                // Remove approved plans
-                foreach (var plan in selectedPlans)
-                {
-                    PendingTreatmentPlans.Remove(plan);
-                }
-                
-                OnPropertyChanged(nameof(SelectedPlansTotal));
+                await LoadPendingPlansAsync();
+                await LoadIncomeExpenseDataAsync();
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Planlar onaylanırken hata: {ex.Message}", "Hata",
+                System.Windows.MessageBox.Show($"Planlar işlenirken hata: {ex.Message}", "Hata",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
             finally

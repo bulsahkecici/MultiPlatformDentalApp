@@ -408,6 +408,7 @@ async function updateAppointment(req, res, next) {
       endTime,
       status,
       appointmentType,
+      dentistId,
       notes,
       cancellationReason,
     } = req.body || {};
@@ -440,6 +441,11 @@ async function updateAppointment(req, res, next) {
     if (appointmentType !== undefined) {
       setClauses.push(`appointment_type = $${paramIndex++}`);
       params.push(appointmentType);
+    }
+
+    if (dentistId !== undefined) {
+      setClauses.push(`dentist_id = $${paramIndex++}`);
+      params.push(dentistId);
     }
 
     if (notes !== undefined) {

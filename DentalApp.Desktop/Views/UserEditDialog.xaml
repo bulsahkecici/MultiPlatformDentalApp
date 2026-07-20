@@ -1,0 +1,22 @@
+<Window x:Class="DentalApp.Desktop.Views.UserEditDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Kullanıcı Düzenle" SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <materialDesign:Card Padding="24" Width="400">
+        <StackPanel>
+            <TextBlock Text="Kullanıcı Düzenle" Style="{StaticResource MaterialDesignHeadline5TextBlock}" FontWeight="Bold" Margin="0,0,0,20"/>
+            <TextBox x:Name="EmailTextBox" materialDesign:HintAssist.Hint="E-posta" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,16"/>
+            <ComboBox x:Name="RoleComboBox" materialDesign:HintAssist.Hint="Rol" Style="{StaticResource MaterialDesignFloatingHintComboBox}" Margin="0,0,0,24">
+                <ComboBoxItem Content="Patron" Tag="admin"/>
+                <ComboBoxItem Content="Doktor" Tag="dentist"/>
+                <ComboBoxItem Content="Sekreter" Tag="secretary"/>
+            </ComboBox>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="VAZGEÇ" IsCancel="True" Style="{StaticResource MaterialDesignFlatButton}" Margin="0,0,8,0"/>
+                <Button Content="KAYDET" IsDefault="True" Click="Save_Click" Style="{StaticResource MaterialDesignRaisedButton}"/>
+            </StackPanel>
+        </StackPanel>
+    </materialDesign:Card>
+</Window>

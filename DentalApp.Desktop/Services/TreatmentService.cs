@@ -90,6 +90,11 @@ namespace DentalApp.Desktop.Services
             return response?.Treatment;
         }
 
+        public Task DeleteTreatmentAsync(int id)
+        {
+            return _apiService.DeleteAsync($"/treatments/{id}");
+        }
+
         public async Task<bool> CreateTreatmentPlanAsync(int patientId, int? dentistId, string title, string? description, List<TreatmentPlanItem> items)
         {
             var request = new
