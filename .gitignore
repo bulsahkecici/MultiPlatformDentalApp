@@ -41,3 +41,6 @@ dental-app-web/.angular/
 # Crash / app logs
 crash_log.txt
 DentalApp.Desktop/crash_log.txt
+
+# Flutter SDK (asla repoya girmemeli — C:\dev\flutter'da kurulu)
+flutter/

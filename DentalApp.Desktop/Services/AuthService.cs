@@ -42,6 +42,23 @@ namespace DentalApp.Desktop.Services
 
         public void Logout()
         {
+            // Refresh token'ı sunucuda iptal et (fire-and-forget; başarısız olsa da lokal çıkış tamamlanır)
+            var refreshToken = _apiService.RefreshToken;
+            if (!string.IsNullOrEmpty(refreshToken))
+            {
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _apiService.PostAsync<object>("/auth/logout", new { refreshToken });
+                    }
+                    catch
+                    {
+                        // Sunucuya ulaşılamıyorsa yoksay
+                    }
+                });
+            }
+
             CurrentUser = null;
             _apiService.ClearTokens();
         }

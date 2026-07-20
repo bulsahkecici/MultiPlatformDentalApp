@@ -17,15 +17,25 @@ async function getStatistics(req, res, next) {
   try {
     // Calculate date ranges
     const now = new Date();
-    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const thisMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
-    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
-    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0];
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+      .toISOString()
+      .split('T')[0];
+    const thisMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      .toISOString()
+      .split('T')[0];
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      .toISOString()
+      .split('T')[0];
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
+      .toISOString()
+      .split('T')[0];
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+      .toISOString()
+      .split('T')[0];
 
     // Total patients
     const totalPatientsResult = await query(
-      `SELECT COUNT(*) as count FROM patients WHERE deleted_at IS NULL`,
+      'SELECT COUNT(*) as count FROM patients WHERE deleted_at IS NULL',
     );
     const totalPatients = parseInt(totalPatientsResult.rows[0].count, 10);
 
@@ -35,7 +45,10 @@ async function getStatistics(req, res, next) {
        WHERE created_at >= $1 AND created_at <= $2 AND deleted_at IS NULL`,
       [lastMonthStart, lastMonthEnd],
     );
-    const lastMonthPatients = parseInt(lastMonthPatientsResult.rows[0].count, 10);
+    const lastMonthPatients = parseInt(
+      lastMonthPatientsResult.rows[0].count,
+      10,
+    );
 
     // This month patients
     const thisMonthPatientsResult = await query(
@@ -43,7 +56,10 @@ async function getStatistics(req, res, next) {
        WHERE created_at >= $1 AND created_at <= $2 AND deleted_at IS NULL`,
       [thisMonthStart, thisMonthEnd],
     );
-    const thisMonthPatients = parseInt(thisMonthPatientsResult.rows[0].count, 10);
+    const thisMonthPatients = parseInt(
+      thisMonthPatientsResult.rows[0].count,
+      10,
+    );
 
     // Last month financial (from treatments)
     const lastMonthFinancialResult = await query(
@@ -51,7 +67,9 @@ async function getStatistics(req, res, next) {
        WHERE treatment_date >= $1 AND treatment_date <= $2 AND cost IS NOT NULL`,
       [lastMonthStart, lastMonthEnd],
     );
-    const lastMonthFinancial = parseFloat(lastMonthFinancialResult.rows[0].total || 0);
+    const lastMonthFinancial = parseFloat(
+      lastMonthFinancialResult.rows[0].total || 0,
+    );
 
     // This month financial
     const thisMonthFinancialResult = await query(
@@ -59,7 +77,9 @@ async function getStatistics(req, res, next) {
        WHERE treatment_date >= $1 AND treatment_date <= $2 AND cost IS NOT NULL`,
       [thisMonthStart, thisMonthEnd],
     );
-    const thisMonthFinancial = parseFloat(thisMonthFinancialResult.rows[0].total || 0);
+    const thisMonthFinancial = parseFloat(
+      thisMonthFinancialResult.rows[0].total || 0,
+    );
 
     // Last month transactions (treatments count)
     const lastMonthTransactionsResult = await query(
@@ -67,7 +87,10 @@ async function getStatistics(req, res, next) {
        WHERE treatment_date >= $1 AND treatment_date <= $2`,
       [lastMonthStart, lastMonthEnd],
     );
-    const lastMonthTransactions = parseInt(lastMonthTransactionsResult.rows[0].count, 10);
+    const lastMonthTransactions = parseInt(
+      lastMonthTransactionsResult.rows[0].count,
+      10,
+    );
 
     // Upcoming appointments count
     const upcomingAppointmentsResult = await query(
@@ -75,7 +98,10 @@ async function getStatistics(req, res, next) {
        WHERE appointment_date >= $1 AND status NOT IN ('cancelled', 'no_show')`,
       [now.toISOString().split('T')[0]],
     );
-    const upcomingAppointmentsCount = parseInt(upcomingAppointmentsResult.rows[0].count, 10);
+    const upcomingAppointmentsCount = parseInt(
+      upcomingAppointmentsResult.rows[0].count,
+      10,
+    );
 
     // Total appointments
     const appointmentsResult = await query(
@@ -94,18 +120,25 @@ async function getStatistics(req, res, next) {
     );
     const treatments = treatmentsResult.rows[0];
 
-    // Total revenue from invoices
-    const invoicesResult = await query(
+    // Financials from payments/patient_debts (invoices tablosuna hiç yazılmıyor;
+    // gerçek veriler payments + patient_debts'te — JSON şekli istemciler için korunuyor)
+    const paymentsAggResult = await query(
       `SELECT COUNT(*) as count,
-       COALESCE(SUM(total), 0) as total_revenue,
-       COALESCE(SUM(CASE WHEN status = 'paid' THEN total ELSE 0 END), 0) as paid_revenue
-       FROM invoices`,
+       COALESCE(SUM(amount), 0) as paid_revenue
+       FROM payments`,
     );
-    const invoices = invoicesResult.rows[0];
+    const debtsAggResult = await query(
+      'SELECT COALESCE(SUM(total_debt), 0) as total_billed FROM patient_debts',
+    );
+    const invoices = {
+      count: paymentsAggResult.rows[0].count,
+      total_revenue: debtsAggResult.rows[0].total_billed,
+      paid_revenue: paymentsAggResult.rows[0].paid_revenue,
+    };
 
     // Dentists count
     const dentistsResult = await query(
-      `SELECT COUNT(*) as count FROM users WHERE roles LIKE '%dentist%' AND deleted_at IS NULL`,
+      "SELECT COUNT(*) as count FROM users WHERE roles LIKE '%dentist%' AND deleted_at IS NULL",
     );
     const totalDentists = parseInt(dentistsResult.rows[0].count, 10);
 

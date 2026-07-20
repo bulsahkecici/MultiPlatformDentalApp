@@ -8,22 +8,22 @@ let transporter = null;
  * Initialize email transporter
  */
 function initializeTransporter() {
-    if (!config.email.enabled) {
-        logger.info('Email service is disabled');
-        return;
-    }
+  if (!config.email.enabled) {
+    logger.info('Email service is disabled');
+    return;
+  }
 
-    transporter = nodemailer.createTransport({
-        host: config.email.host,
-        port: config.email.port,
-        secure: config.email.secure,
-        auth: {
-            user: config.email.user,
-            pass: config.email.pass,
-        },
-    });
+  transporter = nodemailer.createTransport({
+    host: config.email.host,
+    port: config.email.port,
+    secure: config.email.secure,
+    auth: {
+      user: config.email.user,
+      pass: config.email.pass,
+    },
+  });
 
-    logger.info('Email service initialized');
+  logger.info('Email service initialized');
 }
 
 /**
@@ -36,29 +36,29 @@ function initializeTransporter() {
  * @returns {Promise<void>}
  */
 async function sendEmail({ to, subject, html, text }) {
-    if (!config.email.enabled) {
-        logger.warn({ to, subject }, 'Email not sent (service disabled)');
-        return;
-    }
+  if (!config.email.enabled) {
+    logger.warn({ to, subject }, 'Email not sent (service disabled)');
+    return;
+  }
 
-    if (!transporter) {
-        initializeTransporter();
-    }
+  if (!transporter) {
+    initializeTransporter();
+  }
 
-    try {
-        await transporter.sendMail({
-            from: config.email.from,
-            to,
-            subject,
-            html,
-            text,
-        });
+  try {
+    await transporter.sendMail({
+      from: config.email.from,
+      to,
+      subject,
+      html,
+      text,
+    });
 
-        logger.info({ to, subject }, 'Email sent successfully');
-    } catch (err) {
-        logger.error({ err, to, subject }, 'Failed to send email');
-        throw err;
-    }
+    logger.info({ to, subject }, 'Email sent successfully');
+  } catch (err) {
+    logger.error({ err, to, subject }, 'Failed to send email');
+    throw err;
+  }
 }
 
 /**
@@ -68,9 +68,9 @@ async function sendEmail({ to, subject, html, text }) {
  * @returns {Promise<void>}
  */
 async function sendVerificationEmail(email, token) {
-    const verificationUrl = `${config.appUrl}/api/auth/verify-email/${token}`;
+  const verificationUrl = `${config.appUrl}/api/auth/verify-email/${token}`;
 
-    const html = `
+  const html = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -107,7 +107,7 @@ async function sendVerificationEmail(email, token) {
     </html>
   `;
 
-    const text = `
+  const text = `
     Verify Your Email
     
     Thank you for registering with our Dental App!
@@ -120,12 +120,12 @@ async function sendVerificationEmail(email, token) {
     If you didn't create an account, please ignore this email.
   `;
 
-    await sendEmail({
-        to: email,
-        subject: 'Verify Your Email - Dental App',
-        html,
-        text,
-    });
+  await sendEmail({
+    to: email,
+    subject: 'Verify Your Email - Dental App',
+    html,
+    text,
+  });
 }
 
 /**
@@ -135,9 +135,9 @@ async function sendVerificationEmail(email, token) {
  * @returns {Promise<void>}
  */
 async function sendPasswordResetEmail(email, token) {
-    const resetUrl = `${config.appUrl}/reset-password?token=${token}`;
+  const resetUrl = `${config.appUrl}/reset-password?token=${token}`;
 
-    const html = `
+  const html = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -176,7 +176,7 @@ async function sendPasswordResetEmail(email, token) {
     </html>
   `;
 
-    const text = `
+  const text = `
     Password Reset Request
     
     We received a request to reset your password.
@@ -189,12 +189,12 @@ async function sendPasswordResetEmail(email, token) {
     If you didn't request a password reset, please ignore this email.
   `;
 
-    await sendEmail({
-        to: email,
-        subject: 'Password Reset Request - Dental App',
-        html,
-        text,
-    });
+  await sendEmail({
+    to: email,
+    subject: 'Password Reset Request - Dental App',
+    html,
+    text,
+  });
 }
 
 /**
@@ -204,7 +204,7 @@ async function sendPasswordResetEmail(email, token) {
  * @returns {Promise<void>}
  */
 async function sendWelcomeEmail(email, name = '') {
-    const html = `
+  const html = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -235,7 +235,7 @@ async function sendWelcomeEmail(email, name = '') {
     </html>
   `;
 
-    const text = `
+  const text = `
     Welcome to Dental App!
     
     Hi${name ? ` ${name}` : ''},
@@ -245,23 +245,23 @@ async function sendWelcomeEmail(email, name = '') {
     You can now access all features of our Dental Management System.
   `;
 
-    await sendEmail({
-        to: email,
-        subject: 'Welcome to Dental App!',
-        html,
-        text,
-    });
+  await sendEmail({
+    to: email,
+    subject: 'Welcome to Dental App!',
+    html,
+    text,
+  });
 }
 
 // Initialize on module load
 if (config.email && config.email.enabled) {
-    initializeTransporter();
+  initializeTransporter();
 }
 
 module.exports = {
-    sendEmail,
-    sendVerificationEmail,
-    sendPasswordResetEmail,
-    sendWelcomeEmail,
-    initializeTransporter,
+  sendEmail,
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+  sendWelcomeEmail,
+  initializeTransporter,
 };

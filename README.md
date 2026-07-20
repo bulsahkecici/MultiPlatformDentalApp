@@ -2,6 +2,29 @@
 
 A secure, full-featured dental practice management system built with Node.js, Express, and PostgreSQL.
 
+## Platforms
+
+| Platform | Teknoloji | Konum |
+|---|---|---|
+| Backend API + Socket.IO | Node.js / Express / PostgreSQL | `src/`, `db/` |
+| Web | Angular 18 + Material | `dental-app-web/` |
+| Desktop | WPF (.NET 8) + MaterialDesign | `DentalApp.Desktop/` |
+| Mobil | Flutter (Android/iOS) | `dental_app_mobile/` |
+
+Gerçek zamanlı bildirimler tüm istemcilerde **Socket.IO** ile çalışır
+(web: `socket.io-client`, desktop: `SocketIOClient` NuGet, mobil: `socket_io_client`).
+
+> **Not — TDB tarifesi ve diş şeması:** `tdb_2026_tarife_full.json` ve
+> `mouth_chart.png` üç istemcide de ayrı bundle edilir
+> (`dental-app-web/src/assets/`, `DentalApp.Desktop/Data|Assets/`,
+> `dental_app_mobile/assets/`). Tarife güncellemesinde ÜÇ kopya da
+> güncellenmelidir.
+
+## Deployment
+
+İnternet üzerinden VPS dağıtımı (nginx + HTTPS + PM2) için:
+[deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md)
+
 ## Features
 
 ### Security

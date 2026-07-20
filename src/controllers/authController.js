@@ -3,7 +3,10 @@ const validator = require('validator');
 const { query } = require('../db');
 const { AppError } = require('../utils/errorResponder');
 const { parseRolesCsv } = require('../utils/roles');
-const { validatePasswordStrength, isPasswordReused } = require('../utils/passwordValidator');
+const {
+  validatePasswordStrength,
+  isPasswordReused,
+} = require('../utils/passwordValidator');
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -104,7 +107,11 @@ async function login(req, res, next) {
     // Verify password
     const passwordValid = await bcrypt.compare(password, user.password_hash);
     if (!passwordValid) {
-      const failureResult = await recordFailedAttempt(email, ipAddress, userAgent);
+      const failureResult = await recordFailedAttempt(
+        email,
+        ipAddress,
+        userAgent,
+      );
 
       await logAuthEvent({
         eventType: AuditEventType.LOGIN_FAILED,
@@ -131,10 +138,7 @@ async function login(req, res, next) {
     // Check if email is verified (if email service is enabled)
     if (config.email.enabled && !user.email_verified) {
       return next(
-        new AppError(
-          'Please verify your email address before logging in',
-          403,
-        ),
+        new AppError('Please verify your email address before logging in', 403),
       );
     }
 
@@ -356,7 +360,11 @@ async function resetPassword(req, res, next) {
     );
 
     const previousHashes = historyResult.rows.map((row) => row.password_hash);
-    const isReused = await isPasswordReused(newPassword, previousHashes, bcrypt.compare);
+    const isReused = await isPasswordReused(
+      newPassword,
+      previousHashes,
+      bcrypt.compare,
+    );
 
     if (isReused) {
       return next(
@@ -490,7 +498,8 @@ async function resendVerification(req, res, next) {
     }
 
     return res.status(200).json({
-      message: 'If the email exists and is unverified, a verification link has been sent',
+      message:
+        'If the email exists and is unverified, a verification link has been sent',
     });
   } catch (err) {
     return next(new AppError('Failed to resend verification email', 500));

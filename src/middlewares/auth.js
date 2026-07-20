@@ -72,7 +72,7 @@ function requireAnyRole(...roles) {
     if (!req.user || !req.user.roles || !Array.isArray(req.user.roles)) {
       return next(new AppError('Forbidden', 403));
     }
-    const hasRole = roles.some(role => req.user.roles.includes(role));
+    const hasRole = roles.some((role) => req.user.roles.includes(role));
     if (!hasRole) {
       return next(new AppError('Forbidden', 403));
     }
@@ -88,7 +88,9 @@ function canViewPrices(req) {
   if (!req.user || !req.user.roles || !Array.isArray(req.user.roles)) {
     return false;
   }
-  return req.user.roles.includes('admin') || req.user.roles.includes('secretary');
+  return (
+    req.user.roles.includes('admin') || req.user.roles.includes('secretary')
+  );
 }
 
 /**
@@ -101,12 +103,12 @@ function isDentist(req) {
   return req.user.roles.includes('dentist');
 }
 
-module.exports = { 
-  requireAuth, 
-  requireRole, 
-  requireSelf, 
+module.exports = {
+  requireAuth,
+  requireRole,
+  requireSelf,
   requireSelfOrAdmin,
   requireAnyRole,
   canViewPrices,
-  isDentist
+  isDentist,
 };

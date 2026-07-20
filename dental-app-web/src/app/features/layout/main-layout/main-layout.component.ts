@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -8,8 +8,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
-import { User } from '../../../core/models/models';
+import { SocketService } from '../../../core/services/socket.service';
+import { NotificationService } from '../../../core/services/notification.service';
+import { User, Notification } from '../../../core/models/models';
 
 interface MenuItem {
   label: string;
@@ -32,7 +37,9 @@ interface MenuItem {
     MatIconModule,
     MatListModule,
     MatBadgeModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatMenuModule,
+    MatSnackBarModule
   ],
   template: `
     <mat-sidenav-container class="sidenav-container">
@@ -84,6 +91,27 @@ interface MenuItem {
             <mat-icon>menu</mat-icon>
           </button>
           <span class="spacer"></span>
+          <button mat-icon-button [matMenuTriggerFor]="notifMenu" matTooltip="Bildirimler"
+                  (menuOpened)="onNotificationsOpened()">
+            <mat-icon [matBadge]="unreadCount > 0 ? unreadCount : null" matBadgeColor="warn">
+              notifications
+            </mat-icon>
+          </button>
+          <mat-menu #notifMenu="matMenu" class="notification-menu">
+            <div class="notif-header" (click)="$event.stopPropagation()">
+              <span>Bildirimler</span>
+              <button mat-button *ngIf="notifications.length > 0" (click)="markAllRead()">
+                Tümünü okundu işaretle
+              </button>
+            </div>
+            <div *ngIf="notifications.length === 0" class="notif-empty">Bildirim yok</div>
+            <button mat-menu-item *ngFor="let n of notifications">
+              <div class="notif-item">
+                <strong>{{ n.title }}</strong>
+                <small>{{ n.message }}</small>
+              </div>
+            </button>
+          </mat-menu>
           <span>{{ currentUser?.email }}</span>
           <button mat-icon-button (click)="logout()" matTooltip="Çıkış">
             <mat-icon>logout</mat-icon>
@@ -131,16 +159,43 @@ interface MenuItem {
     .content {
       padding: 20px;
     }
+    .notif-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+      font-weight: bold;
+      border-bottom: 1px solid rgba(0,0,0,0.12);
+    }
+    .notif-empty {
+      padding: 16px;
+      color: rgba(0,0,0,0.54);
+      text-align: center;
+    }
+    .notif-item {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.3;
+    }
+    .notif-item small {
+      color: rgba(0,0,0,0.6);
+    }
   `]
 })
-export class MainLayoutComponent implements OnInit {
+export class MainLayoutComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   isAdmin = false;
   isDentist = false;
   isSecretary = false;
+  unreadCount = 0;
+  notifications: Notification[] = [];
+  private notifSub?: Subscription;
 
   constructor(
     private authService: AuthService,
+    private socketService: SocketService,
+    private notificationService: NotificationService,
+    private snackBar: MatSnackBar,
     private router: Router
   ) {}
 
@@ -152,6 +207,45 @@ export class MainLayoutComponent implements OnInit {
         this.isDentist = user.roles.includes('dentist');
         this.isSecretary = user.roles.includes('secretary');
       }
+    });
+
+    // Gerçek zamanlı bildirim bağlantısı (AuthGuard arkasındayız, token mevcut)
+    const token = this.authService.getAccessToken();
+    if (token) {
+      this.socketService.connect(token);
+    }
+    this.notifSub = this.socketService.notification$.subscribe(n => {
+      this.unreadCount++;
+      this.snackBar.open(`${n.title}: ${n.message}`, 'Kapat', { duration: 5000 });
+    });
+    this.refreshUnreadCount();
+  }
+
+  ngOnDestroy(): void {
+    this.notifSub?.unsubscribe();
+    this.socketService.disconnect();
+  }
+
+  onNotificationsOpened(): void {
+    this.notificationService.getNotifications(20).subscribe({
+      next: res => (this.notifications = res.notifications ?? []),
+      error: () => (this.notifications = [])
+    });
+  }
+
+  markAllRead(): void {
+    this.notificationService.markAllAsRead().subscribe({
+      next: () => {
+        this.unreadCount = 0;
+        this.refreshUnreadCount();
+      }
+    });
+  }
+
+  private refreshUnreadCount(): void {
+    this.notificationService.getUnreadCount().subscribe({
+      next: res => (this.unreadCount = res.count ?? 0),
+      error: () => (this.unreadCount = 0)
     });
   }
 

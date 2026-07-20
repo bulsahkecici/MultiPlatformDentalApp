@@ -58,9 +58,31 @@ namespace DentalApp.Desktop.Models
     {
         [JsonProperty("users")]
         public List<User> Users { get; set; } = new();
-        
+
         [JsonProperty("pagination")]
         public PaginationInfo Pagination { get; set; } = new();
+    }
+
+    /// <summary>GET /api/users/dentists yanıtı — dişhekimi seçicileri için.</summary>
+    public class DentistsResponse
+    {
+        [JsonProperty("dentists")]
+        public List<DentistDto> Dentists { get; set; } = new();
+    }
+
+    public class DentistDto
+    {
+        [JsonProperty("id")]
+        public int Id { get; set; }
+
+        [JsonProperty("email")]
+        public string Email { get; set; } = string.Empty;
+
+        [JsonProperty("firstName")]
+        public string FirstName { get; set; } = string.Empty;
+
+        [JsonProperty("lastName")]
+        public string LastName { get; set; } = string.Empty;
     }
 
     public class RolesConverter : JsonConverter<List<string>>

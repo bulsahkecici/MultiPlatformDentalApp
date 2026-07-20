@@ -442,7 +442,13 @@
                         </DockPanel>
                     </materialDesign:ColorZone>
 
-                    <ContentControl Content="{Binding CurrentView}" Margin="10"/>
+                    <Grid>
+                        <ContentControl Content="{Binding CurrentView}" Margin="10"/>
+                        <materialDesign:Snackbar MessageQueue="{Binding NotificationQueue}"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Bottom"
+                                                 Margin="0,0,0,16"/>
+                    </Grid>
                 </DockPanel>
             </materialDesign:DrawerHost>
         </materialDesign:DialogHost>

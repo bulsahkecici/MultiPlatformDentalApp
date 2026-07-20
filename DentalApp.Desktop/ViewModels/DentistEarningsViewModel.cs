@@ -85,34 +85,45 @@ namespace DentalApp.Desktop.ViewModels
             RefreshCommand = new RelayCommand(async _ => await LoadEarningsAsync(), _ => !IsBusy);
         }
 
-        public Task LoadEarningsAsync()
+        public async Task LoadEarningsAsync()
         {
             IsBusy = true;
             try
             {
-                // TODO: Load from backend when API is ready
-                // Placeholder data
-                Salary = 15000m; // Placeholder
-                TotalTurnover = 50000m; // Placeholder - toplam yaptığı işlerin maliyeti
-                CommissionRate = 30m; // Placeholder - %30
-                PaidTurnoverShare = 15000m; // Placeholder - ödenen ciro payı (TotalTurnover * CommissionRate / 100)
-                
-                // Calculate total earnings
-                CalculateTotalEarnings();
-                
-                // TODO: Load treatments from API
+                // Backend: GET /api/dentist/earnings (web dentist-earnings bileşeniyle aynı sözleşme)
+                var response = await _apiService.GetAsync<DentistEarningsResponse>("/dentist/earnings");
+
+                if (response?.Earnings != null)
+                {
+                    Salary = response.Earnings.Salary;
+                    TotalTurnover = response.Earnings.TotalTurnover;
+                    CommissionRate = response.Earnings.CommissionRate;
+                    PaidTurnoverShare = response.Earnings.PaidTurnoverShare;
+                    CalculateTotalEarnings();
+                }
+
                 Treatments.Clear();
+                if (response?.Treatments != null)
+                {
+                    foreach (var treatment in response.Treatments)
+                    {
+                        Treatments.Add(treatment);
+                    }
+                }
+            }
+            catch (UnauthorizedException)
+            {
+                // ApiService OnUnauthorized eventi login'e yönlendirir
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Kazanç bilgileri yüklenirken hata: {ex.Message}", "Hata", 
+                System.Windows.MessageBox.Show($"Kazanç bilgileri yüklenirken hata: {ex.Message}", "Hata",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
             finally
             {
                 IsBusy = false;
             }
-            return Task.CompletedTask;
         }
     }
 
@@ -127,14 +138,20 @@ namespace DentalApp.Desktop.ViewModels
 
     public class EarningsData
     {
-        [Newtonsoft.Json.JsonProperty("totalRevenue")]
-        public decimal TotalRevenue { get; set; }
+        [Newtonsoft.Json.JsonProperty("totalTurnover")]
+        public decimal TotalTurnover { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("paidTurnoverShare")]
+        public decimal PaidTurnoverShare { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("totalEarnings")]
+        public decimal TotalEarnings { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("salary")]
+        public decimal Salary { get; set; }
 
         [Newtonsoft.Json.JsonProperty("commissionRate")]
         public decimal CommissionRate { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("earnings")]
-        public decimal Earnings { get; set; }
 
         [Newtonsoft.Json.JsonProperty("treatmentCount")]
         public int TreatmentCount { get; set; }

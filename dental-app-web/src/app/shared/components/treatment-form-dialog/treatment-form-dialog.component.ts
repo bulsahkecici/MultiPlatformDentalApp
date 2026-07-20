@@ -333,7 +333,7 @@ export class TreatmentFormDialogComponent implements OnInit {
 
   isFormValid(): boolean {
     if (this.isPlanMode) {
-      return this.treatmentForm.get('patientId')?.valid && this.plannedProcedures.length > 0;
+      return !!this.treatmentForm.get('patientId')?.valid && this.plannedProcedures.length > 0;
     }
     return this.treatmentForm.valid;
   }

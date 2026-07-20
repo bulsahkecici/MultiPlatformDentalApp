@@ -418,6 +418,21 @@ BEGIN
     END IF;
 END $$;
 
+-- Notifications table (kullanıcı bildirimleri — notificationHub/notification.js tarafından kullanılır)
+CREATE TABLE IF NOT EXISTS notifications (
+  id BIGSERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type VARCHAR(50) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  message TEXT,
+  data JSONB,
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications (user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications (created_at);
+
 -- Seed discount reasons
 INSERT INTO discount_reasons (name, description) VALUES
   ('SGK Anlaşması', 'SGK ile yapılan anlaşma kapsamında indirim'),

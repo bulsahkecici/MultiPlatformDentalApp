@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../core/api_client.dart';
 import '../providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -28,17 +29,23 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final success = await context.read<AuthProvider>().login(
-            _emailController.text,
+      await context.read<AuthProvider>().login(
+            _emailController.text.trim(),
             _passwordController.text,
           );
-
-      if (success && mounted) {
-        // Navigation is handled by the main wrapper based on auth state
-        // or we can push manually if preferred, but reactive is better.
-      } else if (mounted) {
+      // Yönlendirme AuthWrapper tarafından reaktif yapılır
+    } on ApiException catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Giriş başarısız. Lütfen bilgilerinizi kontrol edin.')),
+          SnackBar(content: Text(e.message)),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content:
+                  Text('Giriş başarısız. Lütfen bilgilerinizi kontrol edin.')),
         );
       }
     } finally {

@@ -1,15 +1,14 @@
 const rateLimit = require('express-rate-limit');
-const slowDown = require('express-slow-down');
 
 /**
- * Get client IP address from request (trust proxy headers)
+ * Get client IP address from request.
+ * req.ip, server.js'teki `trust proxy` ayarını dikkate alır (proxy arkasında doğru IP).
  * @param {Object} req - Express request
  * @returns {string} IP address
  */
 function getClientIp(req) {
   return (
-    req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-    req.headers['x-real-ip'] ||
+    req.ip ||
     req.connection?.remoteAddress ||
     req.socket?.remoteAddress ||
     'unknown'
@@ -25,7 +24,7 @@ const generalLimiter = rateLimit({
   max: 300,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: getClientIp,
+  // Varsayılan keyGenerator kullanılıyor: req.ip tabanlı, IPv6-güvenli (trust proxy ayarlı)
   handler: (req, res) => {
     res.status(429).json({
       error: {
@@ -44,13 +43,12 @@ const authLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: getClientIp,
+  // Varsayılan keyGenerator kullanılıyor: req.ip tabanlı, IPv6-güvenli (trust proxy ayarlı)
   skipSuccessfulRequests: false, // Count all requests
   handler: (req, res) => {
     res.status(429).json({
       error: {
-        message:
-          'Too many authentication attempts, please try again later.',
+        message: 'Too many authentication attempts, please try again later.',
       },
     });
   },
@@ -65,7 +63,7 @@ const mutateLimiter = rateLimit({
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: getClientIp,
+  // Varsayılan keyGenerator kullanılıyor: req.ip tabanlı, IPv6-güvenli (trust proxy ayarlı)
   handler: (req, res) => {
     res.status(429).json({
       error: {
@@ -73,18 +71,6 @@ const mutateLimiter = rateLimit({
       },
     });
   },
-});
-
-/**
- * Progressive slow-down for repeated requests
- * Slows down responses after 5 requests in 1 minute
- */
-const speedLimiter = slowDown({
-  windowMs: 60 * 1000, // 1 minute
-  delayAfter: 5, // Allow 5 requests per minute at full speed
-  delayMs: (hits) => hits * 100, // Add 100ms delay per request after delayAfter
-  maxDelayMs: 2000, // Maximum delay of 2 seconds
-  keyGenerator: getClientIp,
 });
 
 /**
@@ -96,13 +82,12 @@ const passwordResetLimiter = rateLimit({
   max: 3,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: getClientIp,
+  // Varsayılan keyGenerator kullanılıyor: req.ip tabanlı, IPv6-güvenli (trust proxy ayarlı)
   skipSuccessfulRequests: false,
   handler: (req, res) => {
     res.status(429).json({
       error: {
-        message:
-          'Too many password reset requests, please try again later.',
+        message: 'Too many password reset requests, please try again later.',
       },
     });
   },
@@ -117,12 +102,11 @@ const emailVerificationLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: getClientIp,
+  // Varsayılan keyGenerator kullanılıyor: req.ip tabanlı, IPv6-güvenli (trust proxy ayarlı)
   handler: (req, res) => {
     res.status(429).json({
       error: {
-        message:
-          'Too many verification requests, please try again later.',
+        message: 'Too many verification requests, please try again later.',
       },
     });
   },
@@ -132,7 +116,6 @@ module.exports = {
   generalLimiter,
   authLimiter,
   mutateLimiter,
-  speedLimiter,
   passwordResetLimiter,
   emailVerificationLimiter,
   getClientIp,

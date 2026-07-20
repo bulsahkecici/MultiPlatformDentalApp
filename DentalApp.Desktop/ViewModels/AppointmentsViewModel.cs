@@ -131,13 +131,23 @@ namespace DentalApp.Desktop.ViewModels
         {
             try
             {
-                // TODO: Load from /api/users?role=dentist when API is ready
-                // For now, use placeholder data
+                // Backend: GET /api/users/dentists (tüm personel erişebilir)
+                var response = await _apiService.GetAsync<DentistsResponse>("/users/dentists");
                 Dentists.Clear();
-                Dentists.Add(new DentistInfo { Id = 1, Name = "Dr. Ahmet Yılmaz", Email = "ahmet@example.com" });
-                Dentists.Add(new DentistInfo { Id = 2, Name = "Dr. Ayşe Demir", Email = "ayse@example.com" });
-                Dentists.Add(new DentistInfo { Id = 3, Name = "Dr. Mehmet Kaya", Email = "mehmet@example.com" });
-                
+                if (response?.Dentists != null)
+                {
+                    foreach (var dentist in response.Dentists)
+                    {
+                        var name = $"{dentist.FirstName} {dentist.LastName}".Trim();
+                        Dentists.Add(new DentistInfo
+                        {
+                            Id = dentist.Id,
+                            Name = string.IsNullOrWhiteSpace(name) ? dentist.Email : name,
+                            Email = dentist.Email,
+                        });
+                    }
+                }
+
                 // After loading dentists, refresh slots
                 await RefreshSlotsAsync();
             }

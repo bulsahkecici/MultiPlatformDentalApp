@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, of, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import { User, LoginResponse } from '../models/models';
 
@@ -23,6 +23,29 @@ export class AuthService {
 
     get isAuthenticated(): boolean {
         return !!this.getAccessToken();
+    }
+
+    /**
+     * Uygulama açılışında oturumu backend ile doğrula (GET /api/auth/me).
+     * Token geçersizse temizler; APP_INITIALIZER üzerinden çağrılır.
+     */
+    restoreSession(): Observable<User | null> {
+        const token = this.getAccessToken();
+        if (!token) {
+            return of(null);
+        }
+        return this.apiService.get<{ user: User }>('/api/auth/me').pipe(
+            tap(res => {
+                this.currentUserSubject.next(res.user);
+                this.saveUserToStorage(res.user);
+            }),
+            catchError(() => {
+                this.clearTokens();
+                this.currentUserSubject.next(null);
+                localStorage.removeItem('currentUser');
+                return of(null);
+            })
+        ) as Observable<User | null>;
     }
 
     login(email: string, password: string): Observable<LoginResponse> {

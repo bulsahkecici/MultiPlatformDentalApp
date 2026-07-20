@@ -87,54 +87,52 @@ export class ToothChartComponent {
     @Input() selectedTeeth: number[] = [];
     @Output() teethChanged = new EventEmitter<number[]>();
 
-    // FDI numbering system coordinates (matched from Desktop app)
+    /**
+     * FDI numaralandırma sistemi hotspot koordinatları.
+     * mouth_chart.png'nin doğal boyutlarına (1024x482) göre piksel cinsinden ölçüldü;
+     * SVG viewBox aynı boyutta olduğundan görüntü hangi boyutta çizilirse çizilsin ölçeklenir.
+     * Üst sıra soldan sağa: 18..11 | 21..28 — Alt sıra soldan sağa: 38..31 | 41..48
+     */
     hotspots: ToothHotspot[] = [
-        // Upper Right (11-18)
-        { toothNumber: 11, x: 200, y: 50, width: 40, height: 50 },
-        { toothNumber: 12, x: 250, y: 50, width: 40, height: 50 },
-        { toothNumber: 13, x: 300, y: 50, width: 40, height: 50 },
-        { toothNumber: 14, x: 350, y: 50, width: 40, height: 50 },
-        { toothNumber: 15, x: 400, y: 50, width: 40, height: 50 },
-        { toothNumber: 16, x: 450, y: 50, width: 40, height: 50 },
-        { toothNumber: 17, x: 500, y: 50, width: 40, height: 50 },
-        { toothNumber: 18, x: 550, y: 50, width: 40, height: 50 },
-        // Upper Left (21-28)
-        { toothNumber: 21, x: 160, y: 50, width: 40, height: 50 },
-        { toothNumber: 22, x: 120, y: 50, width: 40, height: 50 },
-        { toothNumber: 23, x: 80, y: 50, width: 40, height: 50 },
-        { toothNumber: 24, x: 40, y: 50, width: 40, height: 50 },
-        { toothNumber: 25, x: 0, y: 50, width: 40, height: 50 },
-        // Add more coordinates as needed. For now using placeholder logic.
+        // Üst çene (y: 95, yükseklik: 135)
+        { toothNumber: 18, x: 86, y: 95, width: 52, height: 135 },
+        { toothNumber: 17, x: 141, y: 95, width: 54, height: 135 },
+        { toothNumber: 16, x: 200, y: 95, width: 56, height: 135 },
+        { toothNumber: 15, x: 257, y: 95, width: 48, height: 135 },
+        { toothNumber: 14, x: 306, y: 95, width: 48, height: 135 },
+        { toothNumber: 13, x: 355, y: 95, width: 48, height: 135 },
+        { toothNumber: 12, x: 405, y: 95, width: 50, height: 135 },
+        { toothNumber: 11, x: 457, y: 95, width: 52, height: 135 },
+        { toothNumber: 21, x: 517, y: 95, width: 52, height: 135 },
+        { toothNumber: 22, x: 569, y: 95, width: 50, height: 135 },
+        { toothNumber: 23, x: 621, y: 95, width: 48, height: 135 },
+        { toothNumber: 24, x: 669, y: 95, width: 48, height: 135 },
+        { toothNumber: 25, x: 717, y: 95, width: 48, height: 135 },
+        { toothNumber: 26, x: 768, y: 95, width: 56, height: 135 },
+        { toothNumber: 27, x: 829, y: 95, width: 54, height: 135 },
+        { toothNumber: 28, x: 884, y: 95, width: 52, height: 135 },
+        // Alt çene (y: 252, yükseklik: 170)
+        { toothNumber: 38, x: 96, y: 252, width: 62, height: 170 },
+        { toothNumber: 37, x: 160, y: 252, width: 64, height: 170 },
+        { toothNumber: 36, x: 231, y: 252, width: 66, height: 170 },
+        { toothNumber: 35, x: 297, y: 252, width: 50, height: 170 },
+        { toothNumber: 34, x: 349, y: 252, width: 46, height: 170 },
+        { toothNumber: 33, x: 396, y: 252, width: 40, height: 170 },
+        { toothNumber: 32, x: 440, y: 252, width: 36, height: 170 },
+        { toothNumber: 31, x: 475, y: 252, width: 34, height: 170 },
+        { toothNumber: 41, x: 520, y: 252, width: 34, height: 170 },
+        { toothNumber: 42, x: 553, y: 252, width: 34, height: 170 },
+        { toothNumber: 43, x: 589, y: 252, width: 38, height: 170 },
+        { toothNumber: 44, x: 630, y: 252, width: 44, height: 170 },
+        { toothNumber: 45, x: 677, y: 252, width: 46, height: 170 },
+        { toothNumber: 46, x: 729, y: 252, width: 62, height: 170 },
+        { toothNumber: 47, x: 801, y: 252, width: 62, height: 170 },
+        { toothNumber: 48, x: 867, y: 252, width: 60, height: 170 },
     ];
 
-    // Note: These coordinates need adjustment to match the PNG dimensions.
-    // In WPF they were relative to the image size.
-    containerWidth = 600;
-    containerHeight = 400;
-
-    constructor() {
-        this.initializeHotspots();
-    }
-
-    initializeHotspots() {
-        this.hotspots = [];
-        // Upper Right (18-11)
-        for (let i = 8; i >= 1; i--) {
-            this.hotspots.push({ toothNumber: 10 + i, x: 300 + (8 - i) * 35, y: 50, width: 30, height: 45 });
-        }
-        // Upper Left (21-28)
-        for (let i = 1; i <= 8; i++) {
-            this.hotspots.push({ toothNumber: 20 + i, x: 270 - (i - 1) * 35, y: 50, width: 30, height: 45 });
-        }
-        // Lower Left (38-31)
-        for (let i = 8; i >= 1; i--) {
-            this.hotspots.push({ toothNumber: 30 + i, x: 270 - (i - 1) * 35, y: 150, width: 30, height: 45 });
-        }
-        // Lower Right (41-48)
-        for (let i = 1; i <= 8; i++) {
-            this.hotspots.push({ toothNumber: 40 + i, x: 300 + (8 - i) * 35, y: 150, width: 30, height: 45 });
-        }
-    }
+    // mouth_chart.png doğal boyutları (viewBox bu boyutlarla eşleşir)
+    containerWidth = 1024;
+    containerHeight = 482;
 
     toggleTooth(toothNumber: number) {
         const index = this.selectedTeeth.indexOf(toothNumber);

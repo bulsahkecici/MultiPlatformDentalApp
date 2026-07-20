@@ -15,11 +15,40 @@ namespace DentalApp.Desktop.ViewModels
         private string _selectedUserType = string.Empty;
         private UserFormData _user = new();
         private ObservableCollection<User> _users = new();
-        
+        private int _totalPatients;
+        private int _upcomingAppointmentsCount;
+        private decimal _thisMonthFinancial;
+        private decimal _lastMonthFinancial;
+
         public bool IsBusy
         {
             get => _isBusy;
             set => SetProperty(ref _isBusy, value);
+        }
+
+        // Klinik istatistikleri (GET /api/admin/statistics)
+        public int TotalPatients
+        {
+            get => _totalPatients;
+            set => SetProperty(ref _totalPatients, value);
+        }
+
+        public int UpcomingAppointmentsCount
+        {
+            get => _upcomingAppointmentsCount;
+            set => SetProperty(ref _upcomingAppointmentsCount, value);
+        }
+
+        public decimal ThisMonthFinancial
+        {
+            get => _thisMonthFinancial;
+            set => SetProperty(ref _thisMonthFinancial, value);
+        }
+
+        public decimal LastMonthFinancial
+        {
+            get => _lastMonthFinancial;
+            set => SetProperty(ref _lastMonthFinancial, value);
         }
         
         public bool IsDentistSelected => SelectedUserType == "Dentist";
@@ -238,8 +267,26 @@ namespace DentalApp.Desktop.ViewModels
         
         public async Task LoadStatisticsAsync()
         {
-            // Placeholder for statistics loading
-            await Task.CompletedTask;
+            try
+            {
+                // Backend: GET /api/admin/statistics (Faz 1'de payments/patient_debts tabanlı hale getirildi)
+                var response = await _apiService.GetAsync<AdminStatisticsResponse>("/admin/statistics");
+                if (response?.Statistics != null)
+                {
+                    var stats = response.Statistics;
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        TotalPatients = stats.TotalPatients;
+                        UpcomingAppointmentsCount = stats.UpcomingAppointmentsCount;
+                        ThisMonthFinancial = stats.ThisMonthFinancial;
+                        LastMonthFinancial = stats.LastMonthFinancial;
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading statistics: {ex.Message}");
+            }
         }
         
         private async Task LoadUsersAsync()

@@ -8,6 +8,10 @@ namespace DentalApp.Desktop
 {
     public partial class App : Application
     {
+        // Çalışma dizinine değil, exe'nin yanına yaz (repo kirlenmesin)
+        private static readonly string CrashLogPath =
+            Path.Combine(AppContext.BaseDirectory, "crash_log.txt");
+
         protected override void OnStartup(StartupEventArgs e)
         {
             // Set Turkish culture for DatePicker and other UI elements
@@ -33,7 +37,7 @@ namespace DentalApp.Desktop
                                     $"Stack Trace:\n{args.Exception.InnerException.StackTrace}\n";
                     }
                     
-                    File.AppendAllText("crash_log.txt", logMessage + "\n" + new string('=', 80) + "\n\n");
+                    File.AppendAllText(CrashLogPath, logMessage + "\n" + new string('=', 80) + "\n\n");
                 } 
                 catch { }
                 
@@ -58,7 +62,7 @@ namespace DentalApp.Desktop
                                    $"Type: {args.Exception.GetType().FullName}\n" +
                                    $"Stack Trace:\n{args.Exception.StackTrace}\n";
                     
-                    File.AppendAllText("crash_log.txt", logMessage + "\n" + new string('=', 80) + "\n\n");
+                    File.AppendAllText(CrashLogPath, logMessage + "\n" + new string('=', 80) + "\n\n");
                 }
                 catch { }
                 

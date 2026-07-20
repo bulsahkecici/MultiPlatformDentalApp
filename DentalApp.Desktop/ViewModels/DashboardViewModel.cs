@@ -253,9 +253,14 @@ namespace DentalApp.Desktop.ViewModels
                     endDate: lastMonthEnd);
                 LastMonthTransactions = lastMonthTreatments.Count;
                 
-                // Calculate last month financial (placeholder - needs payment API)
-                LastMonthFinancial = 0m; // TODO: Load from payments API
-                
+                // Finansal veriler: /admin/statistics (aylık ciro) + /payments/* (tahsilat durumu)
+                var statsResponse = await _apiService.GetAsync<AdminStatisticsResponse>("/admin/statistics");
+                if (statsResponse?.Statistics != null)
+                {
+                    LastMonthFinancial = statsResponse.Statistics.LastMonthFinancial;
+                    ThisMonthFinancial = statsResponse.Statistics.ThisMonthFinancial;
+                }
+
                 // Load this month data
                 var thisMonthStart = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
                 var (thisMonthAppts, _) = await _appointmentService.GetAppointmentsAsync(
@@ -263,27 +268,23 @@ namespace DentalApp.Desktop.ViewModels
                     startDate: thisMonthStart,
                     endDate: DateTime.Today);
                 ThisMonthPatients = thisMonthAppts.Count;
-                
-                // Calculate this month financial (placeholder - needs payment API)
-                ThisMonthFinancial = 0m; // TODO: Load from payments API
-                
+
                 // Load upcoming appointments
                 var (upcomingAppts, _) = await _appointmentService.GetAppointmentsAsync(
                     page: 1, limit: 1,
                     startDate: DateTime.Today,
                     endDate: DateTime.Today.AddDays(30));
                 UpcomingAppointmentsCount = upcomingAppts.Count;
-                
-                // Load financial data
-                TotalAmount = 150000m; // Placeholder - TODO: Load from API
-                PaidAmount = 95000m; // Placeholder - TODO: Load from API
-                
-                // Placeholder dentist turnovers
+
+                // Tahsilat durumu: gelir (ödenen) + alacak (kalan) — /payments API'sinden
+                var incomeResponse = await _apiService.GetAsync<TotalIncomeResponse>("/payments/total-income");
+                var receivablesResponse = await _apiService.GetAsync<TotalReceivablesResponse>("/payments/total-receivables");
+                PaidAmount = incomeResponse?.TotalIncome ?? 0m;
+                TotalAmount = PaidAmount + (receivablesResponse?.TotalReceivables ?? 0m);
+
+                // Hekim bazlı ciro için ayrı endpoint henüz yok — sahte veri gösterme
                 DentistTurnovers.Clear();
-                DentistTurnovers.Add(new DentistTurnover { DentistName = "Dr. Ahmet Yılmaz", Turnover = 50000m, TurnoverPercentage = 33.33m });
-                DentistTurnovers.Add(new DentistTurnover { DentistName = "Dr. Ayşe Demir", Turnover = 45000m, TurnoverPercentage = 30.00m });
-                DentistTurnovers.Add(new DentistTurnover { DentistName = "Dr. Mehmet Kaya", Turnover = 55000m, TurnoverPercentage = 36.67m });
-                
+
                 OnPropertyChanged(nameof(RemainingAmount));
                 OnPropertyChanged(nameof(PaidPercentage));
             }
@@ -400,6 +401,50 @@ namespace DentalApp.Desktop.ViewModels
         }
     }
     
+    // ---- API yanıt DTO'ları ----
+
+    public class AdminStatisticsResponse
+    {
+        [Newtonsoft.Json.JsonProperty("statistics")]
+        public AdminStatistics? Statistics { get; set; }
+    }
+
+    public class AdminStatistics
+    {
+        [Newtonsoft.Json.JsonProperty("totalPatients")]
+        public int TotalPatients { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("lastMonthFinancial")]
+        public decimal LastMonthFinancial { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("thisMonthFinancial")]
+        public decimal ThisMonthFinancial { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("lastMonthPatients")]
+        public int LastMonthPatients { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("lastMonthTransactions")]
+        public int LastMonthTransactions { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("thisMonthPatients")]
+        public int ThisMonthPatients { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("upcomingAppointmentsCount")]
+        public int UpcomingAppointmentsCount { get; set; }
+    }
+
+    public class TotalIncomeResponse
+    {
+        [Newtonsoft.Json.JsonProperty("totalIncome")]
+        public decimal TotalIncome { get; set; }
+    }
+
+    public class TotalReceivablesResponse
+    {
+        [Newtonsoft.Json.JsonProperty("totalReceivables")]
+        public decimal TotalReceivables { get; set; }
+    }
+
     public class DentistTurnover : ObservableObject
     {
         private string _dentistName = string.Empty;

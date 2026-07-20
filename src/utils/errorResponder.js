@@ -14,12 +14,14 @@ function errorResponder(err, req, res, next) {
   const status =
     err.statusCode && Number.isInteger(err.statusCode) ? err.statusCode : 500;
   const isDevelopment = process.env.NODE_ENV !== 'production';
-  
+
   const response = {
     error: {
       message:
         status >= 500
-          ? (isDevelopment ? (err.message || 'An unexpected error occurred.') : 'An unexpected error occurred.')
+          ? isDevelopment
+            ? err.message || 'An unexpected error occurred.'
+            : 'An unexpected error occurred.'
           : err.message || 'Request failed.',
     },
   };

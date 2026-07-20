@@ -2,7 +2,6 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const config = require('../config');
 const { query } = require('../db');
-const logger = require('./logger');
 
 // Token expiry times
 const ACCESS_TOKEN_EXPIRY = '1h'; // 1 hour (extended from 15 minutes)
@@ -16,9 +15,9 @@ const PASSWORD_RESET_EXPIRY = 60 * 60 * 1000; // 1 hour
  * @returns {string} JWT access token
  */
 function generateAccessToken(payload) {
-    return jwt.sign(payload, config.security.jwtSecret, {
-        expiresIn: ACCESS_TOKEN_EXPIRY,
-    });
+  return jwt.sign(payload, config.security.jwtSecret, {
+    expiresIn: ACCESS_TOKEN_EXPIRY,
+  });
 }
 
 /**
@@ -27,23 +26,9 @@ function generateAccessToken(payload) {
  * @returns {string} JWT refresh token
  */
 function generateRefreshToken(payload) {
-    return jwt.sign(payload, config.security.jwtSecret, {
-        expiresIn: REFRESH_TOKEN_EXPIRY,
-    });
-}
-
-/**
- * Verify JWT token
- * @param {string} token - Token to verify
- * @returns {Object|null} Decoded payload or null if invalid
- */
-function verifyToken(token) {
-    try {
-        return jwt.verify(token, config.security.jwtSecret);
-    } catch (err) {
-        logger.debug({ err }, 'Token verification failed');
-        return null;
-    }
+  return jwt.sign(payload, config.security.jwtSecret, {
+    expiresIn: REFRESH_TOKEN_EXPIRY,
+  });
 }
 
 /**
@@ -51,7 +36,7 @@ function verifyToken(token) {
  * @returns {string} Hex token
  */
 function generateSecureToken() {
-    return crypto.randomBytes(32).toString('hex');
+  return crypto.randomBytes(32).toString('hex');
 }
 
 /**
@@ -63,13 +48,13 @@ function generateSecureToken() {
  * @returns {Promise<void>}
  */
 async function storeRefreshToken(userId, token, userAgent, ipAddress) {
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    await query(
-        `INSERT INTO refresh_tokens (user_id, token, expires_at, user_agent, ip_address)
+  await query(
+    `INSERT INTO refresh_tokens (user_id, token, expires_at, user_agent, ip_address)
      VALUES ($1, $2, $3, $4, $5)`,
-        [userId, token, expiresAt, userAgent, ipAddress],
-    );
+    [userId, token, expiresAt, userAgent, ipAddress],
+  );
 }
 
 /**
@@ -78,26 +63,26 @@ async function storeRefreshToken(userId, token, userAgent, ipAddress) {
  * @returns {Promise<Object|null>} Token data or null if invalid
  */
 async function verifyRefreshToken(token) {
-    const result = await query(
-        `SELECT rt.*, u.id, u.email, u.roles, u.email_verified, u.deleted_at
+  const result = await query(
+    `SELECT rt.*, u.id, u.email, u.roles, u.email_verified, u.deleted_at
      FROM refresh_tokens rt
      JOIN users u ON rt.user_id = u.id
      WHERE rt.token = $1 AND rt.revoked_at IS NULL AND rt.expires_at > NOW()`,
-        [token],
-    );
+    [token],
+  );
 
-    if (result.rows.length === 0) {
-        return null;
-    }
+  if (result.rows.length === 0) {
+    return null;
+  }
 
-    const tokenData = result.rows[0];
+  const tokenData = result.rows[0];
 
-    // Check if user is deleted
-    if (tokenData.deleted_at) {
-        return null;
-    }
+  // Check if user is deleted
+  if (tokenData.deleted_at) {
+    return null;
+  }
 
-    return tokenData;
+  return tokenData;
 }
 
 /**
@@ -106,23 +91,9 @@ async function verifyRefreshToken(token) {
  * @returns {Promise<void>}
  */
 async function revokeRefreshToken(token) {
-    await query(
-        `UPDATE refresh_tokens SET revoked_at = NOW() WHERE token = $1`,
-        [token],
-    );
-}
-
-/**
- * Revoke all refresh tokens for a user
- * @param {number} userId - User ID
- * @returns {Promise<void>}
- */
-async function revokeAllUserTokens(userId) {
-    await query(
-        `UPDATE refresh_tokens SET revoked_at = NOW() 
-     WHERE user_id = $1 AND revoked_at IS NULL`,
-        [userId],
-    );
+  await query('UPDATE refresh_tokens SET revoked_at = NOW() WHERE token = $1', [
+    token,
+  ]);
 }
 
 /**
@@ -130,10 +101,10 @@ async function revokeAllUserTokens(userId) {
  * @returns {Promise<number>} Number of tokens deleted
  */
 async function cleanupExpiredTokens() {
-    const result = await query(
-        `DELETE FROM refresh_tokens WHERE expires_at < NOW() - INTERVAL '30 days'`,
-    );
-    return result.rowCount || 0;
+  const result = await query(
+    "DELETE FROM refresh_tokens WHERE expires_at < NOW() - INTERVAL '30 days'",
+  );
+  return result.rowCount || 0;
 }
 
 /**
@@ -142,17 +113,17 @@ async function cleanupExpiredTokens() {
  * @returns {Promise<string>} Verification token
  */
 async function generateEmailVerificationToken(userId) {
-    const token = generateSecureToken();
-    const expiresAt = new Date(Date.now() + EMAIL_VERIFICATION_EXPIRY);
+  const token = generateSecureToken();
+  const expiresAt = new Date(Date.now() + EMAIL_VERIFICATION_EXPIRY);
 
-    await query(
-        `UPDATE users 
+  await query(
+    `UPDATE users 
      SET email_verification_token = $1, email_verification_expires = $2
      WHERE id = $3`,
-        [token, expiresAt, userId],
-    );
+    [token, expiresAt, userId],
+  );
 
-    return token;
+  return token;
 }
 
 /**
@@ -161,17 +132,17 @@ async function generateEmailVerificationToken(userId) {
  * @returns {Promise<string>} Reset token
  */
 async function generatePasswordResetToken(userId) {
-    const token = generateSecureToken();
-    const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY);
+  const token = generateSecureToken();
+  const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY);
 
-    await query(
-        `UPDATE users 
+  await query(
+    `UPDATE users 
      SET password_reset_token = $1, password_reset_expires = $2
      WHERE id = $3`,
-        [token, expiresAt, userId],
-    );
+    [token, expiresAt, userId],
+  );
 
-    return token;
+  return token;
 }
 
 /**
@@ -180,15 +151,15 @@ async function generatePasswordResetToken(userId) {
  * @returns {Promise<Object|null>} User data or null if invalid
  */
 async function verifyEmailVerificationToken(token) {
-    const result = await query(
-        `SELECT id, email FROM users 
+  const result = await query(
+    `SELECT id, email FROM users 
      WHERE email_verification_token = $1 
      AND email_verification_expires > NOW()
      AND email_verified = false`,
-        [token],
-    );
+    [token],
+  );
 
-    return result.rows.length > 0 ? result.rows[0] : null;
+  return result.rows.length > 0 ? result.rows[0] : null;
 }
 
 /**
@@ -197,30 +168,28 @@ async function verifyEmailVerificationToken(token) {
  * @returns {Promise<Object|null>} User data or null if invalid
  */
 async function verifyPasswordResetToken(token) {
-    const result = await query(
-        `SELECT id, email FROM users 
+  const result = await query(
+    `SELECT id, email FROM users 
      WHERE password_reset_token = $1 
      AND password_reset_expires > NOW()`,
-        [token],
-    );
+    [token],
+  );
 
-    return result.rows.length > 0 ? result.rows[0] : null;
+  return result.rows.length > 0 ? result.rows[0] : null;
 }
 
 module.exports = {
-    generateAccessToken,
-    generateRefreshToken,
-    verifyToken,
-    generateSecureToken,
-    storeRefreshToken,
-    verifyRefreshToken,
-    revokeRefreshToken,
-    revokeAllUserTokens,
-    cleanupExpiredTokens,
-    generateEmailVerificationToken,
-    generatePasswordResetToken,
-    verifyEmailVerificationToken,
-    verifyPasswordResetToken,
-    ACCESS_TOKEN_EXPIRY,
-    REFRESH_TOKEN_EXPIRY,
+  generateAccessToken,
+  generateRefreshToken,
+  generateSecureToken,
+  storeRefreshToken,
+  verifyRefreshToken,
+  revokeRefreshToken,
+  cleanupExpiredTokens,
+  generateEmailVerificationToken,
+  generatePasswordResetToken,
+  verifyEmailVerificationToken,
+  verifyPasswordResetToken,
+  ACCESS_TOKEN_EXPIRY,
+  REFRESH_TOKEN_EXPIRY,
 };

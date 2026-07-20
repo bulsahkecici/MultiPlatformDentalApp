@@ -36,4 +36,3 @@ ensureAdminUser()
   .finally(async () => {
     await pool.end().catch(() => {});
   });
-

@@ -1,11 +1,11 @@
 const express = require('express');
 const {
-    createTreatment,
-    getTreatments,
-    getTreatmentById,
-    updateTreatment,
-    createTreatmentPlan,
-    getTreatmentPlans,
+  createTreatment,
+  getTreatments,
+  getTreatmentById,
+  updateTreatment,
+  createTreatmentPlan,
+  getTreatmentPlans,
 } = require('../controllers/treatmentController');
 const { requireAuth } = require('../middlewares/auth');
 const { mutateLimiter } = require('../middlewares/rateLimit');
@@ -19,6 +19,11 @@ router.put('/api/treatments/:id', requireAuth, mutateLimiter, updateTreatment);
 
 // Treatment plans
 router.get('/api/treatment-plans', requireAuth, getTreatmentPlans);
-router.post('/api/treatment-plans', requireAuth, mutateLimiter, createTreatmentPlan);
+router.post(
+  '/api/treatment-plans',
+  requireAuth,
+  mutateLimiter,
+  createTreatmentPlan,
+);
 
 module.exports = router;

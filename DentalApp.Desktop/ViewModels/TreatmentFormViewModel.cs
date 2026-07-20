@@ -558,49 +558,46 @@ namespace DentalApp.Desktop.ViewModels
 
         private void InitializeToothHotspots()
         {
-            // FDI numbering system coordinates
-            // These are approximate positions - adjust based on your mouth_chart.png image
-            // Format: ToothNumber, X, Y, Width, Height
-            
-            // Upper right quadrant (11-18)
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 11, X = 200, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 12, X = 250, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 13, X = 300, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 14, X = 350, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 15, X = 400, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 16, X = 450, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 17, X = 500, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 18, X = 550, Y = 50, Width = 40, Height = 50 });
+            // FDI numaralandırma sistemi koordinatları.
+            // mouth_chart.png (1024x482) üzerinden ölçüldü, XAML'deki 743x350 sabit
+            // konteynere göre 350/482 oranıyla ölçeklendi (web tooth-chart ile aynı kaynak tablo).
+            // Üst sıra soldan sağa: 18..11 | 21..28 — Alt sıra: 38..31 | 41..48
 
-            // Upper left quadrant (21-28)
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 21, X = 200, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 22, X = 150, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 23, X = 100, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 24, X = 50, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 25, X = 0, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 26, X = -50, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 27, X = -100, Y = 50, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 28, X = -150, Y = 50, Width = 40, Height = 50 });
+            // Üst çene (Y=69, H=98)
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 18, X = 62, Y = 69, Width = 38, Height = 98 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 17, X = 102, Y = 69, Width = 39, Height = 98 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 16, X = 145, Y = 69, Width = 41, Height = 98 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 15, X = 187, Y = 69, Width = 35, Height = 98 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 14, X = 222, Y = 69, Width = 35, Height = 98 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 13, X = 258, Y = 69, Width = 35, Height = 98 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 12, X = 294, Y = 69, Width = 36, Height = 98 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 11, X = 332, Y = 69, Width = 38, Height = 98 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 21, X = 375, Y = 69, Width = 38, Height = 98 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 22, X = 413, Y = 69, Width = 36, Height = 98 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 23, X = 451, Y = 69, Width = 35, Height = 98 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 24, X = 486, Y = 69, Width = 35, Height = 98 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 25, X = 521, Y = 69, Width = 35, Height = 98 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 26, X = 558, Y = 69, Width = 41, Height = 98 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 27, X = 602, Y = 69, Width = 39, Height = 98 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 28, X = 642, Y = 69, Width = 38, Height = 98 });
 
-            // Lower left quadrant (31-38)
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 31, X = 200, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 32, X = 150, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 33, X = 100, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 34, X = 50, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 35, X = 0, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 36, X = -50, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 37, X = -100, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 38, X = -150, Y = 200, Width = 40, Height = 50 });
-
-            // Lower right quadrant (41-48)
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 41, X = 200, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 42, X = 250, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 43, X = 300, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 44, X = 350, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 45, X = 400, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 46, X = 450, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 47, X = 500, Y = 200, Width = 40, Height = 50 });
-            ToothHotspots.Add(new ToothHotspot { ToothNumber = 48, X = 550, Y = 200, Width = 40, Height = 50 });
+            // Alt çene (Y=183, H=123)
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 38, X = 70, Y = 183, Width = 45, Height = 123 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 37, X = 116, Y = 183, Width = 46, Height = 123 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 36, X = 168, Y = 183, Width = 48, Height = 123 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 35, X = 216, Y = 183, Width = 36, Height = 123 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 34, X = 253, Y = 183, Width = 33, Height = 123 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 33, X = 288, Y = 183, Width = 29, Height = 123 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 32, X = 320, Y = 183, Width = 26, Height = 123 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 31, X = 345, Y = 183, Width = 25, Height = 123 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 41, X = 378, Y = 183, Width = 25, Height = 123 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 42, X = 402, Y = 183, Width = 25, Height = 123 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 43, X = 428, Y = 183, Width = 28, Height = 123 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 44, X = 457, Y = 183, Width = 32, Height = 123 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 45, X = 492, Y = 183, Width = 33, Height = 123 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 46, X = 529, Y = 183, Width = 45, Height = 123 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 47, X = 582, Y = 183, Width = 45, Height = 123 });
+            ToothHotspots.Add(new ToothHotspot { ToothNumber = 48, X = 630, Y = 183, Width = 44, Height = 123 });
         }
 
         private void OnSelectTooth(object? parameter)

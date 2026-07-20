@@ -10,6 +10,7 @@ namespace DentalApp.Desktop.ViewModels
     public class AppointmentFormViewModel : ObservableObject
     {
         private readonly AppointmentService _appointmentService;
+        private readonly ApiService? _apiService;
         private Appointment _appointment;
         private bool _isEditMode;
         private bool _isBusy;
@@ -139,9 +140,10 @@ namespace DentalApp.Desktop.ViewModels
 
         public event Action<bool>? SaveCompleted;
 
-        public AppointmentFormViewModel(AppointmentService appointmentService, PatientService patientService, Appointment? appointment = null)
+        public AppointmentFormViewModel(AppointmentService appointmentService, PatientService patientService, Appointment? appointment = null, ApiService? apiService = null)
         {
             _appointmentService = appointmentService;
+            _apiService = apiService;
             _appointment = appointment ?? new Appointment 
             { 
                 Id = 0, // Ensure ID is 0 for new appointments
@@ -218,22 +220,36 @@ namespace DentalApp.Desktop.ViewModels
             }
         }
         
-        private Task LoadDentistsAsync()
+        private async Task LoadDentistsAsync()
         {
             try
             {
-                // TODO: Load from /api/users?role=dentist when API is ready
-                // For now, use placeholder data - using same class from AppointmentsViewModel
+                if (_apiService == null)
+                {
+                    return;
+                }
+
+                // Backend: GET /api/users/dentists (tüm personel erişebilir)
+                var response = await _apiService.GetAsync<DentistsResponse>("/users/dentists");
                 Dentists.Clear();
-                Dentists.Add(new DentistInfo { Id = 1, Name = "Dr. Ahmet Yılmaz", Email = "ahmet@example.com" });
-                Dentists.Add(new DentistInfo { Id = 2, Name = "Dr. Ayşe Demir", Email = "ayse@example.com" });
-                Dentists.Add(new DentistInfo { Id = 3, Name = "Dr. Mehmet Kaya", Email = "mehmet@example.com" });
+                if (response?.Dentists != null)
+                {
+                    foreach (var dentist in response.Dentists)
+                    {
+                        var name = $"{dentist.FirstName} {dentist.LastName}".Trim();
+                        Dentists.Add(new DentistInfo
+                        {
+                            Id = dentist.Id,
+                            Name = string.IsNullOrWhiteSpace(name) ? dentist.Email : name,
+                            Email = dentist.Email,
+                        });
+                    }
+                }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading dentists: {ex}");
             }
-            return Task.CompletedTask;
         }
 
         private async Task LoadPatientsAsync(PatientService patientService)

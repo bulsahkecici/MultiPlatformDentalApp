@@ -6,18 +6,18 @@ const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
 /**
- * Get client IP address from request
+ * Get client IP address from request.
+ * req.ip, server.js'teki `trust proxy` ayarını dikkate alır (proxy arkasında doğru IP).
  * @param {Object} req - Express request
  * @returns {string} IP address
  */
 function getClientIp(req) {
-    return (
-        req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-        req.headers['x-real-ip'] ||
-        req.connection?.remoteAddress ||
-        req.socket?.remoteAddress ||
-        'unknown'
-    );
+  return (
+    req.ip ||
+    req.connection?.remoteAddress ||
+    req.socket?.remoteAddress ||
+    'unknown'
+  );
 }
 
 /**
@@ -26,40 +26,40 @@ function getClientIp(req) {
  * @returns {Promise<Object>} { locked: boolean, unlockAt: Date|null }
  */
 async function checkAccountLock(email) {
-    const result = await query(
-        `SELECT failed_login_attempts, account_locked_until 
+  const result = await query(
+    `SELECT failed_login_attempts, account_locked_until 
      FROM users 
      WHERE email = $1`,
-        [email],
-    );
+    [email],
+  );
 
-    if (result.rows.length === 0) {
-        return { locked: false, unlockAt: null };
-    }
+  if (result.rows.length === 0) {
+    return { locked: false, unlockAt: null };
+  }
 
-    const user = result.rows[0];
-    const now = new Date();
+  const user = result.rows[0];
+  const now = new Date();
 
-    // Check if account is currently locked
-    if (user.account_locked_until && new Date(user.account_locked_until) > now) {
-        return {
-            locked: true,
-            unlockAt: new Date(user.account_locked_until),
-        };
-    }
+  // Check if account is currently locked
+  if (user.account_locked_until && new Date(user.account_locked_until) > now) {
+    return {
+      locked: true,
+      unlockAt: new Date(user.account_locked_until),
+    };
+  }
 
-    // If lock has expired, reset the counter
-    if (user.account_locked_until && new Date(user.account_locked_until) <= now) {
-        await query(
-            `UPDATE users 
+  // If lock has expired, reset the counter
+  if (user.account_locked_until && new Date(user.account_locked_until) <= now) {
+    await query(
+      `UPDATE users 
        SET failed_login_attempts = 0, account_locked_until = NULL 
        WHERE email = $1`,
-            [email],
-        );
-        return { locked: false, unlockAt: null };
-    }
-
+      [email],
+    );
     return { locked: false, unlockAt: null };
+  }
+
+  return { locked: false, unlockAt: null };
 }
 
 /**
@@ -70,54 +70,54 @@ async function checkAccountLock(email) {
  * @returns {Promise<Object>} { locked: boolean, attempts: number, unlockAt: Date|null }
  */
 async function recordFailedAttempt(email, ipAddress, userAgent) {
-    // Increment failed attempts
-    const result = await query(
-        `UPDATE users 
+  // Increment failed attempts
+  const result = await query(
+    `UPDATE users 
      SET failed_login_attempts = failed_login_attempts + 1 
      WHERE email = $1 
      RETURNING id, failed_login_attempts`,
-        [email],
-    );
+    [email],
+  );
 
-    if (result.rows.length === 0) {
-        // User doesn't exist, but don't reveal that
-        return { locked: false, attempts: 0, unlockAt: null };
-    }
+  if (result.rows.length === 0) {
+    // User doesn't exist, but don't reveal that
+    return { locked: false, attempts: 0, unlockAt: null };
+  }
 
-    const user = result.rows[0];
-    const attempts = user.failed_login_attempts;
+  const user = result.rows[0];
+  const attempts = user.failed_login_attempts;
 
-    // Lock account if max attempts reached
-    if (attempts >= MAX_FAILED_ATTEMPTS) {
-        const unlockAt = new Date(Date.now() + LOCKOUT_DURATION_MS);
+  // Lock account if max attempts reached
+  if (attempts >= MAX_FAILED_ATTEMPTS) {
+    const unlockAt = new Date(Date.now() + LOCKOUT_DURATION_MS);
 
-        await query(
-            `UPDATE users 
+    await query(
+      `UPDATE users 
        SET account_locked_until = $1 
        WHERE email = $2`,
-            [unlockAt, email],
-        );
+      [unlockAt, email],
+    );
 
-        // Log account lockout
-        await logAuthEvent({
-            eventType: AuditEventType.ACCOUNT_LOCKED,
-            userId: user.id,
-            email,
-            ipAddress,
-            userAgent,
-            success: true,
-            reason: `Account locked after ${attempts} failed attempts`,
-        });
+    // Log account lockout
+    await logAuthEvent({
+      eventType: AuditEventType.ACCOUNT_LOCKED,
+      userId: user.id,
+      email,
+      ipAddress,
+      userAgent,
+      success: true,
+      reason: `Account locked after ${attempts} failed attempts`,
+    });
 
-        logger.warn(
-            { email, attempts, unlockAt, ipAddress },
-            'Account locked due to failed login attempts',
-        );
+    logger.warn(
+      { email, attempts, unlockAt, ipAddress },
+      'Account locked due to failed login attempts',
+    );
 
-        return { locked: true, attempts, unlockAt };
-    }
+    return { locked: true, attempts, unlockAt };
+  }
 
-    return { locked: false, attempts, unlockAt: null };
+  return { locked: false, attempts, unlockAt: null };
 }
 
 /**
@@ -126,29 +126,19 @@ async function recordFailedAttempt(email, ipAddress, userAgent) {
  * @returns {Promise<void>}
  */
 async function resetFailedAttempts(email) {
-    await query(
-        `UPDATE users 
+  await query(
+    `UPDATE users 
      SET failed_login_attempts = 0, account_locked_until = NULL 
      WHERE email = $1`,
-        [email],
-    );
-}
-
-/**
- * Middleware to check account lockout before login
- */
-function checkLockout(req, res, next) {
-    // This will be called in the login controller
-    // Exported for use in authController
-    next();
+    [email],
+  );
 }
 
 module.exports = {
-    getClientIp,
-    checkAccountLock,
-    recordFailedAttempt,
-    resetFailedAttempts,
-    checkLockout,
-    MAX_FAILED_ATTEMPTS,
-    LOCKOUT_DURATION_MS,
+  getClientIp,
+  checkAccountLock,
+  recordFailedAttempt,
+  resetFailedAttempts,
+  MAX_FAILED_ATTEMPTS,
+  LOCKOUT_DURATION_MS,
 };

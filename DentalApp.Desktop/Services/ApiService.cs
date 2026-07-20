@@ -1,3 +1,4 @@
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -14,9 +15,64 @@ namespace DentalApp.Desktop.Services
 
         public string BaseUrl { get; set; } = "http://localhost:3000/api";
 
+        /// <summary>Socket.IO sunucu adresi (appsettings.json'dan yüklenir).</summary>
+        public string SocketUrl { get; set; } = "http://localhost:3000";
+
+        /// <summary>Socket.IO bağlantısı için mevcut access token (salt okunur).</summary>
+        public string? AccessToken => _accessToken;
+
+        /// <summary>Logout'ta backend'e iptal için gönderilecek refresh token (salt okunur).</summary>
+        public string? RefreshToken => _refreshToken;
+
         public ApiService()
         {
             _httpClient = new HttpClient();
+            LoadConfiguration();
+        }
+
+        /// <summary>
+        /// Exe'nin yanındaki appsettings.json'dan API/Socket adreslerini yükler.
+        /// Dosya yoksa veya bozuksa localhost varsayılanları kullanılır.
+        /// </summary>
+        private void LoadConfiguration()
+        {
+            try
+            {
+                var configPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+                if (!File.Exists(configPath))
+                {
+                    return;
+                }
+
+                var json = File.ReadAllText(configPath);
+                var config = JsonConvert.DeserializeObject<AppSettings>(json);
+                if (config == null)
+                {
+                    return;
+                }
+
+                if (!string.IsNullOrWhiteSpace(config.ApiBaseUrl))
+                {
+                    BaseUrl = config.ApiBaseUrl.TrimEnd('/');
+                }
+                if (!string.IsNullOrWhiteSpace(config.SocketUrl))
+                {
+                    SocketUrl = config.SocketUrl.TrimEnd('/');
+                }
+            }
+            catch
+            {
+                // Config okunamazsa varsayılanlarla devam et
+            }
+        }
+
+        private class AppSettings
+        {
+            [JsonProperty("ApiBaseUrl")]
+            public string? ApiBaseUrl { get; set; }
+
+            [JsonProperty("SocketUrl")]
+            public string? SocketUrl { get; set; }
         }
 
         public void SetTokens(string accessToken, string refreshToken)
@@ -26,17 +82,10 @@ namespace DentalApp.Desktop.Services
             
             // Remove existing Authorization header if any
             _httpClient.DefaultRequestHeaders.Remove("Authorization");
-            
+
             // Add new Authorization header
-            _httpClient.DefaultRequestHeaders.Authorization = 
+            _httpClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", accessToken);
-            
-            // Debug logging
-            var tokenPreview = accessToken.Length > 15 
-                ? $"{accessToken.Substring(0, 15)}..." 
-                : "***";
-            System.Diagnostics.Debug.WriteLine($"[ApiService] Tokens set. Token preview: {tokenPreview}");
-            System.Diagnostics.Debug.WriteLine($"[ApiService] Authorization header present: {_httpClient.DefaultRequestHeaders.Authorization != null}");
         }
 
         public void ClearTokens()
@@ -44,7 +93,6 @@ namespace DentalApp.Desktop.Services
             _accessToken = null;
             _refreshToken = null;
             _httpClient.DefaultRequestHeaders.Remove("Authorization");
-            System.Diagnostics.Debug.WriteLine("[ApiService] Tokens cleared");
         }
 
         public async Task<T?> GetAsync<T>(string endpoint)
@@ -52,18 +100,8 @@ namespace DentalApp.Desktop.Services
             try
             {
                 var url = $"{BaseUrl}{endpoint}";
-                var hasAuth = _httpClient.DefaultRequestHeaders.Authorization != null;
-                var authHeader = hasAuth 
-                    ? $"Bearer {(_accessToken?.Length > 15 ? _accessToken.Substring(0, 15) + "..." : "***")}" 
-                    : "NONE";
-                
-                System.Diagnostics.Debug.WriteLine($"[ApiService] GET {url}");
-                System.Diagnostics.Debug.WriteLine($"[ApiService] Authorization header: {authHeader}");
-                
                 var response = await _httpClient.GetAsync(url);
                 var responseContent = await response.Content.ReadAsStringAsync();
-                System.Diagnostics.Debug.WriteLine($"[ApiService] Response Status: {response.StatusCode}");
-                System.Diagnostics.Debug.WriteLine($"[ApiService] Response: {responseContent}");
                 return await HandleResponseAsync<T>(response, endpoint, "GET", responseContent);
             }
             catch (Exception ex)
@@ -79,20 +117,9 @@ namespace DentalApp.Desktop.Services
             {
                 var json = JsonConvert.SerializeObject(data);
                 var url = $"{BaseUrl}{endpoint}";
-                var hasAuth = _httpClient.DefaultRequestHeaders.Authorization != null;
-                var authHeader = hasAuth 
-                    ? $"Bearer {(_accessToken?.Length > 15 ? _accessToken.Substring(0, 15) + "..." : "***")}" 
-                    : "NONE";
-                
-                System.Diagnostics.Debug.WriteLine($"[ApiService] POST {url}");
-                System.Diagnostics.Debug.WriteLine($"[ApiService] Authorization header: {authHeader}");
-                System.Diagnostics.Debug.WriteLine($"[ApiService] Request: {json}");
-                
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var response = await _httpClient.PostAsync(url, content);
                 var responseContent = await response.Content.ReadAsStringAsync();
-                System.Diagnostics.Debug.WriteLine($"[ApiService] Response Status: {response.StatusCode}");
-                System.Diagnostics.Debug.WriteLine($"[ApiService] Response: {responseContent}");
                 return await HandleResponseAsync<T>(response, endpoint, "POST", responseContent);
             }
             catch (Exception ex)
@@ -108,14 +135,6 @@ namespace DentalApp.Desktop.Services
             {
                 var json = JsonConvert.SerializeObject(data);
                 var url = $"{BaseUrl}{endpoint}";
-                var hasAuth = _httpClient.DefaultRequestHeaders.Authorization != null;
-                var authHeader = hasAuth 
-                    ? $"Bearer {(_accessToken?.Length > 15 ? _accessToken.Substring(0, 15) + "..." : "***")}" 
-                    : "NONE";
-                
-                System.Diagnostics.Debug.WriteLine($"[ApiService] PUT {url}");
-                System.Diagnostics.Debug.WriteLine($"[ApiService] Authorization header: {authHeader}");
-                
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var response = await _httpClient.PutAsync(url, content);
                 var responseContent = await response.Content.ReadAsStringAsync();
@@ -153,8 +172,7 @@ namespace DentalApp.Desktop.Services
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
                 System.Diagnostics.Debug.WriteLine($"[ApiService] 401 Unauthorized for {method} {endpoint}");
-                System.Diagnostics.Debug.WriteLine($"[ApiService] Response: {content}");
-                
+
                 // Clear tokens and notify
                 ClearTokens();
                 OnUnauthorized?.Invoke();

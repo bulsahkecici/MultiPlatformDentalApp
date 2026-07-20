@@ -18,19 +18,38 @@ function parseList(value) {
     .filter((v) => v.length > 0);
 }
 
+const isProduction = (process.env.NODE_ENV || 'development') === 'production';
+
+// Production'da dev fallback sırlarıyla çalışmayı reddet (fail-fast)
+if (isProduction) {
+  const problems = [];
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'dev-secret') {
+    problems.push('JWT_SECRET must be set to a strong secret in production');
+  }
+  if (!process.env.DB_PASS || process.env.DB_PASS === 'StrongPass123!') {
+    problems.push(
+      'DB_PASS must be set to a non-default password in production',
+    );
+  }
+  if (problems.length > 0) {
+    console.error('FATAL configuration errors:\n- ' + problems.join('\n- '));
+    process.exit(1);
+  }
+}
+
 const config = {
   env: process.env.NODE_ENV || 'development',
   isProduction: (process.env.NODE_ENV || 'development') === 'production',
   port: Number(process.env.PORT) || 3000,
   appUrl: process.env.APP_URL || 'http://localhost:3000',
   cors: {
-    origins: parseList(process.env.CORS_ORIGINS).length > 0 
-      ? parseList(process.env.CORS_ORIGINS)
-      : ['http://localhost:4200', 'http://localhost:3000'], // Default for development
+    origins:
+      parseList(process.env.CORS_ORIGINS).length > 0
+        ? parseList(process.env.CORS_ORIGINS)
+        : ['http://localhost:4200', 'http://localhost:3000'], // Default for development
   },
   security: {
     jwtSecret: process.env.JWT_SECRET || 'dev-secret',
-    enableDemoAuth: parseBoolean(process.env.ENABLE_DEMO_AUTH, false),
     // Account lockout settings
     maxFailedAttempts: Number(process.env.MAX_FAILED_ATTEMPTS) || 5,
     lockoutDurationMinutes: Number(process.env.LOCKOUT_DURATION_MINUTES) || 15,

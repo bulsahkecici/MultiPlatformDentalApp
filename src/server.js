@@ -1,4 +1,3 @@
-const path = require('path');
 const express = require('express');
 const http = require('http');
 const compression = require('compression');
@@ -15,6 +14,7 @@ const {
 } = require('./middlewares/error');
 const { generalLimiter } = require('./middlewares/rateLimit');
 const { initializeSocketIO } = require('./services/notificationHub');
+const { cleanupExpiredTokens } = require('./utils/tokenManager');
 
 const healthRouter = require('./routes/health');
 const authRouter = require('./routes/auth');
@@ -30,6 +30,9 @@ const institutionAgreementsRouter = require('./routes/institutionAgreements');
 
 const app = express();
 const server = http.createServer(app);
+
+// Reverse proxy (nginx vb.) arkasında gerçek istemci IP'sini al — rate limit ve lockout için kritik
+app.set('trust proxy', 1);
 
 // Initialize Socket.IO
 initializeSocketIO(server);
@@ -61,11 +64,6 @@ app.use(compression());
 // Rate limiting - applied globally; mutating routes use per-route limiter
 app.use(generalLimiter);
 
-// Static files
-app.use(
-  express.static(path.join(__dirname, '..', 'public'), { fallthrough: true }),
-);
-
 // Routes
 app.use('/', healthRouter);
 app.use('/', authRouter);
@@ -89,6 +87,22 @@ function start() {
   server.listen(port, () => {
     logger.info({ port }, `Server listening on port ${port} with Socket.IO`);
   });
+
+  // Süresi geçmiş refresh token'ları günde bir temizle (tablo sınırsız büyümesin)
+  setInterval(
+    () => {
+      cleanupExpiredTokens()
+        .then((count) => {
+          if (count > 0) {
+            logger.info({ count }, 'Expired refresh tokens cleaned up');
+          }
+        })
+        .catch((err) =>
+          logger.error({ err }, 'Failed to clean up expired tokens'),
+        );
+    },
+    24 * 60 * 60 * 1000,
+  ).unref();
 }
 
 if (require.main === module) {

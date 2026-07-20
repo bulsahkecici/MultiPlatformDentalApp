@@ -2,6 +2,7 @@ using DentalApp.Desktop.Helpers;
 using DentalApp.Desktop.Models;
 using DentalApp.Desktop.Services;
 using DentalApp.Desktop.Views;
+using MaterialDesignThemes.Wpf;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
@@ -16,6 +17,10 @@ namespace DentalApp.Desktop.ViewModels
         private readonly AppointmentService _appointmentService;
         private readonly TreatmentService _treatmentService;
         private readonly InstitutionAgreementService _institutionAgreementService;
+        private readonly NotificationService _notificationService;
+
+        /// <summary>Gerçek zamanlı bildirimler için Snackbar kuyruğu (MainWindow.xaml'de bağlı).</summary>
+        public SnackbarMessageQueue NotificationQueue { get; } = new SnackbarMessageQueue(TimeSpan.FromSeconds(4));
         
         private object? _currentView;
         public object? CurrentView
@@ -55,6 +60,15 @@ namespace DentalApp.Desktop.ViewModels
             _appointmentService = new AppointmentService(_apiService);
             _treatmentService = new TreatmentService(_apiService);
             _institutionAgreementService = new InstitutionAgreementService(_apiService);
+
+            _notificationService = new NotificationService(_apiService.SocketUrl);
+            _notificationService.NotificationReceived += (_, payload) =>
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    NotificationQueue.Enqueue($"{payload.Title}: {payload.Message}");
+                });
+            };
 
             NavigateToDashboardCommand = new RelayCommand(_ => ShowDashboard());
             NavigateToPatientsCommand = new RelayCommand(_ => ShowPatients());
@@ -101,6 +115,7 @@ namespace DentalApp.Desktop.ViewModels
                 OnPropertyChanged(nameof(IsSecretary));
                 OnPropertyChanged(nameof(IsDentist));
                 OnPropertyChanged(nameof(CanViewPrices));
+                ConnectNotifications();
                 ShowDashboard();
             };
             CurrentView = loginVM;
@@ -231,7 +246,7 @@ namespace DentalApp.Desktop.ViewModels
             {
                 System.Diagnostics.Debug.WriteLine($"[ShowAppointmentForm] Opening appointment form. IsEditMode: {appointment != null && appointment.Id > 0}");
                 
-                var formVM = new AppointmentFormViewModel(_appointmentService, _patientService, appointment);
+                var formVM = new AppointmentFormViewModel(_appointmentService, _patientService, appointment, _apiService);
                 var dialog = new AppointmentFormDialog(formVM);
                 dialog.Owner = Application.Current.MainWindow;
                 var result = dialog.ShowDialog();
@@ -347,8 +362,27 @@ namespace DentalApp.Desktop.ViewModels
             CurrentView = institutionAgreementsVM;
         }
 
+        /// <summary>Login sonrası bildirim soketine bağlan (hata bildirim akışını değil, sadece logu etkiler).</summary>
+        private void ConnectNotifications()
+        {
+            var token = _apiService.AccessToken;
+            if (string.IsNullOrEmpty(token)) return;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _notificationService.ConnectAsync(token);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Notifications] Bağlantı hatası: {ex.Message}");
+                }
+            });
+        }
+
         private void Logout()
         {
+            _ = _notificationService.DisconnectAsync();
             _authService.Logout();
             OnPropertyChanged(nameof(IsAuthenticated));
             OnPropertyChanged(nameof(CurrentUser));
