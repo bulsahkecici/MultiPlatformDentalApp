@@ -160,6 +160,25 @@ namespace DentalApp.Desktop.Services
             }
         }
 
+        /// <summary>DELETE isteğine JSON gövde eklemek için (HttpClient.DeleteAsync gövde desteklemiyor).</summary>
+        public async Task DeleteAsync(string endpoint, object body)
+        {
+            try
+            {
+                var json = JsonConvert.SerializeObject(body);
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"{BaseUrl}{endpoint}")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json"),
+                };
+                var response = await _httpClient.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"DELETE {endpoint} failed: {ex.Message}", ex);
+            }
+        }
+
         private async Task<T?> HandleResponseAsync<T>(HttpResponseMessage response, string endpoint, string method, string? contentPreRead = null)
         {
             var content = contentPreRead ?? await response.Content.ReadAsStringAsync();

@@ -41,17 +41,22 @@ namespace DentalApp.Desktop.ViewModels
 
         public bool HasNotes => !string.IsNullOrWhiteSpace(Appointment?.Notes);
 
+        public bool CanCancel => Appointment?.Status != "cancelled";
+
         public ICommand EditCommand { get; }
         public ICommand CloseCommand { get; }
+        public ICommand CancelCommand { get; }
 
         public event Action? EditRequested;
         public event Action? CloseRequested;
+        public event Action? CancelRequested;
 
         public AppointmentDetailsViewModel(Appointment appointment)
         {
             _appointment = appointment;
             EditCommand = new RelayCommand(_ => EditRequested?.Invoke());
             CloseCommand = new RelayCommand(_ => CloseRequested?.Invoke());
+            CancelCommand = new RelayCommand(_ => CancelRequested?.Invoke(), _ => CanCancel);
         }
     }
 }

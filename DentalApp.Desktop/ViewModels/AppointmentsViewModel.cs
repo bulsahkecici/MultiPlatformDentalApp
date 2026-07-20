@@ -268,7 +268,14 @@ namespace DentalApp.Desktop.ViewModels
                 {
                     MaterialDesignThemes.Wpf.DialogHost.CloseDialogCommand.Execute(null, null);
                 };
-                
+
+                // Cancel requested handler
+                detailsViewModel.CancelRequested += async () =>
+                {
+                    MaterialDesignThemes.Wpf.DialogHost.CloseDialogCommand.Execute(null, null);
+                    await CancelSelectedAppointmentAsync();
+                };
+
                 var view = new Views.AppointmentDetailsDialog
                 {
                     DataContext = detailsViewModel

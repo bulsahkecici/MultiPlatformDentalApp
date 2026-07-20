@@ -110,6 +110,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" 
                                                  Text="{Binding TreatmentDate, StringFormat=d}" 
@@ -127,10 +128,19 @@
                                                  VerticalAlignment="Center"
                                                  Margin="10,0,0,0"
                                                  Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                        <TextBlock Grid.Column="4" 
-                                                 Text="{Binding Status, Converter={StaticResource StatusToTurkishConverter}}" 
+                                        <TextBlock Grid.Column="4"
+                                                 Text="{Binding Status, Converter={StaticResource StatusToTurkishConverter}}"
                                                  VerticalAlignment="Center"
                                                  Margin="10,0,0,0"/>
+                                        <Button Grid.Column="5"
+                                               Command="{Binding DataContext.DeleteTreatmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               CommandParameter="{Binding}"
+                                               Style="{StaticResource MaterialDesignIconButton}"
+                                               ToolTip="Sil"
+                                               Foreground="#DC2626"
+                                               Margin="10,0,0,0">
+                                            <materialDesign:PackIcon Kind="Delete" Width="18" Height="18"/>
+                                        </Button>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

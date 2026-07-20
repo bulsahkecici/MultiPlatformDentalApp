@@ -116,13 +116,21 @@
 
             <!-- Actions -->
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                <Button Content="DÜZENLE" 
-                       Command="{Binding EditCommand}" 
+                <Button Content="RANDEVUYU İPTAL ET"
+                       Command="{Binding CancelCommand}"
+                       Style="{StaticResource MaterialDesignOutlinedButton}"
+                       BorderBrush="#DC2626"
+                       Foreground="#DC2626"
+                       Visibility="{Binding CanCancel, Converter={StaticResource BooleanToVisibilityConverter}}"
+                       Margin="0,0,10,0"
+                       Width="170"/>
+                <Button Content="DÜZENLE"
+                       Command="{Binding EditCommand}"
                        Style="{StaticResource MaterialDesignOutlinedButton}"
                        Margin="0,0,10,0"
                        Width="120"/>
-                <Button Content="KAPAT" 
-                       Command="{Binding CloseCommand}" 
+                <Button Content="KAPAT"
+                       Command="{Binding CloseCommand}"
                        Style="{StaticResource MaterialDesignRaisedButton}"
                        Background="{StaticResource BulkaMediumBlue}"
                        Foreground="White"

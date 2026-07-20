@@ -545,12 +545,14 @@ namespace DentalApp.Desktop.ViewModels
             }
         }
         
+        /// <summary>Kurum anlaşması düzenleme (kategori bazlı indirimler dahil) "Kurum Anlaşmaları"
+        /// ekranında yapılır — orada gerçek düzenleme/silme desteği var. Burada sadece oraya yönlendiriyoruz.</summary>
+        public event Action? NavigateToInstitutionAgreementsRequested;
+
         private Task EditAgreementAsync(InstitutionAgreement? agreement)
         {
             if (agreement == null) return Task.CompletedTask;
-            // TODO: Edit agreement dialog
-            System.Windows.MessageBox.Show("Düzenleme özelliği yakında eklenecek.", "Bilgi",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            NavigateToInstitutionAgreementsRequested?.Invoke();
             return Task.CompletedTask;
         }
         
@@ -559,40 +561,48 @@ namespace DentalApp.Desktop.ViewModels
             IsBusy = true;
             try
             {
-                // TODO: Load from backend when API is ready
-                await Task.CompletedTask; // Placeholder for future API call
-                
-                // Placeholder data
                 PendingTreatmentPlans.Clear();
-                var plan1 = new TreatmentPlanItem
+                var response = await _apiService.GetAsync<dynamic>("/payments/pending-plans");
+                var plans = response?.plans as IEnumerable<dynamic>;
+                if (plans != null)
                 {
-                    Id = 1,
-                    PatientName = "Ahmet Yılmaz",
-                    DentistName = "Dr. Ayşe Demir",
-                    ProceduresCount = 3,
-                    TotalCost = 1500m,
-                    IsSelected = false,
-                    ParentViewModel = this
-                };
-                plan1.Procedures.Add(new ProcedureItem { Code = "D001", Name = "Dolgu", Price = 500m, Category = "Restoratif" });
-                plan1.Procedures.Add(new ProcedureItem { Code = "D002", Name = "Temizlik", Price = 400m, Category = "Profilaksi" });
-                plan1.Procedures.Add(new ProcedureItem { Code = "D003", Name = "Kanal Tedavisi", Price = 600m, Category = "Endodonti" });
-                PendingTreatmentPlans.Add(plan1);
-                
-                var plan2 = new TreatmentPlanItem
-                {
-                    Id = 2,
-                    PatientName = "Mehmet Kaya",
-                    DentistName = "Dr. Ahmet Yılmaz",
-                    ProceduresCount = 2,
-                    TotalCost = 800m,
-                    IsSelected = false,
-                    ParentViewModel = this
-                };
-                plan2.Procedures.Add(new ProcedureItem { Code = "D004", Name = "Çekim", Price = 300m, Category = "Cerrahi" });
-                plan2.Procedures.Add(new ProcedureItem { Code = "D005", Name = "Protez", Price = 500m, Category = "Protetik" });
-                PendingTreatmentPlans.Add(plan2);
-                
+                    foreach (var plan in plans)
+                    {
+                        var vmPlan = new TreatmentPlanItem
+                        {
+                            Id = (int)(plan.id ?? 0),
+                            PatientName = plan.patient_name ?? "Bilinmiyor",
+                            DentistName = plan.dentist_email ?? "Bilinmiyor",
+                            ProceduresCount = 0,
+                            TotalCost = Convert.ToDecimal(plan.total_estimated_cost ?? 0m),
+                            IsSelected = false,
+                            ParentViewModel = this
+                        };
+
+                        var items = plan.items as IEnumerable<dynamic>;
+                        if (items != null)
+                        {
+                            foreach (var item in items)
+                            {
+                                vmPlan.Procedures.Add(new ProcedureItem
+                                {
+                                    Code = item.treatment_type ?? string.Empty,
+                                    Name = item.treatment_type ?? string.Empty,
+                                    Category = item.tooth_number != null ? $"Diş {item.tooth_number}" : string.Empty,
+                                    Price = Convert.ToDecimal(item.cost ?? 0m)
+                                });
+                            }
+                            vmPlan.ProceduresCount = vmPlan.Procedures.Count;
+                            if (vmPlan.TotalCost <= 0)
+                            {
+                                vmPlan.TotalCost = vmPlan.Procedures.Sum(p => p.Price);
+                            }
+                        }
+
+                        PendingTreatmentPlans.Add(vmPlan);
+                    }
+                }
+
                 OnPropertyChanged(nameof(SelectedPlansTotal));
             }
             catch (Exception ex)
@@ -605,7 +615,7 @@ namespace DentalApp.Desktop.ViewModels
                 IsBusy = false;
             }
         }
-        
+
         private async Task ApprovePlansAsync()
         {
             var selectedPlans = PendingTreatmentPlans.Where(p => p.IsSelected).ToList();
@@ -615,27 +625,43 @@ namespace DentalApp.Desktop.ViewModels
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
                 return;
             }
-            
+
             IsBusy = true;
             try
             {
-                // TODO: Approve plans via API
-                await Task.CompletedTask; // Placeholder for future API call
-                
-                var total = selectedPlans.Sum(p => p.TotalCost);
-                
-                System.Windows.MessageBox.Show(
-                    $"{selectedPlans.Count} tedavi planı onaylandı.\nToplam maliyet: {total:F2} ₺\n\nHasta borcu oluşturuldu.",
-                    "Başarılı",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Information);
-                
-                // Remove approved plans
+                decimal totalApproved = 0m;
+                var failedIds = new List<int>();
                 foreach (var plan in selectedPlans)
                 {
-                    PendingTreatmentPlans.Remove(plan);
+                    try
+                    {
+                        await _apiService.PostAsync<dynamic>($"/payments/approve-plan/{plan.Id}", new { approved = true });
+                        totalApproved += plan.TotalCost;
+                        PendingTreatmentPlans.Remove(plan);
+                    }
+                    catch (Exception)
+                    {
+                        failedIds.Add(plan.Id);
+                    }
                 }
-                
+
+                if (totalApproved > 0)
+                {
+                    System.Windows.MessageBox.Show(
+                        $"{selectedPlans.Count - failedIds.Count} tedavi planı onaylandı.\nToplam maliyet: {totalApproved:F2} ₺\n\nHasta borcu güncellendi.",
+                        "Başarılı",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Information);
+                }
+                if (failedIds.Count > 0)
+                {
+                    System.Windows.MessageBox.Show(
+                        $"Şu planlar onaylanamadı: {string.Join(", ", failedIds)}",
+                        "Hata",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Error);
+                }
+
                 OnPropertyChanged(nameof(SelectedPlansTotal));
             }
             catch (Exception ex)

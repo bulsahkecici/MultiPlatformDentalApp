@@ -322,6 +322,7 @@ namespace DentalApp.Desktop.ViewModels
             var paymentsVM = new PaymentsViewModel(_apiService, _patientService, tariffService);
             paymentsVM.CanViewPrices = CanViewPrices;
             paymentsVM.IsSecretary = IsSecretary; // Treatment plan approval sadece secretary'de
+            paymentsVM.NavigateToInstitutionAgreementsRequested += ShowInstitutionAgreements;
             CurrentView = paymentsVM;
             _ = paymentsVM.LoadDataAsync();
             _ = paymentsVM.LoadAgreementsAsync(); // Anlaşmalı kurumlar listesini hemen yükle

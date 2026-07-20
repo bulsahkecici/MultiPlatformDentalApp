@@ -78,8 +78,6 @@ namespace DentalApp.Desktop.Services
                 notes = appointment.Notes
             };
             
-            System.Diagnostics.Debug.WriteLine($"[AppointmentService] CreateAppointment Request: {Newtonsoft.Json.JsonConvert.SerializeObject(request)}");
-
             var response = await _apiService.PostAsync<AppointmentResponse>("/appointments", request);
             return response?.Appointment;
         }
@@ -92,6 +90,7 @@ namespace DentalApp.Desktop.Services
             
             var request = new
             {
+                dentistId = appointment.DentistId,
                 appointmentDate = appointment.AppointmentDate.ToString("yyyy-MM-dd"),
                 startTime = startTimeStr,
                 endTime = endTimeStr,
@@ -106,7 +105,7 @@ namespace DentalApp.Desktop.Services
 
         public async Task CancelAppointmentAsync(int id, string? reason = null)
         {
-            await _apiService.DeleteAsync($"/appointments/{id}");
+            await _apiService.DeleteAsync($"/appointments/{id}", new { cancellationReason = reason });
         }
     }
 }

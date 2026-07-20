@@ -403,6 +403,7 @@ async function updateAppointment(req, res, next) {
     }
 
     const {
+      dentistId,
       appointmentDate,
       startTime,
       endTime,
@@ -416,6 +417,15 @@ async function updateAppointment(req, res, next) {
     const setClauses = [];
     const params = [];
     let paramIndex = 1;
+
+    if (dentistId) {
+      // Dişhekimi randevusunu başka bir dişhekimine devredemez (IDOR koruması)
+      if (isDentist(req) && dentistId !== req.user.sub) {
+        return next(new AppError('Forbidden', 403));
+      }
+      setClauses.push(`dentist_id = $${paramIndex++}`);
+      params.push(dentistId);
+    }
 
     if (appointmentDate) {
       setClauses.push(`appointment_date = $${paramIndex++}`);

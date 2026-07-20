@@ -2,6 +2,7 @@ using DentalApp.Desktop.Helpers;
 using DentalApp.Desktop.Models;
 using DentalApp.Desktop.Services;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -87,10 +88,36 @@ namespace DentalApp.Desktop.ViewModels
             set => SetProperty(ref _users, value);
         }
 
+        private int? _editingUserId;
+        private bool _isEditingUser;
+        public bool IsEditingUser
+        {
+            get => _isEditingUser;
+            set => SetProperty(ref _isEditingUser, value);
+        }
+
+        private string _editUserEmail = string.Empty;
+        public string EditUserEmail
+        {
+            get => _editUserEmail;
+            set => SetProperty(ref _editUserEmail, value);
+        }
+
+        private string _editUserRole = string.Empty;
+        public string EditUserRole
+        {
+            get => _editUserRole;
+            set => SetProperty(ref _editUserRole, value);
+        }
+
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
         public ICommand SelectUserTypeCommand { get; }
         public ICommand LoadUsersCommand { get; }
+        public ICommand EditUserCommand { get; }
+        public ICommand SaveUserEditCommand { get; }
+        public ICommand CancelUserEditCommand { get; }
+        public ICommand DeleteUserCommand { get; }
 
         public AdminManagementViewModel(ApiService apiService)
         {
@@ -115,9 +142,94 @@ namespace DentalApp.Desktop.ViewModels
                 }
             });
             LoadUsersCommand = new RelayCommand(async _ => await LoadUsersAsync());
-            
+            EditUserCommand = new RelayCommand<User>(user => StartEditUser(user));
+            SaveUserEditCommand = new RelayCommand(async _ => await SaveUserEditAsync(), _ => !IsBusy);
+            CancelUserEditCommand = new RelayCommand(_ => CancelEditUser());
+            DeleteUserCommand = new RelayCommand<User>(async user => await DeleteUserAsync(user));
+
             // Load users on initialization
             _ = LoadUsersAsync();
+        }
+
+        private void StartEditUser(User? user)
+        {
+            if (user == null) return;
+            _editingUserId = user.Id;
+            EditUserEmail = user.Email;
+            EditUserRole = user.Roles.FirstOrDefault() ?? string.Empty;
+            IsEditingUser = true;
+        }
+
+        private void CancelEditUser()
+        {
+            _editingUserId = null;
+            IsEditingUser = false;
+        }
+
+        private async Task SaveUserEditAsync()
+        {
+            if (_editingUserId == null) return;
+            var userId = _editingUserId.Value;
+            var original = Users.FirstOrDefault(u => u.Id == userId);
+            if (original == null) return;
+
+            IsBusy = true;
+            try
+            {
+                if (!string.Equals(EditUserEmail, original.Email, StringComparison.Ordinal))
+                {
+                    await _apiService.PutAsync<object>($"/users/{userId}", new { email = EditUserEmail });
+                }
+
+                var originalRole = original.Roles.FirstOrDefault() ?? string.Empty;
+                if (!string.Equals(EditUserRole, originalRole, StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(EditUserRole))
+                {
+                    await _apiService.PutAsync<object>($"/users/{userId}/roles", new { roles = new List<string> { EditUserRole } });
+                }
+
+                System.Windows.MessageBox.Show("Kullanıcı güncellendi.", "Başarılı",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                CancelEditUser();
+                await LoadUsersAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Kullanıcı güncellenirken hata: {ex.Message}", "Hata",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private async Task DeleteUserAsync(User? user)
+        {
+            if (user == null) return;
+
+            var result = System.Windows.MessageBox.Show(
+                $"{user.FullName} ({user.Email}) kullanıcısını silmek istediğinize emin misiniz?",
+                "Silme Onayı",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Warning);
+
+            if (result != System.Windows.MessageBoxResult.Yes) return;
+
+            IsBusy = true;
+            try
+            {
+                await _apiService.DeleteAsync($"/users/{user.Id}");
+                Users.Remove(user);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Kullanıcı silinirken hata: {ex.Message}", "Hata",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
         
         private bool IsValid()
