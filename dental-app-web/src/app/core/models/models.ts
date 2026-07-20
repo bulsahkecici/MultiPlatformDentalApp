@@ -4,6 +4,10 @@ export interface User {
     roles: string[];
     emailVerified: boolean;
     lastLoginAt?: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    tcNo?: string;
 }
 
 export interface LoginResponse {

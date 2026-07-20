@@ -2,6 +2,7 @@ import { ApplicationConfig, provideZoneChangeDetection, APP_INITIALIZER } from '
 import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { firstValueFrom } from 'rxjs';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
@@ -13,6 +14,10 @@ export const appConfig: ApplicationConfig = {
         provideRouter(routes),
         provideAnimationsAsync(),
         provideHttpClient(withInterceptors([authInterceptor])),
+        // MatDialog/CDK Overlay içinde açılan datepicker'ların DateAdapter'ı
+        // kök enjektörden bulabilmesi için — standalone dialog bileşenlerinin
+        // kendi imports'unda MatNativeDateModule olması yeterli değil.
+        provideNativeDateAdapter(),
         // Açılışta oturumu /api/auth/me ile doğrula (hard-refresh sonrası oturum korunur)
         {
             provide: APP_INITIALIZER,

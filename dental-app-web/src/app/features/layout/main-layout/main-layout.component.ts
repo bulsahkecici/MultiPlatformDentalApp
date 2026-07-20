@@ -44,56 +44,69 @@ interface MenuItem {
   template: `
     <mat-sidenav-container class="sidenav-container">
       <mat-sidenav #sidenav mode="side" opened class="sidenav">
-        <div class="sidenav-header">
-          <h2>BULKA DENTAL</h2>
+        <div class="brand">
+          <div class="brand-mark">
+            <mat-icon>medical_services</mat-icon>
+          </div>
+          <div class="brand-text">
+            <span class="brand-name">Bulka Dental</span>
+            <span class="brand-tag">Klinik Yönetimi</span>
+          </div>
         </div>
-        <mat-nav-list>
-          <a mat-list-item routerLink="/dashboard" routerLinkActive="active">
+
+        <nav class="nav-list">
+          <a class="nav-item" routerLink="/dashboard" routerLinkActive="active">
             <mat-icon>dashboard</mat-icon>
             <span>Kontrol Paneli</span>
           </a>
-          
-          <a mat-list-item routerLink="/patients" routerLinkActive="active" *ngIf="canAccessPatients()">
+
+          <a class="nav-item" routerLink="/patients" routerLinkActive="active" *ngIf="canAccessPatients()">
             <mat-icon>people</mat-icon>
             <span>Hastalar</span>
           </a>
-          
-          <a mat-list-item routerLink="/appointments" routerLinkActive="active" *ngIf="canAccessAppointments()">
+
+          <a class="nav-item" routerLink="/appointments" routerLinkActive="active" *ngIf="canAccessAppointments()">
             <mat-icon>event</mat-icon>
             <span>Randevular</span>
           </a>
-          
-          <a mat-list-item routerLink="/treatments" routerLinkActive="active" *ngIf="canAccessTreatments()">
-            <mat-icon>medical_services</mat-icon>
+
+          <a class="nav-item" routerLink="/treatments" routerLinkActive="active" *ngIf="canAccessTreatments()">
+            <mat-icon>medical_information</mat-icon>
             <span>Tedaviler</span>
           </a>
-          
-          <a mat-list-item routerLink="/payments" routerLinkActive="active" *ngIf="canAccessPayments()">
-            <mat-icon>payment</mat-icon>
+
+          <a class="nav-item" routerLink="/payments" routerLinkActive="active" *ngIf="canAccessPayments()">
+            <mat-icon>payments</mat-icon>
             <span>Ödemeler</span>
           </a>
-          
-          <a mat-list-item routerLink="/earnings" routerLinkActive="active" *ngIf="isDentist">
+
+          <a class="nav-item" routerLink="/earnings" routerLinkActive="active" *ngIf="isDentist">
             <mat-icon>attach_money</mat-icon>
             <span>Kazançlarım</span>
           </a>
-          
-          <a mat-list-item routerLink="/admin" routerLinkActive="active" *ngIf="isAdmin">
+
+          <a class="nav-item" routerLink="/admin" routerLinkActive="active" *ngIf="isAdmin">
             <mat-icon>admin_panel_settings</mat-icon>
             <span>Kullanıcı Yönetimi</span>
           </a>
-        </mat-nav-list>
+        </nav>
+
+        <div class="sidenav-footer">
+          <mat-icon>shield</mat-icon>
+          <span>Güvenli oturum</span>
+        </div>
       </mat-sidenav>
 
       <mat-sidenav-content>
-        <mat-toolbar color="primary">
-          <button mat-icon-button (click)="sidenav.toggle()">
+        <header class="topbar">
+          <button mat-icon-button (click)="sidenav.toggle()" class="menu-toggle">
             <mat-icon>menu</mat-icon>
           </button>
           <span class="spacer"></span>
-          <button mat-icon-button [matMenuTriggerFor]="notifMenu" matTooltip="Bildirimler"
+
+          <button mat-icon-button [matMenuTriggerFor]="notifMenu" matTooltip="Bildirimler" class="icon-btn"
                   (menuOpened)="onNotificationsOpened()">
-            <mat-icon [matBadge]="unreadCount > 0 ? unreadCount : null" matBadgeColor="warn">
+            <mat-icon [matBadge]="unreadCount > 0 ? unreadCount : null" matBadgeColor="warn" matBadgeSize="small">
               notifications
             </mat-icon>
           </button>
@@ -104,7 +117,10 @@ interface MenuItem {
                 Tümünü okundu işaretle
               </button>
             </div>
-            <div *ngIf="notifications.length === 0" class="notif-empty">Bildirim yok</div>
+            <div *ngIf="notifications.length === 0" class="notif-empty">
+              <mat-icon>notifications_none</mat-icon>
+              <span>Bildirim yok</span>
+            </div>
             <button mat-menu-item *ngFor="let n of notifications">
               <div class="notif-item">
                 <strong>{{ n.title }}</strong>
@@ -112,11 +128,15 @@ interface MenuItem {
               </div>
             </button>
           </mat-menu>
-          <span>{{ currentUser?.email }}</span>
-          <button mat-icon-button (click)="logout()" matTooltip="Çıkış">
+
+          <div class="user-chip">
+            <div class="avatar">{{ userInitial() }}</div>
+            <span class="user-email">{{ currentUser?.email }}</span>
+          </div>
+          <button mat-icon-button (click)="logout()" matTooltip="Çıkış" class="icon-btn">
             <mat-icon>logout</mat-icon>
           </button>
-        </mat-toolbar>
+        </header>
         <div class="content">
           <router-outlet></router-outlet>
         </div>
@@ -128,57 +148,188 @@ interface MenuItem {
       height: 100vh;
     }
     .sidenav {
-      width: 250px;
-      background-color: #1E3A8A;
-    }
-    .sidenav-header {
-      padding: 20px;
+      width: 268px;
+      background: linear-gradient(180deg, #1e3a8a 0%, #16296b 100%);
       color: white;
-      text-align: center;
-      background-color: #3B82F6;
+      display: flex;
+      flex-direction: column;
+      border-right: none;
     }
-    .sidenav-header h2 {
-      margin: 0;
-      font-weight: bold;
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 24px 20px 20px;
     }
-    mat-nav-list {
-      padding-top: 0;
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.14);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     }
-    mat-nav-list a {
+    .brand-mark mat-icon {
+      color: #93c5fd;
+    }
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.25;
+      min-width: 0;
+    }
+    .brand-name {
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+    .brand-tag {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.55);
+    }
+    .nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 8px 12px;
+      flex: 1 1 auto;
+      overflow-y: auto;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 11px 14px;
+      border-radius: 10px;
+      color: rgba(255, 255, 255, 0.72);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background-color 0.15s ease, color 0.15s ease;
+      position: relative;
+    }
+    .nav-item mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      color: inherit;
+    }
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.06);
       color: white;
     }
-    mat-nav-list a.active {
-      background-color: #3B82F6;
+    .nav-item.active {
+      background: rgba(59, 130, 246, 0.22);
+      color: white;
     }
-    mat-nav-list mat-icon {
-      margin-right: 10px;
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: #60a5fa;
+    }
+    .sidenav-footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 24px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.4);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .sidenav-footer mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      height: 64px;
+      padding: 0 20px;
+      background: var(--surface);
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .icon-btn {
+      color: var(--ink-500);
     }
     .spacer {
       flex: 1 1 auto;
     }
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 12px 6px 6px;
+      border-radius: 999px;
+      background: var(--surface-muted);
+      margin-left: 8px;
+    }
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--bulka-primary-900, #1e3a8a);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .user-email {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-700);
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .content {
-      padding: 20px;
+      background: var(--page-bg);
+      min-height: calc(100vh - 64px);
     }
     .notif-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 16px;
-      font-weight: bold;
-      border-bottom: 1px solid rgba(0,0,0,0.12);
+      padding: 12px 16px;
+      font-weight: 600;
+      font-size: 14px;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
     }
     .notif-empty {
-      padding: 16px;
-      color: rgba(0,0,0,0.54);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 24px 16px;
+      color: var(--ink-500);
       text-align: center;
+      font-size: 13px;
     }
     .notif-item {
       display: flex;
       flex-direction: column;
-      line-height: 1.3;
+      line-height: 1.35;
+      padding: 2px 0;
     }
     .notif-item small {
-      color: rgba(0,0,0,0.6);
+      color: var(--ink-500);
     }
   `]
 })
@@ -247,6 +398,10 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       next: res => (this.unreadCount = res.count ?? 0),
       error: () => (this.unreadCount = 0)
     });
+  }
+
+  userInitial(): string {
+    return (this.currentUser?.email || '?').charAt(0).toUpperCase();
   }
 
   canAccessPatients(): boolean {

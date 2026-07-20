@@ -56,11 +56,14 @@ interface DentistInfo {
     MatDialogModule
   ],
   template: `
-    <div class="appointments-container">
-      <div class="appointments-header">
-        <h1>Randevu Yönetimi</h1>
+    <div class="page wide">
+      <div class="page-header">
+        <div>
+          <h1>Randevu Yönetimi</h1>
+          <p class="page-subtitle">{{ selectedDateLabel() }}</p>
+        </div>
         <div class="header-actions">
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Tarih Seç</mat-label>
             <input matInput [matDatepicker]="picker" [(ngModel)]="selectedDate" (dateChange)="onDateChange()">
             <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
@@ -73,124 +76,167 @@ interface DentistInfo {
         </div>
       </div>
 
-      <div *ngIf="isLoading" class="loading">
-        <mat-spinner></mat-spinner>
+      <div class="legend">
+        <span class="legend-item"><span class="dot available"></span>Müsait</span>
+        <span class="legend-item"><span class="dot occupied"></span>Dolu</span>
       </div>
 
-      <div *ngIf="!isLoading" class="scheduler-container">
-        <mat-card>
-          <mat-card-content>
-            <div class="scheduler-grid">
-              <!-- Time column -->
-              <div class="time-column">
-                <div class="time-header">Saat</div>
-                <div *ngFor="let slot of timeSlots" class="time-slot">
-                  {{ slot.time }}
-                </div>
-              </div>
+      <div *ngIf="isLoading" class="loading">
+        <mat-spinner diameter="36"></mat-spinner>
+      </div>
 
-              <!-- Dentist columns -->
-              <div *ngFor="let dentist of dentists" class="dentist-column">
-                <div class="dentist-header">{{ dentist.name }}</div>
-                <div *ngFor="let slot of timeSlots" 
-                     class="appointment-slot"
-                     [class.available]="getSlotStatus(slot, dentist.id) === 'available'"
-                     [class.occupied]="getSlotStatus(slot, dentist.id) === 'occupied'"
-                     (click)="onSlotClick(slot, dentist.id)">
-                  <div *ngIf="getSlotAppointment(slot, dentist.id) as appointment" class="slot-content">
-                    <div class="patient-name">{{ appointment.patientFirstName || appointment.patient_first_name }} {{ appointment.patientLastName || appointment.patient_last_name }}</div>
-                    <div class="slot-time">{{ slot.time }}</div>
-                  </div>
-                  <div *ngIf="getSlotStatus(slot, dentist.id) === 'available'" class="slot-content">
-                    <div class="slot-time">{{ slot.time }}</div>
-                  </div>
+      <div *ngIf="!isLoading && dentists.length === 0" class="surface-card empty-state">
+        <mat-icon>person_search</mat-icon>
+        <div class="empty-title">Sistemde kayıtlı dişhekimi yok</div>
+        <div class="empty-hint">Randevu oluşturabilmek için önce Kullanıcı Yönetimi'nden bir dişhekimi ekleyin.</div>
+      </div>
+
+      <div *ngIf="!isLoading && dentists.length > 0" class="scheduler-container surface-card">
+        <div class="scheduler-scroll">
+          <div class="scheduler-grid" [style.grid-template-columns]="'88px repeat(' + dentists.length + ', minmax(150px, 1fr))'">
+            <!-- Time column -->
+            <div class="time-column">
+              <div class="col-header time-header">Saat</div>
+              <div *ngFor="let slot of timeSlots" class="time-slot">
+                {{ slot.time }}
+              </div>
+            </div>
+
+            <!-- Dentist columns -->
+            <div *ngFor="let dentist of dentists" class="dentist-column">
+              <div class="col-header dentist-header">
+                <mat-icon>person</mat-icon>
+                <span>{{ dentist.name }}</span>
+              </div>
+              <div *ngFor="let slot of timeSlots"
+                   class="appointment-slot"
+                   [class.available]="getSlotStatus(slot, dentist.id) === 'available'"
+                   [class.occupied]="getSlotStatus(slot, dentist.id) === 'occupied'"
+                   (click)="onSlotClick(slot, dentist.id)">
+                <div *ngIf="getSlotAppointment(slot, dentist.id) as appointment" class="slot-content">
+                  <div class="patient-name">{{ appointment.patientFirstName || appointment.patient_first_name }} {{ appointment.patientLastName || appointment.patient_last_name }}</div>
                 </div>
               </div>
             </div>
-          </mat-card-content>
-        </mat-card>
+          </div>
+        </div>
       </div>
     </div>
   `,
   styles: [`
-    .appointments-container {
-      padding: 20px;
-    }
-    .appointments-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
+    .page.wide { padding: 24px 32px; max-width: 1600px; }
     .header-actions {
       display: flex;
-      gap: 16px;
+      gap: 12px;
       align-items: center;
     }
-    .scheduler-container {
-      margin-top: 20px;
-    }
-    .scheduler-grid {
-      display: grid;
-      grid-template-columns: 100px repeat(auto-fit, minmax(150px, 1fr));
-      gap: 1px;
-      background-color: #ddd;
-    }
-    .time-column, .dentist-column {
-      background-color: white;
-    }
-    .time-header, .dentist-header {
-      padding: 10px;
-      background-color: #1E3A8A;
-      color: white;
-      font-weight: bold;
-      text-align: center;
-    }
-    .time-slot {
-      padding: 10px;
-      text-align: center;
-      border-bottom: 1px solid #ddd;
-      height: 60px;
+    .legend {
       display: flex;
-      align-items: center;
-      justify-content: center;
+      gap: 20px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: var(--ink-500);
     }
-    .appointment-slot {
-      height: 60px;
-      padding: 5px;
-      cursor: pointer;
-      border-bottom: 1px solid #ddd;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .appointment-slot.available {
-      background-color: #90EE90;
-    }
-    .appointment-slot.occupied {
-      background-color: #DC2626;
-      color: white;
-    }
-    .appointment-slot:hover {
-      opacity: 0.8;
-    }
-    .slot-content {
-      width: 100%;
-      text-align: center;
-    }
-    .patient-name {
-      font-weight: bold;
-      font-size: 12px;
-      margin-bottom: 4px;
-    }
-    .slot-time {
-      font-size: 10px;
-    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+    .dot.available { background: var(--surface-muted); border: 1px solid var(--ink-300); }
+    .dot.occupied { background: var(--bulka-primary-600, #2563eb); }
     .loading {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 400px;
+      height: 300px;
+    }
+    .scheduler-container {
+      overflow: hidden;
+    }
+    .scheduler-scroll {
+      overflow-x: auto;
+    }
+    .scheduler-grid {
+      display: grid;
+      min-width: 100%;
+    }
+    .time-column, .dentist-column {
+      background-color: var(--surface);
+      border-right: 1px solid rgba(15, 23, 42, 0.06);
+    }
+    .col-header {
+      padding: 12px 10px;
+      background: var(--surface-muted);
+      color: var(--ink-700);
+      font-weight: 600;
+      font-size: 13px;
+      text-align: center;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 44px;
+      box-sizing: border-box;
+    }
+    .dentist-header mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: var(--bulka-primary-600, #2563eb);
+    }
+    .dentist-header span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .time-slot {
+      padding: 6px;
+      text-align: center;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--ink-500);
+      font-variant-numeric: tabular-nums;
+    }
+    .appointment-slot {
+      height: 44px;
+      padding: 4px 6px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.1s ease;
+    }
+    .appointment-slot.available {
+      background-color: var(--surface);
+    }
+    .appointment-slot.available:hover {
+      background-color: var(--bulka-primary-50, #eff6ff);
+    }
+    .appointment-slot.occupied {
+      background-color: var(--bulka-primary-600, #2563eb);
+      color: white;
+    }
+    .appointment-slot.occupied:hover {
+      background-color: var(--bulka-primary-700, #1d4ed8);
+    }
+    .slot-content {
+      width: 100%;
+      text-align: center;
+      overflow: hidden;
+    }
+    .patient-name {
+      font-weight: 600;
+      font-size: 11.5px;
+      line-height: 1.3;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   `]
 })
@@ -214,18 +260,26 @@ export class AppointmentsComponent implements OnInit {
   }
 
   loadDentists(): void {
-    this.userService.getUsers().subscribe({
+    // Tüm kimliği doğrulanmış personel erişebilir (admin gerektirmez) — bkz. src/routes/users.js
+    this.userService.getDentists().subscribe({
       next: (response) => {
-        this.dentists = (response.users || [])
-          .filter(u => u.roles.includes('dentist'))
-          .map(u => ({ id: u.id, name: u.email }));
-        if (this.dentists.length === 0) {
-          this.dentists = [{ id: 0, name: 'Doktor Yok' }];
-        }
+        this.dentists = (response.dentists || []).map(d => ({
+          id: d.id,
+          name: (`${d.firstName || ''} ${d.lastName || ''}`.trim()) || d.email
+        }));
       },
       error: () => {
-        this.dentists = [{ id: 0, name: 'Doktor Yok' }];
+        this.dentists = [];
       }
+    });
+  }
+
+  selectedDateLabel(): string {
+    return this.selectedDate.toLocaleDateString('tr-TR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   }
 

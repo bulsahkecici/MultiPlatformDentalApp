@@ -9,9 +9,9 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { PatientService } from '../../../core/services/patient.service';
 import { Patient } from '../../../core/models/models';
-import { DataMapper } from '../../../core/utils/data-mapper';
 
 @Component({
   selector: 'app-patient-form-dialog',
@@ -26,7 +26,8 @@ import { DataMapper } from '../../../core/utils/data-mapper';
     MatDatepickerModule,
     MatNativeDateModule,
     MatSelectModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSnackBarModule
   ],
   template: `
     <h2 mat-dialog-title>{{ data ? 'Hasta Düzenle' : 'Yeni Hasta' }}</h2>
@@ -118,7 +119,8 @@ export class PatientFormDialogComponent implements OnInit {
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<PatientFormDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: Patient | null,
-    private patientService: PatientService
+    private patientService: PatientService,
+    private snackBar: MatSnackBar
   ) {
     this.patientForm = this.fb.group({
       firstName: ['', Validators.required],
@@ -162,12 +164,9 @@ export class PatientFormDialogComponent implements OnInit {
         city: formValue.city
       };
 
-      // Convert to backend format
-      const backendData = DataMapper.mapPatientToBackend(patientData);
-
       const request = this.data
-        ? this.patientService.updatePatient(this.data.id, backendData)
-        : this.patientService.createPatient(backendData);
+        ? this.patientService.updatePatient(this.data.id, patientData)
+        : this.patientService.createPatient(patientData);
 
       request.subscribe({
         next: () => {
@@ -175,6 +174,8 @@ export class PatientFormDialogComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error saving patient:', error);
+          const errorMessage = error.error?.message || 'Hasta kaydedilirken hata oluştu';
+          this.snackBar.open(errorMessage, 'Kapat', { duration: 5000 });
           this.isLoading = false;
         }
       });

@@ -5,13 +5,19 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
-import { MatGridListModule } from '@angular/material/grid-list';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../core/services/auth.service';
 import { AppointmentService } from '../../core/services/appointment.service';
 import { DashboardService, DashboardStats } from '../../core/services/dashboard.service';
 import { User, Appointment } from '../../core/models/models';
 import { DataMapper } from '../../core/utils/data-mapper';
+
+interface StatCard {
+  value: string;
+  label: string;
+  icon: string;
+  tone: 'blue' | 'green' | 'amber' | 'slate';
+}
 
 @Component({
   selector: 'app-dashboard',
@@ -22,172 +28,146 @@ import { DataMapper } from '../../core/utils/data-mapper';
     MatButtonModule,
     MatIconModule,
     MatListModule,
-    MatGridListModule,
     MatProgressSpinnerModule
   ],
   template: `
-    <div class="dashboard-container">
-      <!-- Admin Dashboard -->
-      <div *ngIf="isAdmin" class="admin-dashboard">
-        <h1>Admin Kontrol Paneli</h1>
-        
-        <mat-grid-list cols="4" rowHeight="150px" gutterSize="16px">
-          <mat-grid-tile>
-            <mat-card class="stat-card">
-              <mat-card-content>
-                <div class="stat-value">{{ stats?.totalPatients || 0 }}</div>
-                <div class="stat-label">Toplam Hasta</div>
-              </mat-card-content>
-            </mat-card>
-          </mat-grid-tile>
-          
-          <mat-grid-tile>
-            <mat-card class="stat-card">
-              <mat-card-content>
-                <div class="stat-value">{{ formatCurrency(stats?.lastMonthFinancial) }}</div>
-                <div class="stat-label">Geçen Ay Finansal</div>
-              </mat-card-content>
-            </mat-card>
-          </mat-grid-tile>
-          
-          <mat-grid-tile>
-            <mat-card class="stat-card">
-              <mat-card-content>
-                <div class="stat-value">{{ stats?.lastMonthPatients || 0 }}</div>
-                <div class="stat-label">Geçen Ay Hasta</div>
-              </mat-card-content>
-            </mat-card>
-          </mat-grid-tile>
-          
-          <mat-grid-tile>
-            <mat-card class="stat-card">
-              <mat-card-content>
-                <div class="stat-value">{{ stats?.lastMonthTransactions || 0 }}</div>
-                <div class="stat-label">Geçen Ay İşlem</div>
-              </mat-card-content>
-            </mat-card>
-          </mat-grid-tile>
-          
-          <mat-grid-tile>
-            <mat-card class="stat-card">
-              <mat-card-content>
-                <div class="stat-value">{{ stats?.thisMonthPatients || 0 }}</div>
-                <div class="stat-label">Bu Ay Hasta</div>
-              </mat-card-content>
-            </mat-card>
-          </mat-grid-tile>
-          
-          <mat-grid-tile>
-            <mat-card class="stat-card">
-              <mat-card-content>
-                <div class="stat-value">{{ formatCurrency(stats?.thisMonthFinancial) }}</div>
-                <div class="stat-label">Bu Ay Finansal</div>
-              </mat-card-content>
-            </mat-card>
-          </mat-grid-tile>
-          
-          <mat-grid-tile>
-            <mat-card class="stat-card">
-              <mat-card-content>
-                <div class="stat-value">{{ stats?.upcomingAppointmentsCount || 0 }}</div>
-                <div class="stat-label">Yaklaşan Randevu</div>
-              </mat-card-content>
-            </mat-card>
-          </mat-grid-tile>
-        </mat-grid-list>
-      </div>
-
-      <!-- Dentist Dashboard -->
-      <div *ngIf="isDentist" class="dentist-dashboard">
-        <h1>Diş Hekimi Kontrol Paneli</h1>
-        
-        <mat-card class="appointments-card">
-          <mat-card-header>
-            <mat-card-title>Yaklaşan Randevular</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <mat-list *ngIf="upcomingAppointments.length > 0; else noAppointments">
-              <mat-list-item *ngFor="let apt of upcomingAppointments" 
-                           (click)="onAppointmentClick(apt)"
-                           class="appointment-item">
-                <mat-icon matListItemIcon>event</mat-icon>
-                <div matListItemTitle>{{ formatDate(apt.appointmentDate || apt.appointment_date) }} {{ apt.startTime || apt.start_time }}</div>
-                <div matListItemLine>{{ apt.patientFirstName || apt.patient_first_name }} {{ apt.patientLastName || apt.patient_last_name }}</div>
-              </mat-list-item>
-            </mat-list>
-            <ng-template #noAppointments>
-              <p>Yaklaşan randevu bulunmamaktadır.</p>
-            </ng-template>
-          </mat-card-content>
-        </mat-card>
-      </div>
-
-      <!-- Secretary Dashboard -->
-      <div *ngIf="isSecretary" class="secretary-dashboard">
-        <h1>Sekreter Kontrol Paneli</h1>
-        
-        <mat-card class="appointments-card">
-          <mat-card-header>
-            <mat-card-title>Bugün ve Yarın Randevuları</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <mat-list *ngIf="upcomingAppointments.length > 0; else noAppointments">
-              <mat-list-item *ngFor="let apt of upcomingAppointments" 
-                           (click)="onAppointmentClick(apt)"
-                           class="appointment-item">
-                <mat-icon matListItemIcon>event</mat-icon>
-                <div matListItemTitle>{{ formatDate(apt.appointmentDate || apt.appointment_date) }} {{ apt.startTime || apt.start_time }}</div>
-                <div matListItemLine>{{ apt.patientFirstName || apt.patient_first_name }} {{ apt.patientLastName || apt.patient_last_name }}</div>
-              </mat-list-item>
-            </mat-list>
-            <ng-template #noAppointments>
-              <p>Bugün ve yarın için randevu bulunmamaktadır.</p>
-            </ng-template>
-          </mat-card-content>
-        </mat-card>
+    <div class="page">
+      <div class="page-header">
+        <div>
+          <h1>{{ greeting() }}</h1>
+          <p class="page-subtitle">{{ today() }}</p>
+        </div>
       </div>
 
       <div *ngIf="isLoading" class="loading">
-        <mat-spinner></mat-spinner>
+        <mat-spinner diameter="36"></mat-spinner>
+      </div>
+
+      <!-- Admin Dashboard -->
+      <div *ngIf="isAdmin && !isLoading" class="stat-grid">
+        <div class="stat-card" *ngFor="let card of adminCards()">
+          <div class="stat-icon" [class]="'tone-' + card.tone">
+            <mat-icon>{{ card.icon }}</mat-icon>
+          </div>
+          <div class="stat-body">
+            <div class="stat-value">{{ card.value }}</div>
+            <div class="stat-label">{{ card.label }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dentist / Secretary appointment list -->
+      <div *ngIf="(isDentist || isSecretary) && !isLoading" class="appointments-section">
+        <div class="surface-card appointments-card">
+          <div class="card-heading">
+            <mat-icon>event_available</mat-icon>
+            <h2>{{ isDentist ? 'Yaklaşan Randevularım' : 'Bugün ve Yarın Randevuları' }}</h2>
+          </div>
+
+          <div *ngIf="upcomingAppointments.length === 0" class="empty-state">
+            <mat-icon>event_busy</mat-icon>
+            <div class="empty-title">Randevu bulunmuyor</div>
+            <div class="empty-hint">{{ isDentist ? 'Yaklaşan bir randevunuz yok.' : 'Bugün veya yarın için randevu yok.' }}</div>
+          </div>
+
+          <mat-list *ngIf="upcomingAppointments.length > 0">
+            <mat-list-item *ngFor="let apt of upcomingAppointments"
+                         (click)="onAppointmentClick(apt)"
+                         class="appointment-item">
+              <mat-icon matListItemIcon class="apt-icon">event</mat-icon>
+              <div matListItemTitle>{{ apt.patientFirstName || apt.patient_first_name }} {{ apt.patientLastName || apt.patient_last_name }}</div>
+              <div matListItemLine>{{ formatDate(apt.appointmentDate || apt.appointment_date) }} · {{ (apt.startTime || apt.start_time || '').substring(0,5) }}</div>
+            </mat-list-item>
+          </mat-list>
+        </div>
       </div>
     </div>
   `,
   styles: [`
-    .dashboard-container {
-      padding: 20px;
-    }
-    h1 {
-      color: #1E3A8A;
-      margin-bottom: 20px;
-    }
-    .stat-card {
-      height: 100%;
-      text-align: center;
-    }
-    .stat-value {
-      font-size: 32px;
-      font-weight: bold;
-      color: #3B82F6;
-    }
-    .stat-label {
-      font-size: 14px;
-      color: #666;
-      margin-top: 8px;
-    }
-    .appointments-card {
-      margin-top: 20px;
-    }
-    .appointment-item {
-      cursor: pointer;
-    }
-    .appointment-item:hover {
-      background-color: #f5f5f5;
-    }
+    .page { padding: 24px 32px; }
     .loading {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 200px;
+      height: 240px;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .stat-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(15, 23, 42, 0.04);
+      padding: 18px 20px;
+      transition: box-shadow 0.15s ease, transform 0.15s ease;
+    }
+    .stat-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+    .stat-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .stat-icon mat-icon {
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+    }
+    .tone-blue  { background: var(--bulka-primary-50, #eff6ff); color: var(--bulka-primary-700, #1d4ed8); }
+    .tone-green { background: var(--success-50); color: var(--success-600); }
+    .tone-amber { background: var(--amber-50); color: var(--amber-600); }
+    .tone-slate { background: #f1f5f9; color: var(--ink-500); }
+    .stat-body { min-width: 0; }
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--ink-900);
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stat-label {
+      font-size: 13px;
+      color: var(--ink-500);
+      margin-top: 2px;
+    }
+    .appointments-section { margin-top: 8px; }
+    .appointments-card { padding: 8px 8px 8px; }
+    .card-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 16px 8px;
+    }
+    .card-heading mat-icon {
+      color: var(--bulka-primary-600, #2563eb);
+    }
+    .card-heading h2 {
+      font-size: 16px;
+      margin: 0;
+    }
+    .appointment-item {
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+    }
+    .appointment-item:hover {
+      background-color: var(--surface-muted);
+    }
+    .apt-icon {
+      color: var(--bulka-primary-600, #2563eb);
     }
   `]
 })
@@ -320,5 +300,34 @@ export class DashboardComponent implements OnInit {
   formatCurrency(amount?: number): string {
     if (!amount) return '₺0';
     return `₺${amount.toLocaleString('tr-TR')}`;
+  }
+
+  greeting(): string {
+    const hour = new Date().getHours();
+    const timeGreeting = hour < 12 ? 'Günaydın' : hour < 18 ? 'İyi günler' : 'İyi akşamlar';
+    const name = this.currentUser?.email?.split('@')[0] || '';
+    return `${timeGreeting}${name ? ', ' + name : ''}`;
+  }
+
+  today(): string {
+    return new Date().toLocaleDateString('tr-TR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+
+  adminCards(): StatCard[] {
+    const s = this.stats;
+    return [
+      { value: `${s?.totalPatients ?? 0}`, label: 'Toplam Hasta', icon: 'groups', tone: 'blue' },
+      { value: `${s?.upcomingAppointmentsCount ?? 0}`, label: 'Yaklaşan Randevu', icon: 'event_upcoming', tone: 'amber' },
+      { value: this.formatCurrency(s?.thisMonthFinancial), label: 'Bu Ay Finansal', icon: 'payments', tone: 'green' },
+      { value: `${s?.thisMonthPatients ?? 0}`, label: 'Bu Ay Yeni Hasta', icon: 'person_add', tone: 'blue' },
+      { value: this.formatCurrency(s?.lastMonthFinancial), label: 'Geçen Ay Finansal', icon: 'account_balance_wallet', tone: 'slate' },
+      { value: `${s?.lastMonthPatients ?? 0}`, label: 'Geçen Ay Yeni Hasta', icon: 'person_outline', tone: 'slate' },
+      { value: `${s?.lastMonthTransactions ?? 0}`, label: 'Geçen Ay İşlem', icon: 'receipt_long', tone: 'slate' },
+    ];
   }
 }

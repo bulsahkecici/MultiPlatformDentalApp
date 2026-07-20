@@ -1,44 +1,286 @@
-/* You can add global styles to this file, and also import other style files */
-@import '@angular/material/prebuilt-themes/indigo-pink.css';
+@use '@angular/material' as mat;
 
-html, body { 
-  height: 100%; 
-  margin: 0; 
-  font-family: Roboto, "Helvetica Neue", sans-serif; 
-}
+@include mat.core();
 
-/* BULKA DENTAL Color Palette */
+// ---------------------------------------------------------------------------
+// BULKA DENTAL — marka renk paleti
+// Marka rengi (#3B82F6 / #1E3A8A) Tailwind'in blue-500/900 tonlarıyla birebir
+// örtüştüğü için o ölçeği temel aldık — bilinen, erişilebilirlik açısından
+// test edilmiş bir tonal skala.
+// ---------------------------------------------------------------------------
+$bulka-blue-palette: (
+  50: #eff6ff,
+  100: #dbeafe,
+  200: #bfdbfe,
+  300: #93c5fd,
+  400: #60a5fa,
+  500: #3b82f6,
+  600: #2563eb,
+  700: #1d4ed8,
+  800: #1e40af,
+  900: #1e3a8a,
+  A100: #93c5fd,
+  A200: #60a5fa,
+  A400: #3b82f6,
+  A700: #1d4ed8,
+  contrast: (
+    50: rgba(black, 0.87),
+    100: rgba(black, 0.87),
+    200: rgba(black, 0.87),
+    300: rgba(black, 0.87),
+    400: rgba(black, 0.87),
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+    A100: rgba(black, 0.87),
+    A200: rgba(black, 0.87),
+    A400: white,
+    A700: white,
+  ),
+);
+
+$bulka-red-palette: (
+  50: #fef2f2,
+  100: #fee2e2,
+  200: #fecaca,
+  300: #fca5a5,
+  400: #f87171,
+  500: #ef4444,
+  600: #dc2626,
+  700: #b91c1c,
+  800: #991b1b,
+  900: #7f1d1d,
+  A100: #fca5a5,
+  A200: #f87171,
+  A400: #ef4444,
+  A700: #b91c1c,
+  contrast: (
+    50: rgba(black, 0.87),
+    100: rgba(black, 0.87),
+    200: rgba(black, 0.87),
+    300: rgba(black, 0.87),
+    400: white,
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+    A100: rgba(black, 0.87),
+    A200: white,
+    A400: white,
+    A700: white,
+  ),
+);
+
+$bulka-primary: mat.m2-define-palette($bulka-blue-palette, 700, 500, 900);
+$bulka-accent: mat.m2-define-palette($bulka-blue-palette, 500, 300, 700);
+$bulka-warn: mat.m2-define-palette($bulka-red-palette, 600);
+
+$bulka-typography: mat.m2-define-typography-config(
+  $font-family: '"Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+);
+
+$bulka-theme: mat.m2-define-light-theme((
+  color: (
+    primary: $bulka-primary,
+    accent: $bulka-accent,
+    warn: $bulka-warn,
+  ),
+  typography: $bulka-typography,
+  density: 0,
+));
+
+@include mat.all-component-themes($bulka-theme);
+
+// ---------------------------------------------------------------------------
+// Design token'ları — spacing, radius, gölge, renk (bileşenlerde CSS var
+// olarak kullanılır, tek yerden ayarlanır)
+// ---------------------------------------------------------------------------
 :root {
-  --bulka-light-blue: #B3D9FF;
-  --bulka-medium-blue: #3B82F6;
-  --bulka-dark-blue: #1E3A8A;
-  --bulka-silver: #C0C0C0;
-  --bulka-light-green: #90EE90;
-  --bulka-gradient-start: #E6F2FF;
-  --bulka-gradient-end: #FFFFFF;
+  // Marka renkleri
+  --bulka-primary-900: #1e3a8a;   // koyu lacivert — toolbar/sidenav, başlıklar
+  --bulka-primary-800: #1e40af;
+  --bulka-primary-700: #1d4ed8;
+  --bulka-primary-600: #2563eb;
+  --bulka-primary-500: #3b82f6;   // vurgu — aktif durum, ikonlar, linkler
+  --bulka-primary-100: #dbeafe;
+  --bulka-primary-50:  #eff6ff;   // sayfa arka planı tonu
+
+  // Nötr / metin
+  --ink-900: #0f172a;   // ana başlık metni
+  --ink-700: #334155;   // gövde metni
+  --ink-500: #64748b;   // ikincil / yardımcı metin
+  --ink-300: #cbd5e1;   // ayraç, kenarlık
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --page-bg: #f1f5f9;
+
+  // Durum renkleri
+  --success-50: #f0fdf4;
+  --success-500: #22c55e;
+  --success-600: #16a34a;
+  --warn-50: #fef2f2;
+  --warn-600: #dc2626;
+  --amber-50: #fffbeb;
+  --amber-600: #d97706;
+
+  // Ölçekler
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  // Gölgeler (yumuşak, çok katmanlı olmayan modern kart gölgesi)
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 2px 4px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 8px 16px rgba(15, 23, 42, 0.10), 0 2px 6px rgba(15, 23, 42, 0.06);
 }
 
-/* Material Theme Override */
-.mat-primary {
-  background-color: var(--bulka-medium-blue) !important;
-  color: white !important;
+html, body {
+  height: 100%;
+  margin: 0;
 }
 
-/* Custom scrollbar */
+body {
+  font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: var(--page-bg);
+  color: var(--ink-700);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--ink-900);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+// ---------------------------------------------------------------------------
+// Sayfa düzeni yardımcı sınıfları — her feature bileşeni bunları kullanır,
+// böylece tüm sayfalarda tutarlı boşluk/hizalama sağlanır.
+// ---------------------------------------------------------------------------
+.page {
+  padding: var(--space-6) var(--space-8);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.page-header h1 {
+  font-size: 22px;
+  margin: 0;
+}
+
+.page-subtitle {
+  color: var(--ink-500);
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+// Kart yüzeyi — mat-card yerine düz div'lerde de kullanılabilir tutarlı stil
+.surface-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(15, 23, 42, 0.04);
+}
+
+.mat-mdc-card {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+  border: 1px solid rgba(15, 23, 42, 0.04);
+}
+
+.mat-mdc-raised-button, .mat-mdc-unelevated-button {
+  border-radius: var(--radius-sm) !important;
+  letter-spacing: 0 !important;
+  font-weight: 600 !important;
+}
+
+.mat-mdc-outlined-button {
+  border-radius: var(--radius-sm) !important;
+  font-weight: 600 !important;
+}
+
+// Boş durum (empty state) — tablolarda/listede veri yokken
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-4);
+  color: var(--ink-500);
+  text-align: center;
+  gap: var(--space-2);
+}
+
+.empty-state mat-icon {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  color: var(--ink-300);
+  margin-bottom: var(--space-2);
+}
+
+.empty-state .empty-title {
+  font-weight: 600;
+  color: var(--ink-700);
+  font-size: 15px;
+}
+
+.empty-state .empty-hint {
+  font-size: 13px;
+}
+
+// Durum rozetleri (chip) — tablolarda status göstermek için
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1.6;
+}
+.status-chip.status-neutral   { background: #f1f5f9; color: var(--ink-500); }
+.status-chip.status-info      { background: var(--bulka-primary-100, #dbeafe); color: var(--bulka-primary-700, #1d4ed8); }
+.status-chip.status-success   { background: var(--success-50); color: var(--success-600); }
+.status-chip.status-warn      { background: var(--amber-50); color: var(--amber-600); }
+.status-chip.status-danger    { background: var(--warn-50); color: var(--warn-600); }
+
+// Genel odak/erişilebilirlik
+a, button {
+  font-family: inherit;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: var(--bulka-medium-blue);
+  background: #cbd5e1;
   border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--bulka-dark-blue);
+  background: #94a3b8;
 }

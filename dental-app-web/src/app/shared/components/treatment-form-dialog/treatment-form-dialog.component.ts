@@ -288,7 +288,7 @@ export class TreatmentFormDialogComponent implements OnInit {
   loadPatients(): void {
     this.patientService.getPatients(1, 1000).subscribe({
       next: (response) => {
-        this.patients = response.patients || [];
+        this.patients = (response.patients || []).map((p: any) => DataMapper.mapPatient(p));
       }
     });
   }
@@ -375,10 +375,9 @@ export class TreatmentFormDialogComponent implements OnInit {
           treatmentData.cost = formValue.cost;
         }
 
-        const backendData = DataMapper.mapTreatmentToBackend(treatmentData);
         const request = this.data
-          ? this.treatmentService.updateTreatment(this.data.id, backendData)
-          : this.treatmentService.createTreatment(backendData);
+          ? this.treatmentService.updateTreatment(this.data.id, treatmentData)
+          : this.treatmentService.createTreatment(treatmentData);
 
         request.subscribe({
           next: () => this.dialogRef.close(true),

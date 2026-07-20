@@ -25,9 +25,12 @@ import { DataMapper } from '../../core/utils/data-mapper';
     MatDialogModule
   ],
   template: `
-    <div class="treatments-container">
-      <div class="treatments-header">
-        <h1>Tedavi Yönetimi</h1>
+    <div class="page">
+      <div class="page-header">
+        <div>
+          <h1>Tedavi Yönetimi</h1>
+          <p class="page-subtitle">{{ treatments.length }} tedavi kaydı</p>
+        </div>
         <button mat-raised-button color="primary" (click)="openTreatmentForm()">
           <mat-icon>add</mat-icon>
           Yeni Tedavi
@@ -35,73 +38,77 @@ import { DataMapper } from '../../core/utils/data-mapper';
       </div>
 
       <div *ngIf="isLoading" class="loading">
-        <mat-spinner></mat-spinner>
+        <mat-spinner diameter="36"></mat-spinner>
       </div>
 
-      <mat-card *ngIf="!isLoading">
-        <mat-card-content>
-          <table mat-table [dataSource]="treatments" class="treatments-table">
-            <ng-container matColumnDef="patient">
-              <th mat-header-cell *matHeaderCellDef>Hasta</th>
-              <td mat-cell *matCellDef="let treatment">
-                {{ treatment.patientFirstName || treatment.patient_first_name }} {{ treatment.patientLastName || treatment.patient_last_name }}
-              </td>
-            </ng-container>
+      <mat-card *ngIf="!isLoading && treatments.length === 0">
+        <div class="empty-state">
+          <mat-icon>medical_information</mat-icon>
+          <div class="empty-title">Henüz tedavi kaydı yok</div>
+          <div class="empty-hint">"Yeni Tedavi" ile ilk kaydı oluşturun.</div>
+        </div>
+      </mat-card>
 
-            <ng-container matColumnDef="treatmentType">
-              <th mat-header-cell *matHeaderCellDef>Tedavi Tipi</th>
-              <td mat-cell *matCellDef="let treatment">{{ treatment.treatmentType || treatment.treatment_type }}</td>
-            </ng-container>
+      <mat-card *ngIf="!isLoading && treatments.length > 0" class="table-card">
+        <table mat-table [dataSource]="treatments" class="treatments-table">
+          <ng-container matColumnDef="patient">
+            <th mat-header-cell *matHeaderCellDef>Hasta</th>
+            <td mat-cell *matCellDef="let treatment">
+              {{ treatment.patientFirstName || treatment.patient_first_name }} {{ treatment.patientLastName || treatment.patient_last_name }}
+            </td>
+          </ng-container>
 
-            <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef>Durum</th>
-              <td mat-cell *matCellDef="let treatment">{{ treatment.status }}</td>
-            </ng-container>
+          <ng-container matColumnDef="treatmentType">
+            <th mat-header-cell *matHeaderCellDef>Tedavi Tipi</th>
+            <td mat-cell *matCellDef="let treatment">{{ treatment.treatmentType || treatment.treatment_type }}</td>
+          </ng-container>
 
-            <ng-container matColumnDef="cost" *ngIf="canViewPrices">
-              <th mat-header-cell *matHeaderCellDef>Ücret</th>
-              <td mat-cell *matCellDef="let treatment">
-                {{ formatCurrency(treatment.cost) }}
-              </td>
-            </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Durum</th>
+            <td mat-cell *matCellDef="let treatment">
+              <span class="status-chip" [class]="statusChipClass(treatment.status)">{{ statusLabel(treatment.status) }}</span>
+            </td>
+          </ng-container>
 
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef>İşlemler</th>
-              <td mat-cell *matCellDef="let treatment">
-                <button mat-icon-button (click)="editTreatment(treatment)">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button mat-icon-button color="warn" (click)="deleteTreatment(treatment)">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </td>
-            </ng-container>
+          <ng-container matColumnDef="cost" *ngIf="canViewPrices">
+            <th mat-header-cell *matHeaderCellDef>Ücret</th>
+            <td mat-cell *matCellDef="let treatment">
+              {{ formatCurrency(treatment.cost) }}
+            </td>
+          </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-          </table>
-        </mat-card-content>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let treatment">
+              <button mat-icon-button (click)="editTreatment(treatment)" matTooltip="Düzenle">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="deleteTreatment(treatment)" matTooltip="Sil">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns" class="data-row"></tr>
+        </table>
       </mat-card>
     </div>
   `,
   styles: [`
-    .treatments-container {
-      padding: 20px;
-    }
-    .treatments-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
+    .page { padding: 24px 32px; }
+    .table-card { padding: 0; overflow: hidden; }
     .treatments-table {
       width: 100%;
+    }
+    .data-row:hover {
+      background-color: var(--surface-muted);
     }
     .loading {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 400px;
+      height: 300px;
     }
   `]
 })
@@ -194,5 +201,25 @@ export class TreatmentsComponent implements OnInit {
   formatCurrency(amount?: number): string {
     if (!amount) return '₺0';
     return `₺${amount.toLocaleString('tr-TR')}`;
+  }
+
+  statusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      planned: 'Planlandı',
+      in_progress: 'Devam Ediyor',
+      completed: 'Tamamlandı',
+      cancelled: 'İptal Edildi'
+    };
+    return labels[status] || status;
+  }
+
+  statusChipClass(status: string): string {
+    const classes: Record<string, string> = {
+      planned: 'status-info',
+      in_progress: 'status-warn',
+      completed: 'status-success',
+      cancelled: 'status-danger'
+    };
+    return classes[status] || 'status-neutral';
   }
 }

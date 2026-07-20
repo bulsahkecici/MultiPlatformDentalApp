@@ -1,10 +1,11 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
@@ -12,6 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AppointmentService } from '../../../core/services/appointment.service';
 import { PatientService } from '../../../core/services/patient.service';
+import { UserService } from '../../../core/services/user.service';
 import { Appointment, Patient } from '../../../core/models/models';
 import { DataMapper } from '../../../core/utils/data-mapper';
 
@@ -21,10 +23,12 @@ import { DataMapper } from '../../../core/utils/data-mapper';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
+    MatIconModule,
     MatDatepickerModule,
     MatNativeDateModule,
     MatSelectModule,
@@ -32,14 +36,27 @@ import { DataMapper } from '../../../core/utils/data-mapper';
     MatSnackBarModule
   ],
   template: `
-    <h2 mat-dialog-title>{{ data ? 'Randevu Düzenle' : 'Yeni Randevu' }}</h2>
+    <h2 mat-dialog-title>{{ data?.id ? 'Randevu Düzenle' : 'Yeni Randevu' }}</h2>
     <mat-dialog-content>
+      <div class="cancelled-badge" *ngIf="data?.status === 'cancelled'">
+        <mat-icon>event_busy</mat-icon> Bu randevu iptal edilmiş
+      </div>
+
       <form [formGroup]="appointmentForm">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Hasta</mat-label>
           <mat-select formControlName="patientId" required>
             <mat-option *ngFor="let patient of patients" [value]="patient.id">
               {{ patient.firstName }} {{ patient.lastName }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Dişhekimi</mat-label>
+          <mat-select formControlName="dentistId" required>
+            <mat-option *ngFor="let dentist of dentists" [value]="dentist.id">
+              {{ dentist.name }}
             </mat-option>
           </mat-select>
         </mat-form-field>
@@ -78,8 +95,28 @@ import { DataMapper } from '../../../core/utils/data-mapper';
           <textarea matInput formControlName="notes" rows="3"></textarea>
         </mat-form-field>
       </form>
+
+      <div class="cancel-panel" *ngIf="showCancelPanel">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>İptal Nedeni (opsiyonel)</mat-label>
+          <textarea matInput [(ngModel)]="cancelReason" rows="2"></textarea>
+        </mat-form-field>
+        <div class="cancel-panel-actions">
+          <button mat-button (click)="showCancelPanel = false">Vazgeç</button>
+          <button mat-raised-button color="warn" (click)="confirmCancelAppointment()" [disabled]="isCancelling">
+            <mat-spinner *ngIf="isCancelling" diameter="18" class="inline-spinner"></mat-spinner>
+            <span *ngIf="!isCancelling">İptali Onayla</span>
+          </button>
+        </div>
+      </div>
     </mat-dialog-content>
     <mat-dialog-actions>
+      <button mat-stroked-button color="warn"
+              *ngIf="data?.id && data?.status !== 'cancelled' && !showCancelPanel"
+              (click)="showCancelPanel = true">
+        <mat-icon>event_busy</mat-icon> Randevuyu İptal Et
+      </button>
+      <span class="spacer"></span>
       <button mat-button (click)="onCancel()">İptal</button>
       <button mat-raised-button color="primary" (click)="onSave()" [disabled]="!appointmentForm.valid || isLoading">
         <mat-spinner *ngIf="isLoading" diameter="20" class="inline-spinner"></mat-spinner>
@@ -107,12 +144,43 @@ import { DataMapper } from '../../../core/utils/data-mapper';
       max-height: 600px;
       overflow-y: auto;
     }
+    .cancelled-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--warn-50, #fef2f2);
+      color: var(--warn-600, #dc2626);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm, 6px);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .cancel-panel {
+      margin-top: 8px;
+      padding: 12px;
+      border: 1px solid rgba(220, 38, 38, 0.2);
+      border-radius: var(--radius-sm, 6px);
+      background: var(--warn-50, #fef2f2);
+    }
+    .cancel-panel-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .spacer {
+      flex: 1 1 auto;
+    }
   `]
 })
 export class AppointmentFormDialogComponent implements OnInit {
   appointmentForm: FormGroup;
   patients: Patient[] = [];
+  dentists: { id: number; name: string }[] = [];
   isLoading = false;
+  showCancelPanel = false;
+  cancelReason = '';
+  isCancelling = false;
 
   constructor(
     private fb: FormBuilder,
@@ -120,10 +188,12 @@ export class AppointmentFormDialogComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data: Appointment | null,
     private appointmentService: AppointmentService,
     private patientService: PatientService,
+    private userService: UserService,
     private snackBar: MatSnackBar
   ) {
     this.appointmentForm = this.fb.group({
       patientId: ['', Validators.required],
+      dentistId: ['', Validators.required],
       appointmentDate: [new Date(), Validators.required],
       startTime: ['09:00', Validators.required],
       endTime: ['10:00', Validators.required],
@@ -134,15 +204,17 @@ export class AppointmentFormDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPatients();
-    
+    this.loadDentists();
+
     if (this.data) {
       const mapped = DataMapper.mapAppointment(this.data);
       const date = new Date(mapped.appointmentDate || mapped.appointment_date || '');
       const startTime = mapped.startTime || mapped.start_time || '';
       const endTime = mapped.endTime || mapped.end_time || '';
-      
+
       this.appointmentForm.patchValue({
         patientId: mapped.patientId || mapped.patient_id,
+        dentistId: mapped.dentistId || mapped.dentist_id,
         appointmentDate: date,
         startTime: startTime.substring(0, 5),
         endTime: endTime.substring(0, 5),
@@ -155,7 +227,21 @@ export class AppointmentFormDialogComponent implements OnInit {
   loadPatients(): void {
     this.patientService.getPatients(1, 1000).subscribe({
       next: (response) => {
-        this.patients = response.patients || [];
+        this.patients = (response.patients || []).map((p: any) => DataMapper.mapPatient(p));
+      }
+    });
+  }
+
+  loadDentists(): void {
+    this.userService.getDentists().subscribe({
+      next: (response) => {
+        this.dentists = (response.dentists || []).map(d => ({
+          id: d.id,
+          name: (`${d.firstName || ''} ${d.lastName || ''}`.trim()) || d.email
+        }));
+      },
+      error: () => {
+        this.dentists = [];
       }
     });
   }
@@ -166,6 +252,7 @@ export class AppointmentFormDialogComponent implements OnInit {
       const formValue = this.appointmentForm.value;
       const appointmentData: Partial<Appointment> = {
         patientId: formValue.patientId,
+        dentistId: formValue.dentistId,
         appointmentDate: formValue.appointmentDate.toISOString().split('T')[0],
         startTime: `${formValue.startTime}:00`,
         endTime: `${formValue.endTime}:00`,
@@ -174,12 +261,11 @@ export class AppointmentFormDialogComponent implements OnInit {
         status: 'scheduled'
       };
 
-      // Convert to backend format
-      const backendData = DataMapper.mapAppointmentToBackend(appointmentData);
-
-      const request = this.data
-        ? this.appointmentService.updateAppointment(this.data.id, backendData)
-        : this.appointmentService.createAppointment(backendData);
+      // this.data slot tıklaması için tarih/saat/dişhekimi önyükleme amacıyla da
+      // (id'siz) doldurulabilir — gerçek düzenleme olup olmadığını id varlığı belirler.
+      const request = this.data?.id
+        ? this.appointmentService.updateAppointment(this.data.id, appointmentData)
+        : this.appointmentService.createAppointment(appointmentData);
 
       request.subscribe({
         next: () => {
@@ -193,6 +279,22 @@ export class AppointmentFormDialogComponent implements OnInit {
         }
       });
     }
+  }
+
+  confirmCancelAppointment(): void {
+    if (!this.data?.id) return;
+    this.isCancelling = true;
+    this.appointmentService.cancelAppointment(this.data.id, this.cancelReason || undefined).subscribe({
+      next: () => {
+        this.snackBar.open('Randevu iptal edildi', 'Kapat', { duration: 3000 });
+        this.dialogRef.close(true);
+      },
+      error: (error) => {
+        const errorMessage = error.error?.message || 'Randevu iptal edilirken hata oluştu';
+        this.snackBar.open(errorMessage, 'Kapat', { duration: 5000 });
+        this.isCancelling = false;
+      }
+    });
   }
 
   onCancel(): void {

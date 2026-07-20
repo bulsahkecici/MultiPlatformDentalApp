@@ -40,31 +40,32 @@ import { Patient } from '../../core/models/models';
     MatExpansionModule
   ],
   template: `
-    <div class="payments-container">
-      <h1>Ödeme ve İndirim Yönetimi</h1>
+    <div class="page">
+      <div class="page-header">
+        <div>
+          <h1>Ödeme ve İndirim Yönetimi</h1>
+          <p class="page-subtitle">Tahsilat, tedavi planı onayı ve kurum anlaşmaları</p>
+        </div>
+      </div>
 
-      <mat-tab-group>
+      <mat-tab-group animationDuration="150ms">
         <!-- Özet -->
         <mat-tab label="Özet">
           <div class="summary-cards">
-            <mat-card class="summary-card">
-              <mat-card-content>
-                <mat-icon color="warn">account_balance_wallet</mat-icon>
-                <div>
-                  <div class="summary-label">Toplam Alacak</div>
-                  <div class="summary-value">{{ totalReceivables | number:'1.2-2' }} ₺</div>
-                </div>
-              </mat-card-content>
-            </mat-card>
-            <mat-card class="summary-card">
-              <mat-card-content>
-                <mat-icon color="primary">payments</mat-icon>
-                <div>
-                  <div class="summary-label">Toplam Gelir</div>
-                  <div class="summary-value">{{ totalIncome | number:'1.2-2' }} ₺</div>
-                </div>
-              </mat-card-content>
-            </mat-card>
+            <div class="summary-card">
+              <div class="summary-icon tone-blue"><mat-icon>account_balance_wallet</mat-icon></div>
+              <div>
+                <div class="summary-label">Toplam Alacak</div>
+                <div class="summary-value">{{ totalReceivables | number:'1.2-2' }} ₺</div>
+              </div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-icon tone-green"><mat-icon>payments</mat-icon></div>
+              <div>
+                <div class="summary-label">Toplam Gelir</div>
+                <div class="summary-value">{{ totalIncome | number:'1.2-2' }} ₺</div>
+              </div>
+            </div>
           </div>
         </mat-tab>
 
@@ -72,9 +73,10 @@ import { Patient } from '../../core/models/models';
         <mat-tab label="Tedavi Planı Onaylama">
           <div class="tab-content">
             <div *ngIf="loadingPlans" class="loading"><mat-spinner diameter="36"></mat-spinner></div>
-            <p *ngIf="!loadingPlans && pendingPlans.length === 0" class="empty-text">
-              Onay bekleyen tedavi planı yok.
-            </p>
+            <div *ngIf="!loadingPlans && pendingPlans.length === 0" class="empty-state">
+              <mat-icon>fact_check</mat-icon>
+              <div class="empty-title">Onay bekleyen tedavi planı yok</div>
+            </div>
             <mat-accordion>
               <mat-expansion-panel *ngFor="let plan of pendingPlans">
                 <mat-expansion-panel-header>
@@ -221,7 +223,7 @@ import { Patient } from '../../core/models/models';
                 <mat-card-title>{{ selectedAgreement.institution_name }}</mat-card-title>
               </mat-card-header>
               <mat-card-content>
-                <div class="agreement-info">
+                <div class="agreement-info" *ngIf="!editMode">
                   <p><strong>İletişim Kişisi:</strong> {{ selectedAgreement.contact_person || '-' }}</p>
                   <p><strong>Telefon:</strong> {{ selectedAgreement.contact_phone || '-' }}</p>
                   <p><strong>E-posta:</strong> {{ selectedAgreement.contact_email || '-' }}</p>
@@ -229,11 +231,46 @@ import { Patient } from '../../core/models/models';
                   <p *ngIf="selectedAgreement.notes"><strong>Notlar:</strong> {{ selectedAgreement.notes }}</p>
                 </div>
 
-                <div class="agreement-actions" *ngIf="canEdit">
+                <div class="agreement-actions" *ngIf="canEdit && !editMode">
                   <button mat-raised-button color="primary" (click)="editAgreement()">
                     Düzenle
                   </button>
                 </div>
+
+                <form class="agreement-edit-form" *ngIf="editMode">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Kurum Adı</mat-label>
+                    <input matInput [(ngModel)]="editForm.institution_name" name="institution_name" required>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>İletişim Kişisi</mat-label>
+                    <input matInput [(ngModel)]="editForm.contact_person" name="contact_person">
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Telefon</mat-label>
+                    <input matInput [(ngModel)]="editForm.contact_phone" name="contact_phone">
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>E-posta</mat-label>
+                    <input matInput type="email" [(ngModel)]="editForm.contact_email" name="contact_email">
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Genel İndirim (%)</mat-label>
+                    <input matInput type="number" min="0" max="100" [(ngModel)]="editForm.discount_percentage" name="discount_percentage">
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Notlar</mat-label>
+                    <textarea matInput rows="2" [(ngModel)]="editForm.notes" name="notes"></textarea>
+                  </mat-form-field>
+                  <div class="agreement-actions">
+                    <button mat-button type="button" (click)="cancelAgreementEdit()">Vazgeç</button>
+                    <button mat-raised-button color="primary" type="button" (click)="saveAgreementEdit()"
+                            [disabled]="!editForm.institution_name || savingAgreement">
+                      <mat-spinner *ngIf="savingAgreement" diameter="18" class="inline-spinner"></mat-spinner>
+                      <span *ngIf="!savingAgreement">Kaydet</span>
+                    </button>
+                  </div>
+                </form>
               </mat-card-content>
             </mat-card>
           </div>
@@ -242,45 +279,51 @@ import { Patient } from '../../core/models/models';
     </div>
   `,
   styles: [`
-    .payments-container {
-      padding: 20px;
-    }
+    .page { padding: 24px 32px; }
+    ::ng-deep .mat-mdc-tab-body-wrapper { padding-top: 4px; }
     .tab-content {
-      padding: 20px 0;
+      padding: 20px 4px;
     }
     .loading {
       display: flex;
       justify-content: center;
       padding: 24px;
     }
-    .empty-text {
-      color: rgba(0,0,0,0.54);
-      padding: 16px;
-    }
     .summary-cards {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 20px;
+      gap: 16px;
       margin-top: 20px;
     }
-    .summary-card mat-card-content {
+    .summary-card {
       display: flex;
       align-items: center;
       gap: 16px;
-      padding: 16px;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(15, 23, 42, 0.04);
+      padding: 18px 20px;
     }
-    .summary-card mat-icon {
-      font-size: 36px;
-      width: 36px;
-      height: 36px;
+    .summary-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     }
+    .summary-icon.tone-blue { background: var(--bulka-primary-50, #eff6ff); color: var(--bulka-primary-700, #1d4ed8); }
+    .summary-icon.tone-green { background: var(--success-50); color: var(--success-600); }
     .summary-label {
-      color: rgba(0,0,0,0.54);
+      color: var(--ink-500);
       font-size: 13px;
     }
     .summary-value {
-      font-size: 24px;
-      font-weight: bold;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--ink-900);
     }
     .plan-items-table {
       width: 100%;
@@ -296,20 +339,22 @@ import { Patient } from '../../core/models/models';
       grid-template-columns: 320px 1fr;
       gap: 20px;
       margin-top: 20px;
+      align-items: start;
     }
     .payment-detail {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 16px;
     }
     .full-width {
       width: 100%;
     }
     .patient-item {
       cursor: pointer;
+      border-radius: var(--radius-sm);
     }
     .patient-item:hover {
-      background-color: #f5f5f5;
+      background-color: var(--surface-muted);
     }
     .debt-row {
       display: flex;
@@ -317,7 +362,7 @@ import { Patient } from '../../core/models/models';
       padding: 6px 0;
     }
     .debt-row.remaining strong {
-      color: #d32f2f;
+      color: var(--warn-600);
       font-size: 18px;
     }
     .agreements-layout {
@@ -325,21 +370,33 @@ import { Patient } from '../../core/models/models';
       grid-template-columns: 300px 1fr;
       gap: 20px;
       margin-top: 20px;
+      align-items: start;
     }
     .agreements-list mat-list-item {
       cursor: pointer;
+      border-radius: var(--radius-sm);
     }
     .agreements-list mat-list-item:hover {
-      background-color: #f5f5f5;
+      background-color: var(--surface-muted);
     }
     .selected {
-      background-color: #E6F2FF !important;
+      background-color: var(--bulka-primary-50, #eff6ff) !important;
     }
     .agreement-info p {
       margin: 8px 0;
     }
     .agreement-actions {
       margin-top: 20px;
+      display: flex;
+      gap: 12px;
+    }
+    .agreement-edit-form .full-width {
+      width: 100%;
+      margin-bottom: 4px;
+    }
+    .inline-spinner {
+      display: inline-block;
+      margin-right: 8px;
     }
   `]
 })
@@ -350,6 +407,9 @@ export class PaymentsComponent implements OnInit {
   isAdmin = false;
   isSecretary = false;
   canEdit = false;
+  editMode = false;
+  savingAgreement = false;
+  editForm: Partial<InstitutionAgreement> = {};
 
   // Özet
   totalReceivables = 0;
@@ -526,10 +586,35 @@ export class PaymentsComponent implements OnInit {
 
   selectAgreement(agreement: InstitutionAgreement): void {
     this.selectedAgreement = agreement;
+    this.editMode = false;
   }
 
   editAgreement(): void {
-    // TODO: Open edit dialog
-    this.snackBar.open('Düzenleme özelliği yakında eklenecek', 'Kapat', { duration: 3000 });
+    if (!this.selectedAgreement) return;
+    this.editForm = { ...this.selectedAgreement };
+    this.editMode = true;
+  }
+
+  cancelAgreementEdit(): void {
+    this.editMode = false;
+  }
+
+  saveAgreementEdit(): void {
+    if (!this.selectedAgreement || !this.editForm.institution_name) return;
+    this.savingAgreement = true;
+    this.agreementService.updateAgreement(this.selectedAgreement.id, this.editForm).subscribe({
+      next: (updated) => {
+        this.selectedAgreement = updated;
+        this.agreements = this.agreements.map(a => a.id === updated.id ? updated : a);
+        this.editMode = false;
+        this.savingAgreement = false;
+        this.snackBar.open('Kurum anlaşması güncellendi', 'Kapat', { duration: 3000 });
+      },
+      error: (error) => {
+        const errorMessage = error.error?.message || 'Anlaşma güncellenirken hata oluştu';
+        this.snackBar.open(errorMessage, 'Kapat', { duration: 5000 });
+        this.savingAgreement = false;
+      }
+    });
   }
 }
