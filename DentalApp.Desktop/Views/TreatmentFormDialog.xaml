@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:helpers="clr-namespace:DentalApp.Desktop.Helpers"
-        Title="Tedavi Formu" Height="800" Width="900"
+        Title="Tedavi Formu" Height="820" Width="960"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
         WindowState="Normal">
@@ -17,18 +17,18 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="{Binding IsEditMode, Converter={StaticResource BooleanToTextConverter}}" 
-                   Style="{StaticResource MaterialDesignHeadline5TextBlock}" 
+        <TextBlock Text="{Binding IsEditMode, Converter={StaticResource BooleanToTextConverter}}"
+                   Style="{StaticResource MaterialDesignHeadline5TextBlock}"
                    Margin="0,0,0,20"/>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="10"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="15"/>
+                <ColumnDefinition Width="420"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Sol Panel: Form Alanları -->
+            <!-- Sol Panel: Hasta / Tarih / Diş Şeması / Notlar -->
             <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <ComboBox ItemsSource="{Binding Patients}"
@@ -39,136 +39,125 @@
                              IsTextSearchEnabled="True"
                              Margin="0,0,0,10"/>
 
-                    <DatePicker SelectedDate="{Binding Treatment.TreatmentDate}" 
+                    <DatePicker SelectedDate="{Binding Treatment.TreatmentDate}"
                                materialDesign:HintAssist.Hint="Tedavi Tarihi *"
                                Language="tr-TR"
-                               Margin="0,0,0,10"/>
+                               Margin="0,0,0,15"/>
 
-                    <TextBlock Text="Tedavi Türü (Kategori Seçimi)" 
-                             Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
-                             Margin="0,10,0,5"
-                             Visibility="{Binding SelectedPatient, Converter={StaticResource ObjectToVisibilityConverter}}"/>
-                    <TextBlock Text="{Binding Treatment.TreatmentType}" 
-                             Style="{StaticResource MaterialDesignBody1TextBlock}" 
-                             Foreground="{StaticResource BulkaDarkBlue}"
-                             FontWeight="Bold"
+                    <!-- Diş Şeması -->
+                    <TextBlock Text="Diş Şeması (isteğe bağlı — tedavinin uygulandığı dişi/dişleri işaretleyin)"
+                               Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                               Foreground="{StaticResource InkSecondary}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,5"/>
+                    <TextBlock Text="{Binding SelectedToothNumber, StringFormat='Seçili diş: {0}'}"
+                             Style="{StaticResource MaterialDesignBody2TextBlock}"
+                             Foreground="{StaticResource BulkaMediumBlue}"
+                             FontWeight="SemiBold"
+                             Margin="0,0,0,5"
+                             Visibility="{Binding SelectedTeeth.Count, Converter={StaticResource NonZeroToVisibilityConverter}}"/>
+                    <Border BorderBrush="{StaticResource BulkaMediumBlue}"
+                            BorderThickness="2"
+                            CornerRadius="5"
+                            Padding="10"
+                            Margin="0,0,0,15">
+                        <!-- Sabit 743x350 (1024x482 oranı) — hotspot koordinatları bu boyuta göre ölçekli -->
+                        <Grid Height="350" Width="743" HorizontalAlignment="Center">
+                            <!-- Arka plan resmi -->
+                            <Image Source="pack://application:,,,/Assets/mouth_chart.png"
+                                   Stretch="Uniform"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+
+                            <!-- Hotspot'lar için Canvas -->
+                            <Canvas>
+                                <ItemsControl ItemsSource="{Binding ToothHotspots}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Command="{Binding DataContext.SelectToothCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding ToothNumber}"
+                                                    Width="{Binding Width}"
+                                                    Height="{Binding Height}"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Padding="0"
+                                                    Cursor="Hand"
+                                                    ToolTip="{Binding ToothNumber, StringFormat='Diş {0}'}">
+                                                <Button.Style>
+                                                    <Style TargetType="Button">
+                                                        <Setter Property="Background" Value="Transparent"/>
+                                                        <Setter Property="BorderBrush" Value="Transparent"/>
+                                                        <Setter Property="BorderThickness" Value="0"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Value="True">
+                                                                <DataTrigger.Binding>
+                                                                    <MultiBinding Converter="{StaticResource ToothNumberEqualityConverter}">
+                                                                        <Binding Path="DataContext.SelectedTeeth" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                                        <Binding Path="ToothNumber"/>
+                                                                    </MultiBinding>
+                                                                </DataTrigger.Binding>
+                                                                <Setter Property="Background" Value="#40FF6B6B"/>
+                                                                <Setter Property="BorderBrush" Value="#FFFF6B6B"/>
+                                                                <Setter Property="BorderThickness" Value="3"/>
+                                                            </DataTrigger>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="Background" Value="#20FF6B6B"/>
+                                                                <Setter Property="BorderBrush" Value="#FFFF6B6B"/>
+                                                                <Setter Property="BorderThickness" Value="2"/>
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                    <ItemsControl.ItemContainerStyle>
+                                        <Style TargetType="ContentPresenter">
+                                            <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                            <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                        </Style>
+                                    </ItemsControl.ItemContainerStyle>
+                                </ItemsControl>
+                            </Canvas>
+                        </Grid>
+                    </Border>
+
+                    <TextBox Text="{Binding Treatment.Description, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="Açıklama"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             MinHeight="60"
+                             Margin="0,0,0,10"/>
+
+                    <TextBox Text="{Binding Treatment.Diagnosis, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="Tanı"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             MinHeight="60"
+                             Margin="0,0,0,10"/>
+
+                    <TextBox Text="{Binding Treatment.ProcedureNotes, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="Prosedür Notları"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             MinHeight="60"
+                             Margin="0,0,0,10"/>
+
+                    <!-- Ücret alanı sadece Patron/Sekreter görür -->
+                    <TextBlock Text="Maliyet bilgisi sadece Patron ve Sekreter tarafından görüntülenebilir."
+                             Style="{StaticResource MaterialDesignBody2TextBlock}"
+                             Foreground="{StaticResource InkMuted}"
+                             Visibility="{Binding CanViewPrices, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
                              Margin="0,0,0,10"
-                             Visibility="{Binding SelectedPatient, Converter={StaticResource ObjectToVisibilityConverter}}"/>
-
-                <TextBlock Text="Seçilen Dişler:" 
-                         Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
-                         Margin="0,10,0,5"/>
-                <TextBlock Text="{Binding SelectedToothNumber, StringFormat='Diş: {0}'}" 
-                         Style="{StaticResource MaterialDesignBody1TextBlock}" 
-                         Margin="0,0,0,10"
-                         Visibility="{Binding SelectedTeeth.Count, Converter={StaticResource NonZeroToVisibilityConverter}}"/>
-
-                <!-- Diş Şeması -->
-                <TextBlock Text="Diş Şeması" 
-                           Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
-                           Margin="0,10,0,5"/>
-                <Border BorderBrush="{StaticResource BulkaMediumBlue}" 
-                        BorderThickness="2" 
-                        CornerRadius="5"
-                        Padding="10"
-                        Margin="0,0,0,10">
-                    <!-- Sabit 743x350 (1024x482 oranı) — hotspot koordinatları bu boyuta göre ölçekli -->
-                    <Grid Height="350" Width="743" HorizontalAlignment="Center">
-                        <!-- Arka plan resmi -->
-                        <Image Source="pack://application:,,,/Assets/mouth_chart.png"
-                               Stretch="Uniform"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"/>
-                        
-                        <!-- Hotspot'lar için Canvas -->
-                        <Canvas>
-                            <ItemsControl ItemsSource="{Binding ToothHotspots}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <Canvas/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Command="{Binding DataContext.SelectToothCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                CommandParameter="{Binding ToothNumber}"
-                                                Width="{Binding Width}" 
-                                                Height="{Binding Height}"
-                                                Background="Transparent"
-                                                BorderThickness="0"
-                                                Padding="0"
-                                                Cursor="Hand"
-                                                ToolTip="{Binding ToothNumber, StringFormat='Diş {0}'}">
-                                            <Button.Style>
-                                                <Style TargetType="Button">
-                                                    <Setter Property="Background" Value="Transparent"/>
-                                                    <Setter Property="BorderBrush" Value="Transparent"/>
-                                                    <Setter Property="BorderThickness" Value="0"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Value="True">
-                                                            <DataTrigger.Binding>
-                                                                <MultiBinding Converter="{StaticResource ToothNumberEqualityConverter}">
-                                                                    <Binding Path="DataContext.SelectedTeeth" RelativeSource="{RelativeSource AncestorType=Window}"/>
-                                                                    <Binding Path="ToothNumber"/>
-                                                                </MultiBinding>
-                                                            </DataTrigger.Binding>
-                                                            <Setter Property="Background" Value="#40FF6B6B"/>
-                                                            <Setter Property="BorderBrush" Value="#FFFF6B6B"/>
-                                                            <Setter Property="BorderThickness" Value="3"/>
-                                                        </DataTrigger>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter Property="Background" Value="#20FF6B6B"/>
-                                                            <Setter Property="BorderBrush" Value="#FFFF6B6B"/>
-                                                            <Setter Property="BorderThickness" Value="2"/>
-                                                        </Trigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                                <ItemsControl.ItemContainerStyle>
-                                    <Style TargetType="ContentPresenter">
-                                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
-                                        <Setter Property="Canvas.Top" Value="{Binding Y}"/>
-                                    </Style>
-                                </ItemsControl.ItemContainerStyle>
-                            </ItemsControl>
-                        </Canvas>
-                    </Grid>
-                </Border>
-
-                <TextBox Text="{Binding Treatment.Description, UpdateSourceTrigger=PropertyChanged}" 
-                         materialDesign:HintAssist.Hint="Açıklama" 
-                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                         TextWrapping="Wrap"
-                         AcceptsReturn="True"
-                         MinHeight="60"
-                         Margin="0,0,0,10"/>
-
-                <TextBox Text="{Binding Treatment.Diagnosis, UpdateSourceTrigger=PropertyChanged}" 
-                         materialDesign:HintAssist.Hint="Tanı" 
-                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                         TextWrapping="Wrap"
-                         AcceptsReturn="True"
-                         MinHeight="60"
-                         Margin="0,0,0,10"/>
-
-                <TextBox Text="{Binding Treatment.ProcedureNotes, UpdateSourceTrigger=PropertyChanged}" 
-                         materialDesign:HintAssist.Hint="Prosedür Notları" 
-                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                         TextWrapping="Wrap"
-                         AcceptsReturn="True"
-                         MinHeight="60"
-                         Margin="0,0,0,10"/>
-
-                <!-- Ücret alanı sadece Patron/Sekreter görür -->
-                <TextBlock Text="Maliyet bilgisi sadece Patron ve Sekreter tarafından görüntülenebilir." 
-                         Style="{StaticResource MaterialDesignBody2TextBlock}" 
-                         Foreground="Gray"
-                         Visibility="{Binding CanViewPrices, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
-                         Margin="0,0,0,10"
-                         TextWrapping="Wrap"/>
+                             TextWrapping="Wrap"/>
 
                     <ComboBox ItemsSource="{Binding StatusOptions}"
                              SelectedValuePath="Value"
@@ -179,7 +168,7 @@
                 </StackPanel>
             </ScrollViewer>
 
-            <!-- Sağ Panel: TDB Tarife Seçimi -->
+            <!-- Sağ Panel: İşlem/Tarife Seçimi -->
             <materialDesign:Card Grid.Column="2" Padding="15">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -187,36 +176,33 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    
+
                     <StackPanel Grid.Row="0">
-                        <TextBlock Text="İşlem Seçimi" 
-                                   Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                        <TextBlock Text="İşlem Seçimi"
+                                   Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,5"/>
+                        <TextBlock Text="Önce bir kategori seçip listeden işlemi bulun, ardından &quot;Bu İşlemi Kullan&quot;a tıklayın."
+                                   Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                   Foreground="{StaticResource InkMuted}"
+                                   TextWrapping="Wrap"
                                    Margin="0,0,0,15"/>
 
-                        <TextBlock Text="Kategori Seçin" 
-                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
-                                   Margin="0,0,0,5"
-                                   Visibility="{Binding SelectedPatient, Converter={StaticResource ObjectToVisibilityConverter}}"/>
                         <ComboBox ItemsSource="{Binding Categories}"
                                  SelectedItem="{Binding SelectedCategory}"
                                  DisplayMemberPath="Name"
-                                 materialDesign:HintAssist.Hint="Kategori Seçin"
-                                 IsEnabled="{Binding SelectedPatient, Converter={StaticResource NullToBooleanConverter}}"
+                                 materialDesign:HintAssist.Hint="1. Kategori Seçin"
                                  Margin="0,0,0,10"/>
 
                         <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 materialDesign:HintAssist.Hint="Ara (kalem adı veya kod)"
+                                 materialDesign:HintAssist.Hint="2. Ara (kalem adı veya kod)"
                                  Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                 IsEnabled="{Binding SelectedCategory, Converter={StaticResource NullToBooleanConverter}}"
                                  Margin="0,0,0,10"/>
 
-                        <TextBlock Text="Kalemler" 
-                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
+                        <TextBlock Text="3. Listeden bir kalem seçin"
+                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                   Foreground="{StaticResource InkSecondary}"
                                    Margin="0,0,0,5"/>
                     </StackPanel>
 
@@ -225,141 +211,101 @@
                                  SelectedItem="{Binding SelectedTariffItem}">
                             <ListView.View>
                                 <GridView>
-                                <GridViewColumn Header="Kod" Width="80" DisplayMemberBinding="{Binding Code}"/>
-                                <GridViewColumn Header="Kalem Adı" Width="300" DisplayMemberBinding="{Binding Name}"/>
-                                <GridViewColumn Header="Fiyat (KDV Dahil)" Width="120">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding PriceInclVat, StringFormat='{}{0:N2} ₺'}"
-                                                       Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
+                                    <GridViewColumn Header="Kod" Width="70" DisplayMemberBinding="{Binding Code}"/>
+                                    <GridViewColumn Header="Kalem Adı" Width="220" DisplayMemberBinding="{Binding Name}"/>
+                                    <GridViewColumn Header="Fiyat (KDV Dahil)" Width="100">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding PriceInclVat, StringFormat='{}{0:N2} ₺'}"
+                                                           Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
                                 </GridView>
                             </ListView.View>
                         </ListView>
                     </ScrollViewer>
-                    
+
                     <Button Grid.Row="2"
-                           Content="Seçili Kalemi Ekle"
-                           Command="{Binding AddProcedureCommand}"
+                           Content="4. BU İŞLEMİ KULLAN"
+                           Command="{Binding AddTariffItemCommand}"
                            Style="{StaticResource MaterialDesignRaisedButton}"
-                           Margin="0,5,0,0"
+                           Background="{StaticResource BulkaMediumBlue}"
+                           Foreground="White"
+                           Margin="0,5,0,15"
                            HorizontalAlignment="Stretch"/>
-                    
-                    <TextBlock Grid.Row="3"
-                             Text="Seçilen İşlemler" 
-                             Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
-                             Margin="0,15,0,5"/>
-                    
-                    <ListView Grid.Row="4"
-                             ItemsSource="{Binding SelectedProcedures}"
-                             MaxHeight="150"
-                             Margin="0,0,0,10">
-                        <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
+
+                    <!-- Seçilen İşlem Özeti -->
+                    <Border Grid.Row="3"
+                            Background="{StaticResource SurfaceMuted}"
+                            BorderBrush="{StaticResource InkBorder}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="15"
+                            Visibility="{Binding HasSelectedTreatmentType, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel>
+                            <TextBlock Text="Seçilen İşlem"
+                                     Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                     Foreground="{StaticResource InkMuted}"/>
+                            <TextBlock Text="{Binding Treatment.TreatmentType}"
+                                     Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                     Foreground="{StaticResource BulkaDarkBlue}"
+                                     FontWeight="Bold"
+                                     TextWrapping="Wrap"
+                                     Margin="0,0,0,10"/>
+
+                            <StackPanel Visibility="{Binding CanViewPrices, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Grid Margin="0,3">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
-                                        <TextBlock Text="{Binding Code, StringFormat='Kod: {0}'}" FontSize="11"/>
-                                        <TextBlock Text="{Binding Price, StringFormat='Fiyat: {0:N2} ₺'}" 
-                                                 FontSize="11"
-                                                 Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                    </StackPanel>
-                                    <Button Grid.Column="1"
-                                          Command="{Binding DataContext.RemoveProcedureCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                          CommandParameter="{Binding}"
-                                          Style="{StaticResource MaterialDesignIconButton}"
-                                          Foreground="Red">
-                                        <materialDesign:PackIcon Kind="Delete"/>
-                                    </Button>
+                                    <TextBlock Text="Tutar" Grid.Column="0"/>
+                                    <TextBlock Text="{Binding TotalCost, StringFormat='{}{0:N2} ₺'}"
+                                             Grid.Column="1" FontWeight="SemiBold"/>
                                 </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                    
-                    <TextBlock Grid.Row="5"
-                             Text="Diş Bazlı Plan Özeti" 
-                             Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
-                             Margin="0,10,0,5"/>
-                    <ListView Grid.Row="6"
-                             ItemsSource="{Binding ToothPlans}"
-                             MaxHeight="200"
-                             Margin="0,0,0,10">
-                        <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <Expander Header="{Binding Key, StringFormat='Diş {0}'}">
-                                    <ItemsControl ItemsSource="{Binding Value}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid Margin="20,2,0,2">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock Text="{Binding Name}" Grid.Column="0"/>
-                                                    <TextBlock Text="{Binding Price, StringFormat='{}{0:N2} ₺'}" 
-                                                             Grid.Column="1"
-                                                             Margin="10,0,0,0"
-                                                             Foreground="{StaticResource BulkaMediumBlue}"
-                                                             FontWeight="Bold"
-                                                             Visibility="{Binding DataContext.CanViewPrices, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </Expander>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                    
-                    <!-- Toplam ve İndirim Bilgisi -->
-                    <StackPanel Grid.Row="7" 
-                              Visibility="{Binding CanViewPrices, Converter={StaticResource BooleanToVisibilityConverter}}"
-                              Margin="0,10,0,0">
-                        <TextBlock Text="Toplam Tutar" 
-                                 Style="{StaticResource MaterialDesignSubtitle2TextBlock}" 
-                                 Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding TotalCost, StringFormat='{}{0:N2} ₺'}" 
-                                 Style="{StaticResource MaterialDesignHeadline6TextBlock}" 
-                                 Foreground="{StaticResource BulkaDarkBlue}"
-                                 FontWeight="Bold"
-                                 Margin="0,0,0,5"/>
-                        
-                        <TextBlock Text="{Binding InstitutionName, StringFormat='Kurum: {0}'}" 
-                                 Style="{StaticResource MaterialDesignBody2TextBlock}" 
-                                 Foreground="Gray"
-                                 Margin="0,5,0,0"
-                                 Visibility="{Binding HasDiscount, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                        <TextBlock Text="{Binding TotalDiscount, StringFormat='İndirim: -{0:N2} ₺'}" 
-                                 Style="{StaticResource MaterialDesignBody1TextBlock}" 
-                                 Foreground="Green"
-                                 FontWeight="SemiBold"
-                                 Margin="0,5,0,0"
-                                 Visibility="{Binding HasDiscount, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                        <TextBlock Text="{Binding TotalCostWithDiscount, StringFormat='İndirimli Toplam: {0:N2} ₺'}" 
-                                 Style="{StaticResource MaterialDesignHeadline6TextBlock}" 
-                                 Foreground="Green"
-                                 FontWeight="Bold"
-                                 Margin="0,10,0,0"
-                                 Visibility="{Binding HasDiscount, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                    </StackPanel>
+
+                                <StackPanel Visibility="{Binding HasDiscount, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <TextBlock Text="{Binding InstitutionName, StringFormat='Kurum: {0}'}"
+                                             Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                             Foreground="{StaticResource InkMuted}"
+                                             Margin="0,5,0,0"/>
+                                    <Grid Margin="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="İndirim" Grid.Column="0" Foreground="{StaticResource SuccessBrush}"/>
+                                        <TextBlock Text="{Binding TotalDiscount, StringFormat='-{0:N2} ₺'}"
+                                                 Grid.Column="1" FontWeight="SemiBold" Foreground="{StaticResource SuccessBrush}"/>
+                                    </Grid>
+                                    <Separator Margin="0,5"/>
+                                    <Grid Margin="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Ödenecek Tutar" Grid.Column="0" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding TotalCostWithDiscount, StringFormat='{}{0:N2} ₺'}"
+                                                 Grid.Column="1" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"
+                                                 Style="{StaticResource MaterialDesignSubtitle1TextBlock}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </materialDesign:Card>
         </Grid>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <Button Content="İPTAL" 
-                    Command="{Binding CancelCommand}" 
+            <Button Content="İPTAL"
+                    Command="{Binding CancelCommand}"
                     Style="{StaticResource MaterialDesignOutlinedButton}"
                     Margin="0,0,10,0"
                     Width="100"/>
-            <Button Content="KAYDET" 
-                    Command="{Binding SaveCommand}" 
+            <Button Content="KAYDET"
+                    Command="{Binding SaveCommand}"
                     materialDesign:ButtonProgressAssist.IsIndeterminate="{Binding IsBusy}"
                     materialDesign:ButtonProgressAssist.IsIndicatorVisible="{Binding IsBusy}"
                     Width="100"/>

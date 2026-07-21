@@ -78,18 +78,9 @@ namespace DentalApp.Desktop.ViewModels
 
         // Tooth chart collections
         public ObservableCollection<ToothHotspot> ToothHotspots { get; } = new();
-        
-        // Multi-tooth selection
+
+        // Multi-tooth selection (hangi diş/dişlere uygulandığının kaydı; tek bir Treatment'a bağlanır)
         public ObservableCollection<int> SelectedTeeth { get; } = new();
-        
-        // Multi-procedure support: Dictionary<ToothNumber, List<ProcedureItem>>
-        public Dictionary<int, ObservableCollection<ProcedureItem>> ToothPlans { get; } = new();
-        
-        // Available procedures for selected category
-        public ObservableCollection<ProcedureItem> AvailableProcedures { get; } = new();
-        
-        // Selected procedures for current tooth
-        public ObservableCollection<ProcedureItem> SelectedProcedures { get; } = new();
 
         public string? SelectedToothNumber
         {
@@ -99,7 +90,6 @@ namespace DentalApp.Desktop.ViewModels
                 if (SetProperty(ref _selectedToothNumber, value))
                 {
                     Treatment.ToothNumber = value ?? string.Empty;
-                    UpdateSelectedProcedures();
                 }
             }
         }
@@ -123,44 +113,24 @@ namespace DentalApp.Desktop.ViewModels
                         _patientCategoryDiscounts = null;
                         OnPropertyChanged(nameof(TotalCostWithDiscount));
                         OnPropertyChanged(nameof(TotalDiscount));
+                        OnPropertyChanged(nameof(HasDiscount));
                     }
                 }
             }
         }
         
-        public decimal TotalCostWithDiscount
-        {
-            get
-            {
-                var total = TotalCost;
-                if (_patientCategoryDiscounts != null && _patientCategoryDiscounts.Count > 0)
-                {
-                    var discount = TotalDiscount;
-                    return total - discount;
-                }
-                return total;
-            }
-        }
-        
+        public decimal TotalCostWithDiscount => TotalCost - TotalDiscount;
+
         public decimal TotalDiscount
         {
             get
             {
-                if (_patientCategoryDiscounts == null || _patientCategoryDiscounts.Count == 0)
+                if (_patientCategoryDiscounts == null || string.IsNullOrWhiteSpace(Treatment.TreatmentType))
                     return 0m;
-                
-                decimal totalDiscount = 0m;
-                foreach (var toothPlan in ToothPlans)
-                {
-                    foreach (var proc in toothPlan.Value)
-                    {
-                        if (_patientCategoryDiscounts.TryGetValue(proc.Category, out decimal discountPercent))
-                        {
-                            totalDiscount += proc.Price * (discountPercent / 100m);
-                        }
-                    }
-                }
-                return totalDiscount;
+
+                return _patientCategoryDiscounts.TryGetValue(Treatment.TreatmentType, out var discountPercent)
+                    ? TotalCost * (discountPercent / 100m)
+                    : 0m;
             }
         }
         
@@ -184,7 +154,7 @@ namespace DentalApp.Desktop.ViewModels
             }
         }
         
-        public bool HasDiscount => _patientCategoryDiscounts != null && _patientCategoryDiscounts.Count > 0;
+        public bool HasDiscount => TotalDiscount > 0m;
         public string? InstitutionName => SelectedPatient?.InstitutionName;
 
         public TariffCategory? SelectedCategory
@@ -227,11 +197,11 @@ namespace DentalApp.Desktop.ViewModels
         public ICommand CancelCommand { get; }
         public ICommand AddTariffItemCommand { get; }
         public ICommand SelectToothCommand { get; }
-        public ICommand AddProcedureCommand { get; }
-        public ICommand RemoveProcedureCommand { get; }
-        public ICommand SavePlanCommand { get; }
 
         public bool CanViewPrices { get; }
+
+        /// <summary>Sağ paneldeki "Seçilen İşlem" özet kartının görünürlüğü için.</summary>
+        public bool HasSelectedTreatmentType => !string.IsNullOrWhiteSpace(Treatment.TreatmentType);
 
         public event Action<bool>? SaveCompleted;
 
@@ -279,9 +249,6 @@ namespace DentalApp.Desktop.ViewModels
             CancelCommand = new RelayCommand(_ => SaveCompleted?.Invoke(false));
             AddTariffItemCommand = new RelayCommand(_ => AddSelectedTariffItemToTreatment(), _ => SelectedTariffItem != null);
             SelectToothCommand = new RelayCommand(OnSelectTooth);
-            AddProcedureCommand = new RelayCommand<object>(OnAddProcedure, _ => SelectedTariffItem != null);
-            RemoveProcedureCommand = new RelayCommand<ProcedureItem>(OnRemoveProcedure);
-            SavePlanCommand = new RelayCommand(async _ => await SavePlanAsync(), _ => !IsBusy && ToothPlans.Count > 0);
 
             // Initialize tooth hotspots (FDI numbering: 11-18, 21-28, 31-38, 41-48)
             InitializeToothHotspots();
@@ -319,39 +286,9 @@ namespace DentalApp.Desktop.ViewModels
                         SelectedPatient = Patients.FirstOrDefault(p => p.Id == Treatment.PatientId);
                     }
                     
-                    // Load tooth plans if tooth number exists
-                    if (!string.IsNullOrWhiteSpace(Treatment.ToothNumber))
-                    {
-                        if (int.TryParse(Treatment.ToothNumber, out var toothNumber))
-                        {
-                            SelectedTeeth.Clear();
-                            SelectedTeeth.Add(toothNumber);
-                            
-                            if (!ToothPlans.ContainsKey(toothNumber))
-                            {
-                                ToothPlans[toothNumber] = new ObservableCollection<ProcedureItem>();
-                            }
-                            
-                            // Add the existing treatment as a procedure item
-                            var procItem = new ProcedureItem
-                            {
-                                Code = Treatment.Description?.Contains("Kod:") == true 
-                                    ? Treatment.Description.Split("Kod:")[1].Trim().Split(')')[0].Trim()
-                                    : "",
-                                Name = Treatment.TreatmentType ?? Treatment.Description ?? "",
-                                Price = Treatment.Cost ?? 0,
-                                Category = Treatment.TreatmentType ?? ""
-                            };
-                            
-                            if (!ToothPlans[toothNumber].Any(p => p.Code == procItem.Code && p.Name == procItem.Name))
-                            {
-                                ToothPlans[toothNumber].Add(procItem);
-                            }
-                            
-                            UpdateSelectedProcedures();
-                        }
-                    }
-                    
+                    // Diş şeması üzerinde hangi diş(ler) seçili gösterilsin (virgülle ayrılmış olabilir)
+                    RestoreSelectedTeethFromTreatment();
+
                     // Set category if treatment type matches
                     if (!string.IsNullOrWhiteSpace(Treatment.TreatmentType))
                     {
@@ -389,27 +326,16 @@ namespace DentalApp.Desktop.ViewModels
         private void OnCategoryChanged()
         {
             TariffItems.Clear();
-            AvailableProcedures.Clear();
             SearchText = string.Empty; // Arama kutusunu temizle
-            
+
             if (SelectedCategory != null)
             {
-                // Kategori seçildiğinde tedavi türüne otomatik yaz
-                Treatment.TreatmentType = SelectedCategory.Name;
-                
                 foreach (var item in SelectedCategory.Items)
                 {
                     TariffItems.Add(item);
-                    AvailableProcedures.Add(new ProcedureItem 
-                    { 
-                        Code = item.Code, 
-                        Name = item.Name, 
-                        Price = item.PriceInclVat,
-                        Category = SelectedCategory.Name
-                    });
                 }
             }
-            
+
             TariffItemsView?.Refresh();
         }
 
@@ -446,8 +372,8 @@ namespace DentalApp.Desktop.ViewModels
             Treatment.TreatmentType = SelectedTariffItem.Name;
             Treatment.Cost = SelectedTariffItem.PriceInclVat;
             Treatment.Currency = SelectedTariffItem.Currency;
-            CostString = SelectedTariffItem.PriceInclVat.ToString("F2", CultureInfo.InvariantCulture);
-            
+            _costString = SelectedTariffItem.PriceInclVat.ToString("F2", CultureInfo.InvariantCulture);
+
             // Açıklama alanına kod ekle
             if (string.IsNullOrWhiteSpace(Treatment.Description))
             {
@@ -457,6 +383,16 @@ namespace DentalApp.Desktop.ViewModels
             {
                 Treatment.Description = $"{Treatment.Description}\nKod: {SelectedTariffItem.Code}";
             }
+
+            // Treatment ObservableObject değil; Treatment.* binding'lerinin (özet kart, toplam/
+            // indirim) tazelenmesi için Treatment değişikliğini doğrudan bildiriyoruz.
+            OnPropertyChanged(nameof(Treatment));
+            OnPropertyChanged(nameof(CostString));
+            OnPropertyChanged(nameof(HasSelectedTreatmentType));
+            OnPropertyChanged(nameof(TotalCost));
+            OnPropertyChanged(nameof(TotalDiscount));
+            OnPropertyChanged(nameof(TotalCostWithDiscount));
+            OnPropertyChanged(nameof(HasDiscount));
         }
 
         private async Task LoadPatientsAsync(PatientService patientService)
@@ -476,43 +412,35 @@ namespace DentalApp.Desktop.ViewModels
                     SelectedPatient = Patients.FirstOrDefault(p => p.Id == Treatment.PatientId);
                 }
 
-                // If editing an existing treatment, load its data into ToothPlans
-                if (IsEditMode && Treatment.Id > 0 && !string.IsNullOrWhiteSpace(Treatment.ToothNumber))
+                if (IsEditMode && Treatment.Id > 0)
                 {
-                    if (int.TryParse(Treatment.ToothNumber, out var toothNumber))
-                    {
-                        SelectedTeeth.Clear();
-                        SelectedTeeth.Add(toothNumber);
-                        
-                        if (!ToothPlans.ContainsKey(toothNumber))
-                        {
-                            ToothPlans[toothNumber] = new ObservableCollection<ProcedureItem>();
-                        }
-                        
-                        // Add the existing treatment as a procedure item
-                        var procItem = new ProcedureItem
-                        {
-                            Code = Treatment.Description?.Contains("Kod:") == true 
-                                ? Treatment.Description.Split("Kod:")[1].Trim().Split(')')[0].Trim()
-                                : "",
-                            Name = Treatment.TreatmentType ?? Treatment.Description ?? "",
-                            Price = Treatment.Cost ?? 0,
-                            Category = Treatment.TreatmentType ?? ""
-                        };
-                        
-                        if (!ToothPlans[toothNumber].Any(p => p.Code == procItem.Code && p.Name == procItem.Name))
-                        {
-                            ToothPlans[toothNumber].Add(procItem);
-                        }
-                        
-                        UpdateSelectedProcedures();
-                    }
+                    RestoreSelectedTeethFromTreatment();
                 }
             }
             catch (Exception ex)
             {
                 System.Windows.MessageBox.Show($"Hastalar yüklenirken hata: {ex.Message}", "Hata", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
+        }
+
+        /// <summary>Treatment.ToothNumber'daki (virgülle ayrılmış olabilir) diş numaralarını
+        /// diş şeması üzerinde seçili göstermek için SelectedTeeth'e geri yükler.</summary>
+        private void RestoreSelectedTeethFromTreatment()
+        {
+            SelectedTeeth.Clear();
+            if (string.IsNullOrWhiteSpace(Treatment.ToothNumber))
+                return;
+
+            foreach (var part in Treatment.ToothNumber.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (int.TryParse(part, out var toothNumber))
+                {
+                    SelectedTeeth.Add(toothNumber);
+                }
+            }
+
+            _selectedToothNumber = SelectedTeeth.Count > 0 ? string.Join(", ", SelectedTeeth.OrderBy(t => t)) : null;
+            OnPropertyChanged(nameof(SelectedToothNumber));
         }
 
         private bool IsValid()
@@ -617,180 +545,19 @@ namespace DentalApp.Desktop.ViewModels
             if (SelectedTeeth.Contains(toothNumber))
             {
                 SelectedTeeth.Remove(toothNumber);
-                ToothPlans.Remove(toothNumber);
             }
             else
             {
                 SelectedTeeth.Add(toothNumber);
-                if (!ToothPlans.ContainsKey(toothNumber))
-                {
-                    ToothPlans[toothNumber] = new ObservableCollection<ProcedureItem>();
-                }
             }
-            
+
             // Update selected tooth number for display
-            if (SelectedTeeth.Count > 0)
-            {
-                SelectedToothNumber = string.Join(", ", SelectedTeeth.OrderBy(t => t));
-            }
-            else
-            {
-                SelectedToothNumber = null;
-            }
-            
-            UpdateSelectedProcedures();
+            SelectedToothNumber = SelectedTeeth.Count > 0
+                ? string.Join(", ", SelectedTeeth.OrderBy(t => t))
+                : null;
         }
         
-        private void UpdateSelectedProcedures()
-        {
-            SelectedProcedures.Clear();
-            if (SelectedTeeth.Count == 1)
-            {
-                var tooth = SelectedTeeth.First();
-                if (ToothPlans.ContainsKey(tooth))
-                {
-                    foreach (var proc in ToothPlans[tooth])
-                    {
-                        SelectedProcedures.Add(proc);
-                    }
-                }
-            }
-            OnPropertyChanged(nameof(TotalCost));
-            OnPropertyChanged(nameof(TotalCostWithDiscount));
-            OnPropertyChanged(nameof(TotalDiscount));
-        }
-        
-        public decimal TotalCost
-        {
-            get
-            {
-                decimal total = 0m;
-                foreach (var toothPlan in ToothPlans)
-                {
-                    foreach (var proc in toothPlan.Value)
-                    {
-                        total += proc.Price;
-                    }
-                }
-                return total;
-            }
-        }
-        
-        private void OnAddProcedure(object? parameter)
-        {
-            if (SelectedTariffItem == null) return;
-            
-            var procItem = new ProcedureItem
-            {
-                Code = SelectedTariffItem.Code,
-                Name = SelectedTariffItem.Name,
-                Price = SelectedTariffItem.PriceInclVat,
-                Category = SelectedCategory?.Name ?? ""
-            };
-            
-            // Add to all selected teeth
-            foreach (var tooth in SelectedTeeth)
-            {
-                if (!ToothPlans.ContainsKey(tooth))
-                {
-                    ToothPlans[tooth] = new ObservableCollection<ProcedureItem>();
-                }
-                
-                // Check if already added
-                if (!ToothPlans[tooth].Any(p => p.Code == procItem.Code))
-                {
-                    ToothPlans[tooth].Add(procItem);
-                }
-            }
-            
-            UpdateSelectedProcedures();
-        }
-        
-        private void OnRemoveProcedure(ProcedureItem? procedure)
-        {
-            if (procedure == null) return;
-            
-            foreach (var toothPlan in ToothPlans.Values)
-            {
-                var item = toothPlan.FirstOrDefault(p => p.Code == procedure.Code);
-                if (item != null)
-                {
-                    toothPlan.Remove(item);
-                }
-            }
-            
-            UpdateSelectedProcedures();
-        }
-        
-        private async Task SavePlanAsync()
-        {
-            if (Treatment.PatientId <= 0)
-            {
-                System.Windows.MessageBox.Show("Lütfen bir hasta seçin.", "Uyarı", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-                return;
-            }
-
-            if (ToothPlans.Count == 0)
-            {
-                System.Windows.MessageBox.Show("Lütfen en az bir diş ve işlem seçin.", "Uyarı", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-                return;
-            }
-
-            IsBusy = true;
-            try
-            {
-                // Prepare treatment plan items
-                var planItems = new List<Services.TreatmentPlanItem>();
-                
-                foreach (var toothPlan in ToothPlans)
-                {
-                    var toothNumber = toothPlan.Key;
-                    var procedures = toothPlan.Value;
-                    
-                    foreach (var proc in procedures)
-                    {
-                        planItems.Add(new Services.TreatmentPlanItem
-                        {
-                            ToothNumber = toothNumber,
-                            TreatmentType = proc.Category,
-                            Cost = CanViewPrices ? proc.Price : null,
-                            Currency = "TRY",
-                            Notes = $"{proc.Name} (Kod: {proc.Code})"
-                        });
-                    }
-                }
-
-                // Create treatment plan using the API
-                var title = $"Tedavi Planı - {Treatment.TreatmentDate:dd.MM.yyyy}";
-                var description = $"Toplam {planItems.Count} işlem, {ToothPlans.Count} diş";
-                
-                var success = await _treatmentService.CreateTreatmentPlanAsync(
-                    Treatment.PatientId,
-                    Treatment.DentistId,
-                    title,
-                    description,
-                    planItems
-                );
-
-                if (success)
-                {
-                    System.Windows.MessageBox.Show("Tedavi planı başarıyla kaydedildi.", "Başarılı", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
-                    SaveCompleted?.Invoke(true);
-                }
-                else
-                {
-                    System.Windows.MessageBox.Show("Tedavi planı kaydedilemedi.", "Hata", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"Tedavi planı kaydedilirken hata: {ex.Message}", "Hata", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
+        public decimal TotalCost => Treatment.Cost ?? 0m;
     }
     
     public class ProcedureItem : ObservableObject
