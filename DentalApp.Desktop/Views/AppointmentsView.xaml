@@ -9,29 +9,29 @@
              d:DesignHeight="600" d:DesignWidth="1000">
     <UserControl.Resources>
         <Style x:Key="AvailableSlotStyle" TargetType="Button">
-            <Setter Property="Background" Value="#90EE90"/>
+            <Setter Property="Background" Value="#4ADE80"/>
             <Setter Property="Foreground" Value="Black"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#70C070"/>
+            <Setter Property="BorderBrush" Value="#22C55E"/>
             <Setter Property="Padding" Value="5"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#7ACC7A"/>
+                    <Setter Property="Background" Value="#34D399"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
         
         <Style x:Key="OccupiedSlotStyle" TargetType="Button">
-            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Background" Value="#0D9488"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#2563EB"/>
+            <Setter Property="BorderBrush" Value="#0F766E"/>
             <Setter Property="Padding" Value="5"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#2563EB"/>
+                    <Setter Property="Background" Value="#0F766E"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -175,17 +175,17 @@
                                         <Style.Triggers>
                                             <!-- Status-based styling -->
                                             <DataTrigger Binding="{Binding Status}" Value="Available">
-                                                <Setter Property="Background" Value="#90EE90"/>
+                                                <Setter Property="Background" Value="#4ADE80"/>
                                                 <Setter Property="Foreground" Value="Black"/>
                                                 <Setter Property="BorderThickness" Value="1"/>
-                                                <Setter Property="BorderBrush" Value="#70C070"/>
+                                                <Setter Property="BorderBrush" Value="#22C55E"/>
                                                 <Setter Property="IsEnabled" Value="True"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding Status}" Value="Occupied">
-                                                <Setter Property="Background" Value="#3B82F6"/>
+                                                <Setter Property="Background" Value="#0D9488"/>
                                                 <Setter Property="Foreground" Value="White"/>
                                                 <Setter Property="BorderThickness" Value="1"/>
-                                                <Setter Property="BorderBrush" Value="#2563EB"/>
+                                                <Setter Property="BorderBrush" Value="#0F766E"/>
                                                 <Setter Property="IsEnabled" Value="True"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding Status}" Value="Unavailable">

@@ -8,19 +8,25 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- BULKA DENTAL Logo Renkleri: Açık Mavi (Primary), Koyu Mavi (Secondary), Gümüş (Accent) -->
-                <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="Blue" SecondaryColor="Cyan" />
+                <!-- BULKA DENTAL "Aqua Mint" Paleti: Teal (Primary), Nane (Secondary), Mercan (Accent) -->
+                <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="Teal" SecondaryColor="Pink" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            
-            <!-- BULKA DENTAL Özel Renk Paleti -->
-            <SolidColorBrush x:Key="BulkaLightBlue" Color="#B3D9FF"/>
-            <SolidColorBrush x:Key="BulkaMediumBlue" Color="#3B82F6"/>
-            <SolidColorBrush x:Key="BulkaDarkBlue" Color="#1E3A8A"/>
-            <SolidColorBrush x:Key="BulkaSilver" Color="#C0C0C0"/>
-            <SolidColorBrush x:Key="BulkaLightGreen" Color="#90EE90"/>
-            <SolidColorBrush x:Key="BulkaGradientStart" Color="#E6F2FF"/>
+
+            <!-- BULKA DENTAL "Aqua Mint" Renk Paleti -->
+            <SolidColorBrush x:Key="BulkaLightBlue" Color="#CCFBF1"/>
+            <SolidColorBrush x:Key="BulkaMediumBlue" Color="#0D9488"/>
+            <SolidColorBrush x:Key="BulkaDarkBlue" Color="#134E4A"/>
+            <SolidColorBrush x:Key="BulkaSilver" Color="#94A3B8"/>
+            <SolidColorBrush x:Key="BulkaLightGreen" Color="#4ADE80"/>
+            <SolidColorBrush x:Key="BulkaGradientStart" Color="#F0FDFA"/>
             <SolidColorBrush x:Key="BulkaGradientEnd" Color="#FFFFFF"/>
+
+            <!-- Yeni: Nane (ikincil) ve Mercan (vurgu) — Aqua Mint paletinin tamamlayıcıları -->
+            <SolidColorBrush x:Key="MintBrush" Color="#5EEAD4"/>
+            <SolidColorBrush x:Key="MintSurface" Color="#F0FDFA"/>
+            <SolidColorBrush x:Key="CoralAccent" Color="#FB7185"/>
+            <SolidColorBrush x:Key="CoralAccentDark" Color="#E11D48"/>
 
             <!-- Nötr metin/yüzey tonları (web tarafındaki ink/surface token ölçeğiyle aynı) -->
             <SolidColorBrush x:Key="InkPrimary" Color="#0F172A"/>
@@ -37,9 +43,9 @@
 
             <!-- Gradient Brush -->
             <LinearGradientBrush x:Key="BulkaGradientBrush" StartPoint="0,0" EndPoint="0,1">
-                <GradientStop Color="#E6F2FF" Offset="0"/>
+                <GradientStop Color="#F0FDFA" Offset="0"/>
                 <GradientStop Color="#FFFFFF" Offset="0.5"/>
-                <GradientStop Color="#E6F2FF" Offset="1"/>
+                <GradientStop Color="#F0FDFA" Offset="1"/>
             </LinearGradientBrush>
 
             <!-- Global Converters -->
@@ -79,6 +85,16 @@
                 <Setter Property="TextAlignment" Value="Center"/>
                 <Setter Property="HorizontalAlignment" Value="Center"/>
                 <Setter Property="Margin" Value="20"/>
+            </Style>
+
+            <!-- Şekil dili: Aqua Mint'in "çok yuvarlak" hissi — kartlar 16px, butonlar pill'e yakın.
+                 CardAssist/ButtonAssist var olan kontrol şablonunun okuduğu ekli özellikler
+                 olduğu için şablonu değiştirmeden (güvenle) tüm uygulamaya uygulanır. -->
+            <Style TargetType="materialDesign:Card">
+                <Setter Property="UniformCornerRadius" Value="16"/>
+            </Style>
+            <Style TargetType="Button">
+                <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="18"/>
             </Style>
 
         </ResourceDictionary>

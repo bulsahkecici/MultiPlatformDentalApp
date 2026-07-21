@@ -156,7 +156,7 @@ class _Row extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: highlight ? 18 : 14,
-              color: highlight ? const Color(0xFF1E3A8A) : null,
+              color: highlight ? const Color(0xFF134E4A) : null,
             ),
           ),
         ],

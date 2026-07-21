@@ -125,7 +125,7 @@ interface StatCard {
       width: 22px;
       height: 22px;
     }
-    .tone-blue  { background: var(--bulka-primary-50, #eff6ff); color: var(--bulka-primary-700, #1d4ed8); }
+    .tone-blue  { background: var(--bulka-primary-50, #f0fdfa); color: var(--bulka-primary-700, #0f766e); }
     .tone-green { background: var(--success-50); color: var(--success-600); }
     .tone-amber { background: var(--amber-50); color: var(--amber-600); }
     .tone-slate { background: #f1f5f9; color: var(--ink-500); }
@@ -153,7 +153,7 @@ interface StatCard {
       padding: 16px 16px 8px;
     }
     .card-heading mat-icon {
-      color: var(--bulka-primary-600, #2563eb);
+      color: var(--bulka-primary-600, #0d9488);
     }
     .card-heading h2 {
       font-size: 16px;
@@ -167,7 +167,7 @@ interface StatCard {
       background-color: var(--surface-muted);
     }
     .apt-icon {
-      color: var(--bulka-primary-600, #2563eb);
+      color: var(--bulka-primary-600, #0d9488);
     }
   `]
 })

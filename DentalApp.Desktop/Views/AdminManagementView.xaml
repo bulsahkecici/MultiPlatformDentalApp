@@ -51,7 +51,7 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <materialDesign:Card Grid.Column="0" Margin="3" Height="72"
-                                           Background="{Binding IsDentistSelected, Converter={StaticResource BooleanToBrushConverter}, ConverterParameter='#E3F2FD|White'}"
+                                           Background="{Binding IsDentistSelected, Converter={StaticResource BooleanToBrushConverter}, ConverterParameter='#CCFBF1|White'}"
                                            BorderBrush="{Binding IsDentistSelected, Converter={StaticResource BooleanToBrushConverter}, ConverterParameter='#1976D2|#E0E0E0'}"
                                            BorderThickness="2"
                                            Cursor="Hand"
@@ -490,7 +490,7 @@
                             <Setter Property="Background" Value="White"/>
                             <Style.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#E3F2FD"/>
+                                    <Setter Property="Background" Value="#CCFBF1"/>
                                 </Trigger>
                             </Style.Triggers>
                         </Style>

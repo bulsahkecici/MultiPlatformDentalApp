@@ -144,7 +144,7 @@ class _TreatmentFormScreenState extends State<TreatmentFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEdit ? 'Tedaviyi Düzenle' : 'Yeni Tedavi'),
-        backgroundColor: const Color(0xFF1E3A8A),
+        backgroundColor: const Color(0xFF134E4A),
         foregroundColor: Colors.white,
       ),
       body: ListView(

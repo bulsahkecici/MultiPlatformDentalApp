@@ -3,26 +3,26 @@
 @include mat.core();
 
 // ---------------------------------------------------------------------------
-// BULKA DENTAL — marka renk paleti
-// Marka rengi (#3B82F6 / #1E3A8A) Tailwind'in blue-500/900 tonlarıyla birebir
-// örtüştüğü için o ölçeği temel aldık — bilinen, erişilebilirlik açısından
-// test edilmiş bir tonal skala.
+// BULKA DENTAL — "Aqua Mint" marka renk paleti
+// Ana renk Tailwind'in teal-500/900 tonlarıyla birebir örtüştüğü için o
+// ölçeği temel aldık — bilinen, erişilebilirlik açısından test edilmiş bir
+// tonal skala. Ferah/klinik bir his için turkuaz + nane + mercan üçlüsü.
 // ---------------------------------------------------------------------------
 $bulka-blue-palette: (
-  50: #eff6ff,
-  100: #dbeafe,
-  200: #bfdbfe,
-  300: #93c5fd,
-  400: #60a5fa,
-  500: #3b82f6,
-  600: #2563eb,
-  700: #1d4ed8,
-  800: #1e40af,
-  900: #1e3a8a,
-  A100: #93c5fd,
-  A200: #60a5fa,
-  A400: #3b82f6,
-  A700: #1d4ed8,
+  50: #f0fdfa,
+  100: #ccfbf1,
+  200: #99f6e4,
+  300: #5eead4,
+  400: #2dd4bf,
+  500: #14b8a6,
+  600: #0d9488,
+  700: #0f766e,
+  800: #115e59,
+  900: #134e4a,
+  A100: #5eead4,
+  A200: #2dd4bf,
+  A400: #14b8a6,
+  A700: #0f766e,
   contrast: (
     50: rgba(black, 0.87),
     100: rgba(black, 0.87),
@@ -36,6 +36,40 @@ $bulka-blue-palette: (
     900: white,
     A100: rgba(black, 0.87),
     A200: rgba(black, 0.87),
+    A400: white,
+    A700: white,
+  ),
+);
+
+// Vurgu (accent) — mercan/gül tonu, CTA ve önemli rozetlerde kullanılır
+$bulka-coral-palette: (
+  50: #fff1f2,
+  100: #ffe4e6,
+  200: #fecdd3,
+  300: #fda4af,
+  400: #fb7185,
+  500: #f43f5e,
+  600: #e11d48,
+  700: #be123c,
+  800: #9f1239,
+  900: #881337,
+  A100: #fda4af,
+  A200: #fb7185,
+  A400: #f43f5e,
+  A700: #e11d48,
+  contrast: (
+    50: rgba(black, 0.87),
+    100: rgba(black, 0.87),
+    200: rgba(black, 0.87),
+    300: rgba(black, 0.87),
+    400: white,
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+    A100: rgba(black, 0.87),
+    A200: white,
     A400: white,
     A700: white,
   ),
@@ -75,7 +109,7 @@ $bulka-red-palette: (
 );
 
 $bulka-primary: mat.m2-define-palette($bulka-blue-palette, 700, 500, 900);
-$bulka-accent: mat.m2-define-palette($bulka-blue-palette, 500, 300, 700);
+$bulka-accent: mat.m2-define-palette($bulka-coral-palette, 400, 300, 600);
 $bulka-warn: mat.m2-define-palette($bulka-red-palette, 600);
 
 $bulka-typography: mat.m2-define-typography-config(
@@ -99,14 +133,21 @@ $bulka-theme: mat.m2-define-light-theme((
 // olarak kullanılır, tek yerden ayarlanır)
 // ---------------------------------------------------------------------------
 :root {
-  // Marka renkleri
-  --bulka-primary-900: #1e3a8a;   // koyu lacivert — toolbar/sidenav, başlıklar
-  --bulka-primary-800: #1e40af;
-  --bulka-primary-700: #1d4ed8;
-  --bulka-primary-600: #2563eb;
-  --bulka-primary-500: #3b82f6;   // vurgu — aktif durum, ikonlar, linkler
-  --bulka-primary-100: #dbeafe;
-  --bulka-primary-50:  #eff6ff;   // sayfa arka planı tonu
+  // Marka renkleri — "Aqua Mint" (turkuaz)
+  --bulka-primary-900: #134e4a;   // koyu teal — toolbar/sidenav, başlıklar
+  --bulka-primary-800: #115e59;
+  --bulka-primary-700: #0f766e;
+  --bulka-primary-600: #0d9488;
+  --bulka-primary-500: #14b8a6;   // vurgu — aktif durum, ikonlar, linkler
+  --bulka-primary-100: #ccfbf1;
+  --bulka-primary-50:  #f0fdfa;   // sayfa arka planı tonu
+
+  // İkincil (nane) ve vurgu (mercan) — Aqua Mint paletinin tamamlayıcıları
+  --mint-300: #5eead4;
+  --mint-100: #ccfbf1;
+  --coral-400: #fb7185;
+  --coral-500: #f43f5e;
+  --coral-600: #e11d48;
 
   // Nötr / metin
   --ink-900: #0f172a;   // ana başlık metni
@@ -126,10 +167,12 @@ $bulka-theme: mat.m2-define-light-theme((
   --amber-50: #fffbeb;
   --amber-600: #d97706;
 
-  // Ölçekler
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  // Ölçekler — Aqua Mint'in "çok yuvarlak" şekil dili: büyük kart yarıçapı,
+  // pill'e yakın buton köşeleri
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -208,13 +251,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .mat-mdc-raised-button, .mat-mdc-unelevated-button {
-  border-radius: var(--radius-sm) !important;
+  border-radius: var(--radius-pill) !important;
   letter-spacing: 0 !important;
   font-weight: 600 !important;
 }
 
 .mat-mdc-outlined-button {
-  border-radius: var(--radius-sm) !important;
+  border-radius: var(--radius-pill) !important;
   font-weight: 600 !important;
 }
 
@@ -260,7 +303,7 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.6;
 }
 .status-chip.status-neutral   { background: #f1f5f9; color: var(--ink-500); }
-.status-chip.status-info      { background: var(--bulka-primary-100, #dbeafe); color: var(--bulka-primary-700, #1d4ed8); }
+.status-chip.status-info      { background: var(--bulka-primary-100, #ccfbf1); color: var(--bulka-primary-700, #0f766e); }
 .status-chip.status-success   { background: var(--success-50); color: var(--success-600); }
 .status-chip.status-warn      { background: var(--amber-50); color: var(--amber-600); }
 .status-chip.status-danger    { background: var(--warn-50); color: var(--warn-600); }

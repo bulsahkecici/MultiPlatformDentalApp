@@ -247,7 +247,7 @@ import { forkJoin, Observable } from 'rxjs';
       margin-bottom: 16px;
     }
     .section-heading mat-icon {
-      color: var(--bulka-primary-600, #2563eb);
+      color: var(--bulka-primary-600, #0d9488);
     }
     .section-heading h3 {
       margin: 0;
@@ -281,8 +281,8 @@ import { forkJoin, Observable } from 'rxjs';
       background: var(--surface-muted);
     }
     .type-option.selected {
-      border-color: var(--bulka-primary-500, #3b82f6);
-      background: var(--bulka-primary-50, #eff6ff);
+      border-color: var(--bulka-primary-500, #14b8a6);
+      background: var(--bulka-primary-50, #f0fdfa);
     }
     .user-form-card {
       margin-top: 4px;

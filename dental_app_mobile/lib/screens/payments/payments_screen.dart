@@ -174,7 +174,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           color: Theme.of(context).colorScheme.surface,
           child: TabBar(
             controller: _tabController,
-            labelColor: const Color(0xFF1E3A8A),
+            labelColor: const Color(0xFF134E4A),
             tabs: const [
               Tab(text: 'Özet'),
               Tab(text: 'Plan Onayı'),

@@ -184,7 +184,7 @@ class _StatCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: const Color(0xFF1E3A8A)),
+            Icon(icon, color: const Color(0xFF134E4A)),
             const SizedBox(height: 8),
             Text(label, style: Theme.of(context).textTheme.bodySmall),
             Text(

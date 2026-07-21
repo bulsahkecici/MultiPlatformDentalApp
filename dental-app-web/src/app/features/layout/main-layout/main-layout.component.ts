@@ -149,7 +149,7 @@ interface MenuItem {
     }
     .sidenav {
       width: 268px;
-      background: linear-gradient(180deg, #1e3a8a 0%, #16296b 100%);
+      background: linear-gradient(180deg, #134e4a 0%, #0c2b29 100%);
       color: white;
       display: flex;
       flex-direction: column;
@@ -172,7 +172,7 @@ interface MenuItem {
       flex-shrink: 0;
     }
     .brand-mark mat-icon {
-      color: #93c5fd;
+      color: #5eead4;
     }
     .brand-text {
       display: flex;
@@ -222,7 +222,7 @@ interface MenuItem {
       color: white;
     }
     .nav-item.active {
-      background: rgba(59, 130, 246, 0.22);
+      background: rgba(20, 184, 166, 0.22);
       color: white;
     }
     .nav-item.active::before {
@@ -233,7 +233,7 @@ interface MenuItem {
       bottom: 8px;
       width: 3px;
       border-radius: 0 3px 3px 0;
-      background: #60a5fa;
+      background: #2dd4bf;
     }
     .sidenav-footer {
       display: flex;
@@ -281,7 +281,7 @@ interface MenuItem {
       width: 30px;
       height: 30px;
       border-radius: 50%;
-      background: var(--bulka-primary-900, #1e3a8a);
+      background: var(--bulka-primary-900, #134e4a);
       color: white;
       display: flex;
       align-items: center;

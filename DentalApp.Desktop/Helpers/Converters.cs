@@ -283,13 +283,15 @@ namespace DentalApp.Desktop.Helpers
                 
                 if (date.Date == today)
                 {
-                    // Bugün - açık mavi
-                    return System.Windows.Media.Brushes.LightBlue;
+                    // Bugün - açık nane (Aqua Mint paleti)
+                    return new System.Windows.Media.SolidColorBrush(
+                        (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#99F6E4"));
                 }
                 else if (date.Date == tomorrow)
                 {
-                    // Yarın - açık yeşil
-                    return System.Windows.Media.Brushes.LightGreen;
+                    // Yarın - açık mercan
+                    return new System.Windows.Media.SolidColorBrush(
+                        (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#FECDD3"));
                 }
                 else
                 {

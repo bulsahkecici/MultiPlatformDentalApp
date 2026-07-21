@@ -314,7 +314,7 @@ import { Patient } from '../../core/models/models';
       justify-content: center;
       flex-shrink: 0;
     }
-    .summary-icon.tone-blue { background: var(--bulka-primary-50, #eff6ff); color: var(--bulka-primary-700, #1d4ed8); }
+    .summary-icon.tone-blue { background: var(--bulka-primary-50, #f0fdfa); color: var(--bulka-primary-700, #0f766e); }
     .summary-icon.tone-green { background: var(--success-50); color: var(--success-600); }
     .summary-label {
       color: var(--ink-500);
@@ -380,7 +380,7 @@ import { Patient } from '../../core/models/models';
       background-color: var(--surface-muted);
     }
     .selected {
-      background-color: var(--bulka-primary-50, #eff6ff) !important;
+      background-color: var(--bulka-primary-50, #f0fdfa) !important;
     }
     .agreement-info p {
       margin: 8px 0;

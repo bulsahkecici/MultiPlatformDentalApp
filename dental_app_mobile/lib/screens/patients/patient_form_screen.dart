@@ -112,7 +112,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEdit ? 'Hastayı Düzenle' : 'Yeni Hasta'),
-        backgroundColor: const Color(0xFF1E3A8A),
+        backgroundColor: const Color(0xFF134E4A),
         foregroundColor: Colors.white,
       ),
       body: Form(

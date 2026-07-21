@@ -77,9 +77,9 @@ import { AuthService } from '../../../core/services/auth.service';
       align-items: center;
       height: 100vh;
       background:
-        radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.12), transparent 45%),
-        radial-gradient(circle at 85% 80%, rgba(30, 58, 138, 0.10), transparent 45%),
-        linear-gradient(135deg, #eff6ff 0%, #f8fafc 60%, #eff6ff 100%);
+        radial-gradient(circle at 15% 20%, rgba(20, 184, 166, 0.12), transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(19, 78, 74, 0.10), transparent 45%),
+        linear-gradient(135deg, #f0fdfa 0%, #f8fafc 60%, #f0fdfa 100%);
       padding: 16px;
     }
     .login-card {
@@ -95,12 +95,12 @@ import { AuthService } from '../../../core/services/auth.service';
       width: 56px;
       height: 56px;
       border-radius: 16px;
-      background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+      background: linear-gradient(135deg, #14b8a6, #134e4a);
       display: flex;
       align-items: center;
       justify-content: center;
       margin: 0 auto 16px;
-      box-shadow: 0 8px 16px rgba(30, 58, 138, 0.25);
+      box-shadow: 0 8px 16px rgba(13, 148, 136, 0.25);
     }
     .brand-mark mat-icon {
       color: white;

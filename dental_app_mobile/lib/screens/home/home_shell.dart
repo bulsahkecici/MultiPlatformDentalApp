@@ -73,7 +73,7 @@ class _HomeShellState extends State<HomeShell> {
     return Scaffold(
       appBar: AppBar(
         title: Text(menu[index].label),
-        backgroundColor: const Color(0xFF1E3A8A),
+        backgroundColor: const Color(0xFF134E4A),
         foregroundColor: Colors.white,
         actions: [
           Consumer<NotificationProvider>(
@@ -106,7 +106,7 @@ class _HomeShellState extends State<HomeShell> {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: const BoxDecoration(color: Color(0xFF1E3A8A)),
+              decoration: const BoxDecoration(color: Color(0xFF134E4A)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,

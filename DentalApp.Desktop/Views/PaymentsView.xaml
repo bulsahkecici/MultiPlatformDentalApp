@@ -134,10 +134,10 @@
                                         <Setter Property="Background" Value="White"/>
                                         <Style.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#E3F2FD"/>
+                                                <Setter Property="Background" Value="#CCFBF1"/>
                                             </Trigger>
                                             <Trigger Property="IsSelected" Value="True">
-                                                <Setter Property="Background" Value="#BBDEFB"/>
+                                                <Setter Property="Background" Value="#99F6E4"/>
                                                 <Setter Property="FontWeight" Value="SemiBold"/>
                                             </Trigger>
                                         </Style.Triggers>
@@ -590,7 +590,7 @@
                                                      Grid.Column="1"
                                                      Style="{StaticResource MaterialDesignBody1TextBlock}"
                                                      FontWeight="Bold"
-                                                     Foreground="Green"/>
+                                                     Foreground="{StaticResource SuccessBrush}"/>
                                         </Grid>
                                         <Grid Margin="0,5">
                                             <Grid.ColumnDefinitions>
@@ -604,7 +604,7 @@
                                                      Grid.Column="1"
                                                      Style="{StaticResource MaterialDesignBody1TextBlock}"
                                                      FontWeight="Bold"
-                                                     Foreground="Red"/>
+                                                     Foreground="{StaticResource DangerBrush}"/>
                                         </Grid>
                                     </StackPanel>
                                 </materialDesign:Card>

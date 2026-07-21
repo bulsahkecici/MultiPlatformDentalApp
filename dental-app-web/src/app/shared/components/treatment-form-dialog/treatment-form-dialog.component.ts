@@ -204,7 +204,7 @@ import { TariffSelectorComponent } from '../tariff-selector/tariff-selector.comp
       font-size: 1.1rem;
       font-weight: bold;
       margin-top: 12px;
-      color: #1e40af;
+      color: #115e59;
     }
     .no-selection-hint {
       padding: 40px;

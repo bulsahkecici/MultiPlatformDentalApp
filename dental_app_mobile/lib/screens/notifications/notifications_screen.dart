@@ -45,7 +45,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bildirimler'),
-        backgroundColor: const Color(0xFF1E3A8A),
+        backgroundColor: const Color(0xFF134E4A),
         foregroundColor: Colors.white,
         actions: [
           if (!widget.readOnly && provider.notifications.isNotEmpty)
@@ -88,7 +88,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             _iconFor(notification.type),
                             color: notification.isRead
                                 ? Colors.grey
-                                : const Color(0xFF1E3A8A),
+                                : const Color(0xFF134E4A),
                           ),
                           title: Text(
                             notification.title,

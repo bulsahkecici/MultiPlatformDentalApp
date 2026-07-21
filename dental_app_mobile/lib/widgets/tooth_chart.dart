@@ -99,7 +99,7 @@ class ToothChart extends StatelessWidget {
                                 : const Color(0x113B82F6),
                             border: Border.all(
                               color: selectedTeeth.contains(spot.tooth)
-                                  ? const Color(0xFF2563EB)
+                                  ? const Color(0xFF0F766E)
                                   : const Color(0x333B82F6),
                               width:
                                   selectedTeeth.contains(spot.tooth) ? 2 : 1,

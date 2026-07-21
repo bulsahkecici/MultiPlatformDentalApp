@@ -140,7 +140,7 @@ interface DentistInfo {
     .legend-item { display: flex; align-items: center; gap: 6px; }
     .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
     .dot.available { background: var(--surface-muted); border: 1px solid var(--ink-300); }
-    .dot.occupied { background: var(--bulka-primary-600, #2563eb); }
+    .dot.occupied { background: var(--bulka-primary-600, #0d9488); }
     .loading {
       display: flex;
       justify-content: center;
@@ -183,7 +183,7 @@ interface DentistInfo {
       font-size: 16px;
       width: 16px;
       height: 16px;
-      color: var(--bulka-primary-600, #2563eb);
+      color: var(--bulka-primary-600, #0d9488);
     }
     .dentist-header span {
       overflow: hidden;
@@ -216,14 +216,14 @@ interface DentistInfo {
       background-color: var(--surface);
     }
     .appointment-slot.available:hover {
-      background-color: var(--bulka-primary-50, #eff6ff);
+      background-color: var(--bulka-primary-50, #f0fdfa);
     }
     .appointment-slot.occupied {
-      background-color: var(--bulka-primary-600, #2563eb);
+      background-color: var(--bulka-primary-600, #0d9488);
       color: white;
     }
     .appointment-slot.occupied:hover {
-      background-color: var(--bulka-primary-700, #1d4ed8);
+      background-color: var(--bulka-primary-700, #0f766e);
     }
     .slot-content {
       width: 100%;

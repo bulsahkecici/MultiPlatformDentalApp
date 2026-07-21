@@ -139,7 +139,7 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEdit ? 'Randevuyu Düzenle' : 'Yeni Randevu'),
-        backgroundColor: const Color(0xFF1E3A8A),
+        backgroundColor: const Color(0xFF134E4A),
         foregroundColor: Colors.white,
       ),
       body: ListView(

@@ -59,26 +59,26 @@ import { ToothHotspot } from '../../../core/models/models';
       pointer-events: none;
     }
     .hotspot {
-      fill: rgba(59, 130, 246, 0.1);
-      stroke: rgba(59, 130, 246, 0.3);
+      fill: rgba(20, 184, 166, 0.1);
+      stroke: rgba(20, 184, 166, 0.3);
       stroke-width: 1;
       cursor: pointer;
       pointer-events: all;
       transition: all 0.2s;
     }
     .hotspot:hover {
-      fill: rgba(59, 130, 246, 0.3);
+      fill: rgba(20, 184, 166, 0.3);
     }
     .hotspot.selected {
-      fill: rgba(59, 130, 246, 0.6);
-      stroke: #2563eb;
+      fill: rgba(20, 184, 166, 0.6);
+      stroke: #0d9488;
       stroke-width: 2;
     }
     .selection-info {
       font-weight: 500;
-      color: #1e40af;
+      color: #115e59;
       padding: 8px 16px;
-      background: #eff6ff;
+      background: #f0fdfa;
       border-radius: 20px;
     }
   `]

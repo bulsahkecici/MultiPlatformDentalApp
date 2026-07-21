@@ -51,7 +51,7 @@ import { DashboardService, DentistEarnings } from '../../core/services/dashboard
     .earning-value {
       font-size: 20px;
       font-weight: bold;
-      color: #3B82F6;
+      color: var(--bulka-primary-600, #0d9488);
     }
     .loading {
       display: flex;

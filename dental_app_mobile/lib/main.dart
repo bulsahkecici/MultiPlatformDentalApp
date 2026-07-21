@@ -17,6 +17,73 @@ Future<void> main() async {
   runApp(const DentalApp());
 }
 
+/// "Aqua Mint" marka teması — turkuaz (ana), nane (ikincil), mercan (vurgu).
+/// Kartlar/butonlar çok yuvarlak köşelerle (pill'e yakın) ferah bir his verir.
+ThemeData _buildTheme() {
+  final colorScheme = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF0D9488), // teal-600
+    secondary: const Color(0xFFFB7185), // mercan (coral-400)
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: colorScheme,
+    scaffoldBackgroundColor: const Color(0xFFF0FDFA),
+    cardTheme: CardThemeData(
+      elevation: 0,
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        shape: const StadiumBorder(),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(shape: const StadiumBorder()),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(shape: const StadiumBorder()),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(shape: const StadiumBorder()),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.outlineVariant),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+      ),
+    ),
+    chipTheme: const ChipThemeData(
+      shape: StadiumBorder(),
+      side: BorderSide.none,
+    ),
+    appBarTheme: AppBarTheme(
+      backgroundColor: colorScheme.primary,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      centerTitle: false,
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: colorScheme.secondary,
+      foregroundColor: Colors.white,
+      shape: const StadiumBorder(),
+    ),
+  );
+}
+
 class DentalApp extends StatelessWidget {
   const DentalApp({super.key});
 
@@ -42,11 +109,7 @@ class DentalApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Bulka Dental',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme:
-              ColorScheme.fromSeed(seedColor: const Color(0xFF1E3A8A)),
-        ),
+        theme: _buildTheme(),
         home: const AuthWrapper(),
       ),
     );

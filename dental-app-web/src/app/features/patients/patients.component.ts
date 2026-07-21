@@ -174,8 +174,8 @@ import { MatListModule } from '@angular/material/list';
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background: var(--bulka-primary-100, #dbeafe);
-      color: var(--bulka-primary-700, #1d4ed8);
+      background: var(--bulka-primary-100, #ccfbf1);
+      color: var(--bulka-primary-700, #0f766e);
       font-weight: 700;
       font-size: 12px;
       margin-right: 10px;
@@ -194,7 +194,7 @@ import { MatListModule } from '@angular/material/list';
       background-color: var(--surface-muted);
     }
     .selected {
-      background-color: var(--bulka-primary-50, #eff6ff) !important;
+      background-color: var(--bulka-primary-50, #f0fdfa) !important;
     }
     .details-header {
       display: flex;

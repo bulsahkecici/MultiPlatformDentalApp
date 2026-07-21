@@ -126,7 +126,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_patient?.fullName ?? 'Hasta Detayı'),
-        backgroundColor: const Color(0xFF1E3A8A),
+        backgroundColor: const Color(0xFF134E4A),
         foregroundColor: Colors.white,
         actions: [
           if (_patient != null)
