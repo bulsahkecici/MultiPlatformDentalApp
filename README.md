@@ -1,18 +1,65 @@
-# MultiPlatformDentalApp
+# 🦷 Bulka Dental — Diş Kliniği Yönetim Sistemi
 
-A secure, full-featured dental practice management system built with Node.js, Express, and PostgreSQL.
+**Node.js/Express/PostgreSQL** üzerinde çalışan, **Web (Angular)**, **Masaüstü (WPF)** ve
+**Mobil (Flutter)** olmak üzere üç ayrı istemciyle aynı klinikte hasta, randevu, tedavi
+ve ödeme süreçlerini tek yerden yöneten güvenli, gerçek zamanlı bir diş kliniği yönetim
+sistemi.
 
-## Platforms
+Üç istemci de aynı REST API'yi ve aynı **"Aqua Mint"** tasarım dilini (turkuaz + nane +
+mercan, yuvarlak köşeler) paylaşır — hangi platformdan girerseniz girin tutarlı bir
+deneyim sunar.
+
+---
+
+## 📸 Ekran Görüntüleri
+
+<table>
+<tr>
+<td width="50%">
+
+**Masaüstü — Kontrol Paneli**
+<img src="docs/screenshots/desktop-dashboard.png" alt="Masaüstü Kontrol Paneli" />
+
+</td>
+<td width="50%">
+
+**Masaüstü — Randevu Yönetimi**
+<img src="docs/screenshots/desktop-appointments.png" alt="Masaüstü Randevu Takvimi" />
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Masaüstü — Hasta Yönetimi**
+<img src="docs/screenshots/desktop-patients.png" alt="Masaüstü Hasta Detayları" />
+
+</td>
+<td width="50%">
+
+**Web — Randevu Takvimi**
+<img src="docs/screenshots/web-appointments.png" alt="Web Randevu Takvimi" />
+
+</td>
+</tr>
+</table>
+
+**Web — Kontrol Paneli**
+<img src="docs/screenshots/web-dashboard.png" alt="Web Kontrol Paneli" />
+
+---
+
+## 🖥️ Platformlar
 
 | Platform | Teknoloji | Konum |
 |---|---|---|
 | Backend API + Socket.IO | Node.js / Express / PostgreSQL | `src/`, `db/` |
 | Web | Angular 18 + Material | `dental-app-web/` |
-| Desktop | WPF (.NET 8) + MaterialDesign | `DentalApp.Desktop/` |
+| Masaüstü | WPF (.NET 8) + MaterialDesignInXAML | `DentalApp.Desktop/` |
 | Mobil | Flutter (Android/iOS) | `dental_app_mobile/` |
 
 Gerçek zamanlı bildirimler tüm istemcilerde **Socket.IO** ile çalışır
-(web: `socket.io-client`, desktop: `SocketIOClient` NuGet, mobil: `socket_io_client`).
+(web: `socket.io-client`, masaüstü: `SocketIOClient` NuGet, mobil: `socket_io_client`).
 
 > **Not — TDB tarifesi ve diş şeması:** `tdb_2026_tarife_full.json` ve
 > `mouth_chart.png` üç istemcide de ayrı bundle edilir
@@ -20,46 +67,48 @@ Gerçek zamanlı bildirimler tüm istemcilerde **Socket.IO** ile çalışır
 > `dental_app_mobile/assets/`). Tarife güncellemesinde ÜÇ kopya da
 > güncellenmelidir.
 
-## Deployment
+## 🚀 Deployment
 
 İnternet üzerinden dağıtım için: [deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md)
 — ana yol Windows (Caddy + NSSM), alternatif olarak Ubuntu/Linux VPS
 (nginx + PM2 + Certbot) adımları da dokümanda mevcut.
 
-## Features
+## ✨ Özellikler
 
-### Security
-- ✅ JWT authentication with refresh tokens (15min access, 7 day refresh)
-- ✅ Account lockout after failed login attempts (5 attempts, 15min lockout)
-- ✅ Password strength validation and history tracking
-- ✅ Email verification and password reset
-- ✅ IP-based rate limiting
-- ✅ Comprehensive audit logging
-- ✅ Role-based access control (RBAC)
+### Güvenlik
+- ✅ Refresh token'lı JWT kimlik doğrulama (15dk access, 7 gün refresh)
+- ✅ Başarısız girişten sonra hesap kilitleme (5 deneme, 15dk kilit)
+- ✅ Şifre güçlülük kontrolü ve şifre geçmişi takibi
+- ✅ E-posta doğrulama ve şifre sıfırlama
+- ✅ IP bazlı rate limiting
+- ✅ Kapsamlı denetim (audit) günlüğü
+- ✅ Rol bazlı erişim kontrolü (RBAC) — Patron / Sekreter / Diş Hekimi
 
-### User Management
-- ✅ User CRUD operations
-- ✅ Role management (admin, user)
-- ✅ Password change functionality
-- ✅ Email verification workflow
+### Kullanıcı Yönetimi
+- ✅ Kullanıcı CRUD işlemleri
+- ✅ Rol yönetimi (patron, sekreter, diş hekimi)
+- ✅ Şifre değiştirme
+- ✅ E-posta doğrulama akışı
 
-### Dental Features
-- ✅ Patient management (CRUD with medical history)
-- ✅ Appointment scheduling (with conflict detection)
-- ✅ Treatment records and tracking
-- ✅ Medical records system
-- ✅ Soft delete for all entities
+### Klinik Özellikleri
+- ✅ Hasta yönetimi (tıbbi geçmiş dahil CRUD)
+- ✅ Çakışma kontrollü randevu planlama
+- ✅ TDB tarifesine bağlı tedavi kayıtları ve diş şeması
+- ✅ Kurum/sigorta anlaşmaları ve kategori bazlı indirim yönetimi
+- ✅ Ödeme takibi, gelir/gider özeti, diş hekimi ciro/kazanç raporu
+- ✅ Tüm kayıtlarda soft delete
 
-## Prerequisites
+## 🛠️ Kurulum
 
+### Gereksinimler
 - Node.js 18+
-- PostgreSQL running locally (or accessible remotely)
-- (Optional) SMTP server for email verification/password reset
+- Yerelde veya erişilebilir uzak bir PostgreSQL
+- (Opsiyonel) E-posta doğrulama/şifre sıfırlama için SMTP sunucusu
 
-## Environment
+### Ortam Değişkenleri
 
-1. Copy `.env.example` to `.env`
-2. Adjust the configuration:
+1. `.env.example` dosyasını `.env` olarak kopyalayın
+2. Ayarları düzenleyin:
 
 ```env
 # Server
@@ -90,120 +139,125 @@ ADMIN_EMAIL=admin@mail.com
 ADMIN_PASSWORD=Admin@123456
 ```
 
-## Installation & Database
+### Kurulum ve Veritabanı
 
 ```bash
-# Install dependencies
+# Bağımlılıkları kur
 npm install
 
-# Apply database schema
+# Veritabanı şemasını uygula
 npm run db:migrate
 
-# Create admin user
+# Patron/admin kullanıcı oluştur
 npm run db:seed:admin
 ```
 
-## Development
+## 💻 Geliştirme
 
 ```bash
 npm run dev
 ```
 
-## Production
+Web, masaüstü ve mobil istemcilerin kendi kurulum adımları için ilgili
+klasörlerdeki README dosyalarına bakın: [`dental-app-web/README.md`](dental-app-web/README.md),
+[`DentalApp.Desktop/README.md`](DentalApp.Desktop/README.md),
+[`dental_app_mobile/README.md`](dental_app_mobile/README.md).
+
+## 📦 Production
 
 ```bash
 npm start
 ```
 
-## API Endpoints
+## 🔌 API Uç Noktaları
 
-### Authentication
-- `POST /api/auth/login` - Login (returns access + refresh tokens)
-- `POST /api/auth/refresh` - Refresh access token
-- `POST /api/auth/logout` - Logout (revoke refresh token)
-- `POST /api/auth/request-reset` - Request password reset email
-- `POST /api/auth/reset-password` - Reset password with token
-- `GET /api/auth/verify-email/:token` - Verify email address
-- `POST /api/auth/resend-verification` - Resend verification email
+### Kimlik Doğrulama
+- `POST /api/auth/login` - Giriş (access + refresh token döner)
+- `POST /api/auth/refresh` - Access token yenileme
+- `POST /api/auth/logout` - Çıkış (refresh token iptali)
+- `POST /api/auth/request-reset` - Şifre sıfırlama e-postası iste
+- `POST /api/auth/reset-password` - Token ile şifre sıfırla
+- `GET /api/auth/verify-email/:token` - E-posta doğrula
+- `POST /api/auth/resend-verification` - Doğrulama e-postasını yeniden gönder
 
-### Users (Admin only for most)
-- `GET /api/users` - List users (admin)
-- `POST /api/users` - Create user (admin)
-- `GET /api/users/:id` - Get user (self or admin)
-- `PUT /api/users/:id` - Update user (self or admin)
-- `DELETE /api/users/:id` - Delete user (admin)
-- `PUT /api/users/:id/password` - Change password (self)
-- `PUT /api/users/:id/roles` - Update roles (admin)
+### Kullanıcılar (çoğu işlem sadece admin)
+- `GET /api/users` - Kullanıcıları listele (admin)
+- `POST /api/users` - Kullanıcı oluştur (admin)
+- `GET /api/users/:id` - Kullanıcı getir (kendisi veya admin)
+- `PUT /api/users/:id` - Kullanıcı güncelle (kendisi veya admin)
+- `DELETE /api/users/:id` - Kullanıcı sil (admin)
+- `PUT /api/users/:id/password` - Şifre değiştir (kendisi)
+- `PUT /api/users/:id/roles` - Rol güncelle (admin)
 
-### Patients (Authenticated users)
-- `GET /api/patients` - List patients
-- `POST /api/patients` - Create patient
-- `GET /api/patients/:id` - Get patient details
-- `PUT /api/patients/:id` - Update patient
-- `DELETE /api/patients/:id` - Delete patient (admin)
+### Hastalar (kimliği doğrulanmış kullanıcılar)
+- `GET /api/patients` - Hastaları listele
+- `POST /api/patients` - Hasta oluştur
+- `GET /api/patients/:id` - Hasta detayı
+- `PUT /api/patients/:id` - Hasta güncelle
+- `DELETE /api/patients/:id` - Hasta sil (admin)
 
-### Appointments (Authenticated users)
-- `GET /api/appointments` - List appointments
-- `POST /api/appointments` - Create appointment
-- `GET /api/appointments/:id` - Get appointment details
-- `PUT /api/appointments/:id` - Update appointment
-- `DELETE /api/appointments/:id` - Cancel appointment
+### Randevular (kimliği doğrulanmış kullanıcılar)
+- `GET /api/appointments` - Randevuları listele
+- `POST /api/appointments` - Randevu oluştur
+- `GET /api/appointments/:id` - Randevu detayı
+- `PUT /api/appointments/:id` - Randevu güncelle
+- `DELETE /api/appointments/:id` - Randevu iptal et
 
-### Treatments (Authenticated users)
-- `GET /api/treatments` - List treatments
-- `POST /api/treatments` - Create treatment record
-- `GET /api/treatments/:id` - Get treatment details
-- `PUT /api/treatments/:id` - Update treatment
+### Tedaviler (kimliği doğrulanmış kullanıcılar)
+- `GET /api/treatments` - Tedavileri listele
+- `POST /api/treatments` - Tedavi kaydı oluştur
+- `GET /api/treatments/:id` - Tedavi detayı
+- `PUT /api/treatments/:id` - Tedavi güncelle
 
-### Health & Admin
-- `GET /healthz` - Health check
-- `GET /readyz` - Readiness check (includes DB)
-- `GET /admin/status` - Admin status (requires admin role)
+### Sağlık & Admin
+- `GET /healthz` - Sağlık kontrolü
+- `GET /readyz` - Hazır olma kontrolü (DB dahil)
+- `GET /admin/status` - Admin durumu (admin rolü gerekir)
 
-## Testing
+## 🧪 Test
 
 ```bash
 npm test
 ```
 
-## Security Features
+## 🔒 Güvenlik Özellikleri
 
-### Account Lockout
-- Accounts are locked after 5 failed login attempts
-- Lockout duration: 15 minutes
-- Automatic unlock after duration expires
+### Hesap Kilitleme
+- 5 başarısız girişten sonra hesap kilitlenir
+- Kilit süresi: 15 dakika
+- Süre dolunca otomatik açılır
 
-### Password Policy
-- Minimum 8 characters
-- Must contain: uppercase, lowercase, number, special character
-- Cannot reuse last 3 passwords
-- Common passwords are blocked
+### Şifre Politikası
+- En az 8 karakter
+- Büyük harf, küçük harf, rakam, özel karakter zorunlu
+- Son 3 şifre tekrar kullanılamaz
+- Yaygın şifreler engellenir
 
 ### Rate Limiting
-- General: 300 requests / 15 minutes per IP
-- Auth endpoints: 10 requests / 15 minutes per IP
-- Password reset: 3 requests / hour per IP
-- Email verification: 5 requests / hour per IP
+- Genel: IP başına 15 dakikada 300 istek
+- Auth uç noktaları: IP başına 15 dakikada 10 istek
+- Şifre sıfırlama: IP başına saatte 3 istek
+- E-posta doğrulama: IP başına saatte 5 istek
 
-### Audit Logging
-All security events and data modifications are logged:
-- Login attempts (success/failure)
-- Password changes and resets
-- User/patient/appointment/treatment modifications
-- Admin actions
+### Denetim Günlüğü
+Tüm güvenlik olayları ve veri değişiklikleri loglanır:
+- Giriş denemeleri (başarılı/başarısız)
+- Şifre değişiklikleri ve sıfırlamaları
+- Kullanıcı/hasta/randevu/tedavi değişiklikleri
+- Admin işlemleri
 
-## Architecture
+## 🏗️ Mimari
 
 ```
 src/
-├── config/          # Configuration management
-├── controllers/     # Business logic
-├── middlewares/     # Auth, security, rate limiting
-├── routes/          # API routes
-├── utils/           # Utilities (logger, validators, email)
-└── db.js            # Database connection pool
+├── config/          # Yapılandırma yönetimi
+├── controllers/     # İş mantığı
+├── middlewares/     # Auth, güvenlik, rate limiting
+├── routes/          # API route'ları
+├── utils/           # Yardımcılar (logger, validator, e-posta)
+└── db.js            # Veritabanı bağlantı havuzu
 ```
 
-## License
+## 📄 Lisans
 
 ISC
