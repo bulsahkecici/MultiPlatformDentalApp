@@ -3,6 +3,7 @@ const { query } = require('../db');
 const { AppError } = require('../utils/errorResponder');
 const { logDataEvent, AuditEventType } = require('../utils/auditLogger');
 const { getClientIp } = require('../middlewares/accountLockout');
+const { sanitizeAuditChanges } = require('../utils/auditSanitizer');
 
 /**
  * Create new patient
@@ -103,7 +104,7 @@ async function createPatient(req, res, next) {
       userAgent,
       resourceType: 'patient',
       resourceId: patient.id,
-      changes: { firstName, lastName, email },
+      changes: sanitizeAuditChanges('patient', { firstName, lastName, email }),
     });
 
     return res.status(201).json({ patient });
@@ -317,7 +318,7 @@ async function updatePatient(req, res, next) {
       userAgent,
       resourceType: 'patient',
       resourceId: patientId,
-      changes: updates,
+      changes: sanitizeAuditChanges('patient', updates),
     });
 
     return res.status(200).json({ patient: result.rows[0] });
