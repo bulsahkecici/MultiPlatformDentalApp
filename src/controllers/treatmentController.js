@@ -980,7 +980,28 @@ async function createTreatmentPlan(req, res, next) {
           [createdPlan.id],
         );
 
-        return { plan: createdPlan, items: itemsResult.rows };
+        // Ham kalem toplamı (henüz hiçbir indirim uygulanmadan) burada
+        // yazılır — aksi halde total_estimated_cost onaya kadar NULL kalır
+        // ve pending bir plana manuel indirim uygulamak (yüzde/limit
+        // hesapları currentTotal=0 üzerinden yapıldığı için) hiçbir zaman
+        // mümkün olmazdı. Kurum/kategori indirimi hâlâ yalnızca onay
+        // anında (approveTreatmentPlan) uygulanır; bu sadece onay öncesi
+        // bir önizleme/temel tutardır.
+        const rawTotal =
+          Math.round(
+            itemsResult.rows.reduce(
+              (sum, item) => sum + (parseFloat(item.cost) || 0),
+              0,
+            ) * 100,
+          ) / 100;
+
+        const totalUpdateResult = await client.query(
+          `UPDATE treatment_plans SET total_estimated_cost = $1, currency = $2, updated_at = NOW()
+           WHERE id = $3 RETURNING *`,
+          [rawTotal, itemsResult.rows[0]?.currency || 'TRY', createdPlan.id],
+        );
+
+        return { plan: totalUpdateResult.rows[0], items: itemsResult.rows };
       },
     );
 

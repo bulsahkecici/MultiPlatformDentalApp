@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "jest --runInBand",
+    "test:integration": "cross-env NODE_ENV=test DB_NAME=dentalappdb_test TZ=Europe/Istanbul jest --config jest.integration.config.js --runInBand",
     "db:migrate": "node scripts/dbMigrate.js",
     "db:seed:admin": "node scripts/seedAdminUser.js"
   },

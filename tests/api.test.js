@@ -588,6 +588,11 @@ describe('Tedavi planı oluşturma — plan ve kalemler tek transaction', () => 
           ],
         });
       }
+      if (sql.includes('UPDATE treatment_plans SET total_estimated_cost')) {
+        return Promise.resolve({
+          rows: [{ id: 41, patient_id: 5, title: 'Dolgu', total_estimated_cost: 500 }],
+        });
+      }
       return Promise.resolve({ rows: [], rowCount: 0 });
     });
 
