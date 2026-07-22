@@ -103,6 +103,13 @@ describe('Diş hekimi fiyatı göremediği gibi API üzerinden de değiştiremez
   });
 
   it('PUT /api/treatments/:id — diş hekimi cost değiştirmeye çalışırsa 403 döner', async () => {
+    db.query.mockImplementation((sql) => {
+      if (sql.includes('SELECT dentist_id, status, currency FROM treatments')) {
+        return Promise.resolve({ rows: [{ dentist_id: 7, status: 'in_progress', currency: 'TRY' }] });
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
+    });
+
     const res = await request(app)
       .put('/api/treatments/9')
       .set('Authorization', `Bearer ${dentistToken(7)}`)
@@ -117,8 +124,8 @@ describe('Diş hekimi fiyatı göremediği gibi API üzerinden de değiştiremez
 
   it('PUT /api/treatments/:id — cost açıkça null gönderilirse (WPF/JSON serileştirme) engellenmez', async () => {
     db.query.mockImplementation((sql) => {
-      if (sql.includes('SELECT dentist_id FROM treatments')) {
-        return Promise.resolve({ rows: [{ dentist_id: 7 }] });
+      if (sql.includes('SELECT dentist_id, status, currency FROM treatments')) {
+        return Promise.resolve({ rows: [{ dentist_id: 7, status: 'in_progress', currency: 'TRY' }] });
       }
       if (sql.includes('UPDATE treatments')) {
         return Promise.resolve({ rows: [{ id: 9, dentist_id: 7 }] });
@@ -136,8 +143,8 @@ describe('Diş hekimi fiyatı göremediği gibi API üzerinden de değiştiremez
 
   it('PUT /api/treatments/:id — cost içermeyen bir currency değeri tek başına engellenmez (istemciler klinik not güncellerken sabit "TRY" gönderebiliyor)', async () => {
     db.query.mockImplementation((sql) => {
-      if (sql.includes('SELECT dentist_id FROM treatments')) {
-        return Promise.resolve({ rows: [{ dentist_id: 7 }] });
+      if (sql.includes('SELECT dentist_id, status, currency FROM treatments')) {
+        return Promise.resolve({ rows: [{ dentist_id: 7, status: 'in_progress', currency: 'TRY' }] });
       }
       if (sql.includes('UPDATE treatments')) {
         return Promise.resolve({ rows: [{ id: 9, dentist_id: 7 }] });
@@ -155,8 +162,8 @@ describe('Diş hekimi fiyatı göremediği gibi API üzerinden de değiştiremez
 
   it('PUT /api/treatments/:id — diş hekimi kendi tedavisinin klinik notunu (cost hariç) değiştirebilir', async () => {
     db.query.mockImplementation((sql) => {
-      if (sql.includes('SELECT dentist_id FROM treatments')) {
-        return Promise.resolve({ rows: [{ dentist_id: 7 }] });
+      if (sql.includes('SELECT dentist_id, status, currency FROM treatments')) {
+        return Promise.resolve({ rows: [{ dentist_id: 7, status: 'in_progress' }] });
       }
       if (sql.includes('UPDATE treatments')) {
         return Promise.resolve({
@@ -176,6 +183,9 @@ describe('Diş hekimi fiyatı göremediği gibi API üzerinden de değiştiremez
 
   it('PUT /api/treatments/:id — admin/sekreter cost değiştirebilir', async () => {
     db.query.mockImplementation((sql) => {
+      if (sql.includes('SELECT dentist_id, status, currency FROM treatments')) {
+        return Promise.resolve({ rows: [{ dentist_id: null, status: 'in_progress' }] });
+      }
       if (sql.includes('UPDATE treatments')) {
         return Promise.resolve({ rows: [{ id: 9, cost: '3000' }] });
       }

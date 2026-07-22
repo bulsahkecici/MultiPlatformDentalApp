@@ -112,6 +112,9 @@ describe('Tedavi güncelleme (deleted_at regresyonu)', () => {
 
   it('PUT /api/treatments/:id — UPDATE sorgusu voided (deleted_at dolu) kaydı hariç tutar', async () => {
     db.query.mockImplementation((sql) => {
+      if (sql.includes('SELECT dentist_id, status, currency FROM treatments')) {
+        return Promise.resolve({ rows: [{ dentist_id: null, status: 'in_progress', currency: 'TRY' }] });
+      }
       if (sql.includes('UPDATE treatments')) {
         return Promise.resolve({
           rows: [{ id: 7, status: 'completed', dentist_id: null }],
@@ -144,6 +147,9 @@ describe('DELETE /api/treatments/:id — tedavi kaydı asla hard-delete edilmez 
 
   it('DELETE isteği bir UPDATE (soft void) üretir, hiçbir zaman DELETE FROM treatments çalıştırmaz', async () => {
     db.query.mockImplementation((sql) => {
+      if (sql.includes('SELECT dentist_id, void_status FROM treatments')) {
+        return Promise.resolve({ rows: [{ dentist_id: null, void_status: null }] });
+      }
       if (
         sql.includes('UPDATE treatments') &&
         sql.includes('deleted_at = NOW()')
@@ -179,9 +185,18 @@ describe('DELETE /api/treatments/:id — tedavi kaydı asla hard-delete edilmez 
     const res = await request(app)
       .delete('/api/treatments/9')
       .set('Authorization', `Bearer ${adminToken()}`)
-      .send({});
+      .send({ reason: 'Tekrar deneme' });
 
     expect(res.status).toBe(404);
+  });
+
+  it('void nedeni boş olamaz', async () => {
+    const res = await request(app)
+      .delete('/api/treatments/9')
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({});
+
+    expect(res.status).toBe(400);
   });
 });
 

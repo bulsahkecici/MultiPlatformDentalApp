@@ -544,3 +544,74 @@ END $$;
 ALTER TABLE treatment_plans ADD COLUMN IF NOT EXISTS cancellation_reason TEXT;
 ALTER TABLE treatment_plans ADD COLUMN IF NOT EXISTS cancelled_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
 ALTER TABLE treatment_plans ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ;
+
+-- =============================================================================
+-- Migration (2026-07, devam 3): pilot-öncesi klinik erişim güvenliği +
+-- randevu durum bütünlüğü + manuel indirim kalıcılığı.
+--
+-- 1) Sekreter artık tedaviyi doğrudan void edemez — yalnızca bir void TALEBİ
+--    oluşturabilir (void_status='pending'); onay/red patron tarafından yapılır
+--    (bkz. treatmentController.js requestTreatmentVoid/decideTreatmentVoid).
+--    Diş hekimi sadece kendi tedavisi için talep açabilir. Admin hâlâ
+--    doğrudan void edebilir (acil/gerekçeli durumlar için).
+-- 2) Tamamlanmış tedavilerin klinik alanları (tanı, prosedür notu, diş no,
+--    tedavi türü, tarih, hekim, durum) artık PUT ile doğrudan değiştirilemez;
+--    değişiklik treatment_revisions tablosuna kaydedilen ayrı bir "amendment"
+--    akışından geçmelidir (bkz. amendTreatment).
+-- 3) Randevu durumu artık serbest metin değil, sabit bir liste + DB CHECK.
+-- 4) Manuel indirim, plan onayında institution/category indirimi yeniden
+--    hesaplanırken artık sessizce kaybolmuyor (manual_discount_amount).
+-- =============================================================================
+
+ALTER TABLE treatments ADD COLUMN IF NOT EXISTS void_status VARCHAR(20);
+ALTER TABLE treatments ADD COLUMN IF NOT EXISTS void_requested_at TIMESTAMPTZ;
+ALTER TABLE treatments ADD COLUMN IF NOT EXISTS void_requested_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE treatments ADD COLUMN IF NOT EXISTS void_request_reason TEXT;
+ALTER TABLE treatments ADD COLUMN IF NOT EXISTS void_approved_at TIMESTAMPTZ;
+ALTER TABLE treatments ADD COLUMN IF NOT EXISTS void_approved_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE treatments ADD COLUMN IF NOT EXISTS void_rejection_reason TEXT;
+CREATE INDEX IF NOT EXISTS idx_treatments_void_status ON treatments (void_status);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_treatments_void_status') THEN
+    ALTER TABLE treatments ADD CONSTRAINT chk_treatments_void_status
+      CHECK (void_status IS NULL OR void_status IN ('pending', 'approved', 'rejected'));
+  END IF;
+END $$;
+
+-- Tamamlanmış tedavilerdeki klinik alan değişikliklerinin (amendment) tam
+-- geçmişi — eski kayıt hiçbir zaman kaybolmaz, her revizyon kim/ne
+-- zaman/hangi gerekçeyle yapıldığını taşır.
+CREATE TABLE IF NOT EXISTS treatment_revisions (
+  id SERIAL PRIMARY KEY,
+  treatment_id INTEGER NOT NULL REFERENCES treatments(id) ON DELETE CASCADE,
+  revision_number INTEGER NOT NULL,
+  changed_fields TEXT NOT NULL, -- virgülle ayrılmış alan adları
+  previous_values JSONB NOT NULL,
+  new_values JSONB NOT NULL,
+  reason TEXT NOT NULL,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  approved_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  approved_at TIMESTAMPTZ,
+  UNIQUE(treatment_id, revision_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_treatment_revisions_treatment_id ON treatment_revisions (treatment_id);
+
+-- Randevu durumu sabit bir liste — uygulama katmanındaki geçiş matrisinin
+-- (bkz. appointmentController.js STATUS_TRANSITIONS) yanında son bir
+-- güvenlik ağı olarak DB seviyesinde de kısıtlanır.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_appointments_status_allowed') THEN
+    ALTER TABLE appointments ADD CONSTRAINT chk_appointments_status_allowed
+      CHECK (status IN ('scheduled', 'confirmed', 'completed', 'cancelled', 'no_show'));
+  END IF;
+END $$;
+
+-- Bekleyen bir planda uygulanan manuel indirim tutarı — approveTreatmentPlan
+-- kurum/kategori indirimini yeniden hesaplarken bu tutarı da düşer, böylece
+-- daha önce uygulanmış manuel indirim onay sırasında sessizce kaybolmaz.
+ALTER TABLE treatment_plans ADD COLUMN IF NOT EXISTS manual_discount_amount DECIMAL(10, 2) NOT NULL DEFAULT 0;
