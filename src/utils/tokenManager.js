@@ -15,20 +15,30 @@ const PASSWORD_RESET_EXPIRY = 60 * 60 * 1000; // 1 hour
  * @returns {string} JWT access token
  */
 function generateAccessToken(payload) {
-  return jwt.sign(payload, config.security.jwtSecret, {
-    expiresIn: ACCESS_TOKEN_EXPIRY,
-  });
+  return jwt.sign(
+    { ...payload, tokenType: 'access' },
+    config.security.jwtSecret,
+    {
+      expiresIn: ACCESS_TOKEN_EXPIRY,
+    },
+  );
 }
 
 /**
  * Generate refresh token (long-lived)
+ * Signed with a separate secret (falls back to JWT_SECRET when
+ * JWT_REFRESH_SECRET isn't configured) and carries its own `tokenType`
+ * claim, so a leaked/long-lived refresh token can never be replayed as a
+ * short-lived API access token (see requireAuth in middlewares/auth.js).
  * @param {Object} payload - User data to encode
  * @returns {string} JWT refresh token
  */
 function generateRefreshToken(payload) {
-  return jwt.sign(payload, config.security.jwtSecret, {
-    expiresIn: REFRESH_TOKEN_EXPIRY,
-  });
+  return jwt.sign(
+    { ...payload, tokenType: 'refresh' },
+    config.security.jwtRefreshSecret,
+    { expiresIn: REFRESH_TOKEN_EXPIRY },
+  );
 }
 
 /**

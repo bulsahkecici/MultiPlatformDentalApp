@@ -36,6 +36,15 @@ async function createTreatment(req, res, next) {
       );
     }
 
+    // Diş hekimi fiyatı göremez (canViewPrices), dolayısıyla API üzerinden
+    // de belirleyemez — arayüzde gizli bir alanın ham istekle set edilebilmesi
+    // yalnızca UI kontrolüne güvenmek anlamına gelirdi.
+    if (cost !== undefined && cost !== null && !canViewPrices(req)) {
+      return next(
+        new AppError('Only admin/secretary can set treatment cost', 403),
+      );
+    }
+
     // Create treatment
     const result = await query(
       `INSERT INTO treatments (
@@ -108,7 +117,9 @@ async function getTreatments(req, res, next) {
     } = req.query;
 
     const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
-    const conditions = []; // treatments table doesn't have deleted_at
+    // Voided (soft-deleted) kayıtlar varsayılan listeden gizlenir — patients
+    // tablosuyla aynı konvansiyon (bkz. patientController.js).
+    const conditions = ['deleted_at IS NULL'];
     const params = [];
     let paramIndex = 1;
 
@@ -210,7 +221,7 @@ async function getTreatmentById(req, res, next) {
        FROM treatments t
        LEFT JOIN patients p ON t.patient_id = p.id
        LEFT JOIN users u ON t.dentist_id = u.id
-       WHERE t.id = $1`,
+       WHERE t.id = $1 AND t.deleted_at IS NULL`,
       [treatmentId],
     );
 
@@ -237,10 +248,27 @@ async function updateTreatment(req, res, next) {
     const treatmentId = parseInt(req.params.id, 10);
     const updates = req.body || {};
 
+    // Diş hekimi fiyatı göremez (canViewPrices), dolayısıyla API üzerinden
+    // de değiştiremez — arayüzde "cost" alanı hiç gösterilmese de PUT ile
+    // ham istek gönderilirse önceden sessizce kabul ediliyordu. Yalnızca
+    // gerçek (dolu) bir cost değeri engellenir — istemciler klinik notu
+    // güncellerken cost'u null/tanımsız bırakıp yine de sabit bir currency
+    // (ör. "TRY") gönderebiliyor; bu tek başına bir fiyat değişikliği değil.
+    if (
+      updates.cost !== undefined &&
+      updates.cost !== null &&
+      updates.cost !== '' &&
+      !canViewPrices(req)
+    ) {
+      return next(
+        new AppError('Only admin/secretary can change treatment cost', 403),
+      );
+    }
+
     // Diş hekimi sadece kendi tedavisini güncelleyebilir (IDOR koruması)
     if (isDentist(req)) {
       const ownership = await query(
-        'SELECT dentist_id FROM treatments WHERE id = $1',
+        'SELECT dentist_id FROM treatments WHERE id = $1 AND deleted_at IS NULL',
         [treatmentId],
       );
       if (ownership.rows.length === 0) {
@@ -290,9 +318,9 @@ async function updateTreatment(req, res, next) {
     params.push(treatmentId);
 
     const result = await query(
-      `UPDATE treatments 
+      `UPDATE treatments
        SET ${setClauses.join(', ')}
-       WHERE id = $${paramIndex}
+       WHERE id = $${paramIndex} AND deleted_at IS NULL
        RETURNING *`,
       params,
     );
@@ -336,16 +364,24 @@ async function updateTreatment(req, res, next) {
 }
 
 /**
- * Delete a treatment record
+ * "Delete" a treatment record — in reality a soft VOID, never a hard DELETE.
+ * Tedaviler faturalanmış/klinik kayıtlardır; kalıcı silme hem denetlenebilirliği
+ * hem de daha önce bu kayda bağlanmış ödeme/borç geçmişini geri dönülemez
+ * şekilde bozar. Kayıt `deleted_at` ile işaretlenir, kim/ne zaman/neden
+ * void ettiği saklanır; veritabanından asla kaldırılmaz.
  */
 async function deleteTreatment(req, res, next) {
   try {
     const treatmentId = parseInt(req.params.id, 10);
+    const voidReason =
+      typeof req.body?.reason === 'string' && req.body.reason.trim()
+        ? req.body.reason.trim()
+        : null;
 
-    // Diş hekimi sadece kendi tedavisini silebilir (IDOR koruması)
+    // Diş hekimi sadece kendi tedavisini void edebilir (IDOR koruması)
     if (isDentist(req)) {
       const ownership = await query(
-        'SELECT dentist_id FROM treatments WHERE id = $1',
+        'SELECT dentist_id FROM treatments WHERE id = $1 AND deleted_at IS NULL',
         [treatmentId],
       );
       if (ownership.rows.length === 0) {
@@ -357,8 +393,15 @@ async function deleteTreatment(req, res, next) {
     }
 
     const result = await query(
-      'DELETE FROM treatments WHERE id = $1 RETURNING id',
-      [treatmentId],
+      `UPDATE treatments
+       SET deleted_at = NOW(),
+           void_reason = $1,
+           voided_by = $2,
+           status = 'cancelled',
+           updated_at = NOW()
+       WHERE id = $3 AND deleted_at IS NULL
+       RETURNING id`,
+      [voidReason, req.user.sub, treatmentId],
     );
 
     if (result.rows.length === 0) {
@@ -375,6 +418,7 @@ async function deleteTreatment(req, res, next) {
       userAgent,
       resourceType: 'treatment',
       resourceId: treatmentId,
+      changes: { voidReason },
     });
 
     return res.status(204).send();

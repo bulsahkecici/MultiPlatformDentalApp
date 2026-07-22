@@ -26,5 +26,13 @@ class MobileAccessPolicy {
   bool get canManagePatients => isDentist;
   bool get canManageTreatments => isDentist;
 
-  String get roleLabel => isOwner ? 'Patron · Salt okunur' : 'Diş Hekimi';
+  // Daha önce ekranları tamamen yazılmış ama bu menüye hiç bağlanmamış
+  // özellikler — backend zaten admin/secretary+dentist bazında yetkilendiriyor,
+  // burada sadece mobilin desteklediği iki role (patron/dişhekimi) eşleniyor.
+  bool get canManagePayments => isOwner; // Ödeme alma + plan onayı (backend: admin/secretary)
+  bool get canViewAgreements => isOwner; // Kurum anlaşmaları (salt görüntüleme)
+  bool get canManageUsers => isOwner; // Kullanıcı yönetimi (backend: admin)
+  bool get canViewEarnings => isDentist; // Kendi kazanç/ciro payı raporu
+
+  String get roleLabel => isOwner ? 'Patron' : 'Diş Hekimi';
 }

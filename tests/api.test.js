@@ -17,7 +17,7 @@ const { app } = require('../src/server');
 
 function adminToken() {
   return jwt.sign(
-    { sub: 1, email: 'admin@mail.com', roles: ['admin'] },
+    { sub: 1, email: 'admin@mail.com', roles: ['admin'], tokenType: 'access' },
     'test-secret',
     { expiresIn: '15m' },
   );
@@ -25,7 +25,12 @@ function adminToken() {
 
 function dentistToken(sub) {
   return jwt.sign(
-    { sub, email: `dentist${sub}@mail.com`, roles: ['dentist'] },
+    {
+      sub,
+      email: `dentist${sub}@mail.com`,
+      roles: ['dentist'],
+      tokenType: 'access',
+    },
     'test-secret',
     { expiresIn: '15m' },
   );
@@ -105,7 +110,7 @@ describe('Tedavi güncelleme (deleted_at regresyonu)', () => {
     db.query.mockResolvedValue({ rows: [], rowCount: 0 });
   });
 
-  it('PUT /api/treatments/:id — UPDATE sorgusu var olmayan deleted_at kolonunu içermez', async () => {
+  it('PUT /api/treatments/:id — UPDATE sorgusu voided (deleted_at dolu) kaydı hariç tutar', async () => {
     db.query.mockImplementation((sql) => {
       if (sql.includes('UPDATE treatments')) {
         return Promise.resolve({
@@ -126,8 +131,57 @@ describe('Tedavi güncelleme (deleted_at regresyonu)', () => {
       sql.includes('UPDATE treatments'),
     );
     expect(updateCall).toBeDefined();
-    // Regresyon: treatments tablosunda deleted_at yok — sorguda geçmemeli
-    expect(updateCall[0]).not.toContain('deleted_at');
+    // Void edilmiş (deleted_at dolu) bir kayıt sessizce güncellenemesin
+    expect(updateCall[0]).toContain('deleted_at IS NULL');
+  });
+});
+
+describe('DELETE /api/treatments/:id — tedavi kaydı asla hard-delete edilmez (void)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    db.query.mockResolvedValue({ rows: [], rowCount: 0 });
+  });
+
+  it('DELETE isteği bir UPDATE (soft void) üretir, hiçbir zaman DELETE FROM treatments çalıştırmaz', async () => {
+    db.query.mockImplementation((sql) => {
+      if (
+        sql.includes('UPDATE treatments') &&
+        sql.includes('deleted_at = NOW()')
+      ) {
+        return Promise.resolve({ rows: [{ id: 9 }] });
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
+    });
+
+    const res = await request(app)
+      .delete('/api/treatments/9')
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({ reason: 'Yanlış hasta kaydına girilmiş' });
+
+    expect(res.status).toBe(204);
+
+    const hardDeleteCall = db.query.mock.calls.find(([sql]) =>
+      sql.trim().startsWith('DELETE FROM treatments'),
+    );
+    expect(hardDeleteCall).toBeUndefined();
+
+    const voidCall = db.query.mock.calls.find(
+      ([sql]) =>
+        sql.includes('UPDATE treatments') && sql.includes('deleted_at = NOW()'),
+    );
+    expect(voidCall).toBeDefined();
+    expect(voidCall[1]).toEqual(['Yanlış hasta kaydına girilmiş', 1, 9]);
+  });
+
+  it('zaten void edilmiş bir kaydı tekrar void etmeye çalışmak 404 döner', async () => {
+    db.query.mockResolvedValue({ rows: [], rowCount: 0 }); // WHERE deleted_at IS NULL eşleşmez
+
+    const res = await request(app)
+      .delete('/api/treatments/9')
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({});
+
+    expect(res.status).toBe(404);
   });
 });
 
@@ -235,8 +289,22 @@ describe('Randevu yetkilendirme (IDOR koruması — diş hekimi sadece kendi ran
 
   it('PUT /api/appointments/:id — başka dişhekiminin randevusunu güncelleyemez', async () => {
     db.query.mockImplementation((sql) => {
-      if (sql.includes('SELECT dentist_id FROM appointments')) {
-        return Promise.resolve({ rows: [{ dentist_id: 1 }] });
+      if (
+        sql.includes(
+          'SELECT dentist_id, appointment_date, start_time, end_time, status FROM appointments',
+        )
+      ) {
+        return Promise.resolve({
+          rows: [
+            {
+              dentist_id: 1,
+              appointment_date: '2026-07-20',
+              start_time: '09:00:00',
+              end_time: '09:30:00',
+              status: 'scheduled',
+            },
+          ],
+        });
       }
       return Promise.resolve({ rows: [], rowCount: 0 });
     });
@@ -368,8 +436,17 @@ describe('Tedavi planı onayı — idempotent (çift onay borcu iki kez eklemez)
 
   it('İlk onayda plan güncellenir ve borç eklenir', async () => {
     db.query.mockImplementation((sql) => {
-      if (sql.includes('SELECT SUM(cost)')) {
-        return Promise.resolve({ rows: [{ total: '500' }] });
+      if (
+        sql.includes(
+          'SELECT id, treatment_type, cost FROM treatment_plan_items',
+        )
+      ) {
+        return Promise.resolve({
+          rows: [{ id: 1, treatment_type: 'Dolgu', cost: '500' }],
+        });
+      }
+      if (sql.includes('FROM institution_agreements')) {
+        return Promise.resolve({ rows: [] }); // hasta bir kuruma bağlı değil
       }
       if (sql.includes("WHERE id = $3 AND status = 'pending'")) {
         return Promise.resolve({
@@ -403,8 +480,17 @@ describe('Tedavi planı onayı — idempotent (çift onay borcu iki kez eklemez)
 
   it('Zaten onaylanmış planı tekrar onaylamaya çalışmak 409 döner ve borç tekrar eklenmez', async () => {
     db.query.mockImplementation((sql) => {
-      if (sql.includes('SELECT SUM(cost)')) {
-        return Promise.resolve({ rows: [{ total: '500' }] });
+      if (
+        sql.includes(
+          'SELECT id, treatment_type, cost FROM treatment_plan_items',
+        )
+      ) {
+        return Promise.resolve({
+          rows: [{ id: 1, treatment_type: 'Dolgu', cost: '500' }],
+        });
+      }
+      if (sql.includes('FROM institution_agreements')) {
+        return Promise.resolve({ rows: [] });
       }
       if (sql.includes("WHERE id = $3 AND status = 'pending'")) {
         // Plan zaten 'pending' dışında bir durumda — hiçbir satır güncellenmez

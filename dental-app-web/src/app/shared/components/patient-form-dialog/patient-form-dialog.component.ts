@@ -12,6 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { PatientService } from '../../../core/services/patient.service';
 import { Patient } from '../../../core/models/models';
+import { DateUtils } from '../../../core/utils/date-utils';
 
 @Component({
   selector: 'app-patient-form-dialog',
@@ -156,7 +157,7 @@ export class PatientFormDialogComponent implements OnInit {
       const patientData: Partial<Patient> = {
         firstName: formValue.firstName,
         lastName: formValue.lastName,
-        dateOfBirth: formValue.dateOfBirth ? formValue.dateOfBirth.toISOString().split('T')[0] : null,
+        dateOfBirth: formValue.dateOfBirth ? DateUtils.toLocalDateString(formValue.dateOfBirth) : undefined,
         gender: formValue.gender,
         phone: formValue.phone,
         email: formValue.email,

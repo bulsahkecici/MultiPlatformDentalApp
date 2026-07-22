@@ -50,6 +50,12 @@ const config = {
   },
   security: {
     jwtSecret: process.env.JWT_SECRET || 'dev-secret',
+    // Refresh token'lar ayrı bir secret ile imzalanır (tanımlı değilse
+    // JWT_SECRET'a düşer) — access token doğrulaması bu secret'ı hiç
+    // tanımadığından, refresh token'ın kendisi API'ye Bearer olarak asla
+    // kabul edilmez (bkz. tokenType kontrolü, middlewares/auth.js).
+    jwtRefreshSecret:
+      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'dev-secret',
     // Account lockout settings
     maxFailedAttempts: Number(process.env.MAX_FAILED_ATTEMPTS) || 5,
     lockoutDurationMinutes: Number(process.env.LOCKOUT_DURATION_MINUTES) || 15,
@@ -81,6 +87,13 @@ const config = {
     user: process.env.EMAIL_USER || '',
     pass: process.env.EMAIL_PASS || '',
     from: process.env.EMAIL_FROM || 'noreply@dentalapp.com',
+  },
+  business: {
+    // Bu orandan yüksek manuel indirim talepleri sekreter tarafından
+    // doğrudan uygulanamaz — patron onayı bekleyen bir işlem (financial_transactions,
+    // status='pending_approval') olarak kaydedilir. Admin/patron için eşik uygulanmaz.
+    highDiscountApprovalThresholdPercent:
+      Number(process.env.HIGH_DISCOUNT_THRESHOLD_PERCENT) || 20,
   },
 };
 

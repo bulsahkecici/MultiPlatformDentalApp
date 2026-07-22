@@ -11,6 +11,7 @@ import { AppointmentService } from '../../core/services/appointment.service';
 import { DashboardService, DashboardStats } from '../../core/services/dashboard.service';
 import { User, Appointment } from '../../core/models/models';
 import { DataMapper } from '../../core/utils/data-mapper';
+import { DateUtils } from '../../core/utils/date-utils';
 
 interface StatCard {
   value: string;
@@ -235,7 +236,7 @@ export class DashboardComponent implements OnInit {
   }
 
   loadDentistDashboard(): void {
-    const today = new Date().toISOString().split('T')[0];
+    const today = DateUtils.toLocalDateString(new Date());
     // Backend automatically filters by dentist ID when user is dentist
     this.appointmentService.getAppointments(1, 100, undefined, undefined, today).subscribe({
       next: (response) => {
@@ -255,8 +256,8 @@ export class DashboardComponent implements OnInit {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    const todayStr = today.toISOString().split('T')[0];
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    const todayStr = DateUtils.toLocalDateString(today);
+    const tomorrowStr = DateUtils.toLocalDateString(tomorrow);
     
     this.appointmentService.getAppointments(1, 100, undefined, undefined, todayStr, tomorrowStr).subscribe({
       next: (response) => {

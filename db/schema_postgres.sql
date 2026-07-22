@@ -441,3 +441,106 @@ INSERT INTO discount_reasons (name, description) VALUES
   ('Yaşlı İndirimi', '65 yaş üstü hastalara indirim'),
   ('Toplu İşlem', 'Birden fazla işlem için toplu indirim')
 ON CONFLICT (name) DO NOTHING;
+
+-- =============================================================================
+-- Migration (2026-07): proje denetimi — klinik kayıt bütünlüğü, finansal
+-- doğruluk ve randevu doğrulaması düzeltmeleri.
+-- =============================================================================
+
+-- Tedaviler artık asla hard-delete edilmez (bkz. treatmentController.deleteTreatment) —
+-- "silme" bu alanlarla bir VOID işlemine dönüştürüldü; kayıt kalıcıdır.
+ALTER TABLE treatments ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+ALTER TABLE treatments ADD COLUMN IF NOT EXISTS void_reason TEXT;
+ALTER TABLE treatments ADD COLUMN IF NOT EXISTS voided_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_treatments_deleted_at ON treatments (deleted_at);
+
+-- Tedavi planı onayında kurum/kategori indirimi artık her kalem için ayrı ayrı
+-- hesaplanıp bir anlık görüntü (snapshot) olarak saklanır — sonradan anlaşma
+-- değişse bile onay anındaki fiyat sabit kalır (bkz. paymentController.approveTreatmentPlan).
+ALTER TABLE treatment_plan_items ADD COLUMN IF NOT EXISTS discount_percentage DECIMAL(5, 2);
+ALTER TABLE treatment_plan_items ADD COLUMN IF NOT EXISTS discounted_cost DECIMAL(10, 2);
+
+-- Veri bütünlüğü kısıtları — uygulama katmanındaki doğrulamaların yanında
+-- veritabanı seviyesinde de son bir güvenlik ağı. Var olan veri bu oturumda
+-- kontrol edildi ve hiçbiri bu kısıtları ihlal etmiyor (bkz. denetim raporu).
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_payments_amount_positive') THEN
+    ALTER TABLE payments ADD CONSTRAINT chk_payments_amount_positive CHECK (amount > 0);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_payments_method_allowed') THEN
+    ALTER TABLE payments ADD CONSTRAINT chk_payments_method_allowed CHECK (payment_method IN ('card', 'cash'));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_treatment_plan_items_cost_nonneg') THEN
+    ALTER TABLE treatment_plan_items ADD CONSTRAINT chk_treatment_plan_items_cost_nonneg CHECK (cost >= 0);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_treatment_plan_items_discount_pct') THEN
+    ALTER TABLE treatment_plan_items ADD CONSTRAINT chk_treatment_plan_items_discount_pct CHECK (discount_percentage IS NULL OR discount_percentage BETWEEN 0 AND 100);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_appointments_end_after_start') THEN
+    ALTER TABLE appointments ADD CONSTRAINT chk_appointments_end_after_start CHECK (end_time > start_time);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_institution_agreements_discount_pct') THEN
+    ALTER TABLE institution_agreements ADD CONSTRAINT chk_institution_agreements_discount_pct CHECK (discount_percentage BETWEEN 0 AND 100);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_institution_category_discounts_pct') THEN
+    ALTER TABLE institution_agreement_category_discounts ADD CONSTRAINT chk_institution_category_discounts_pct CHECK (discount_percentage BETWEEN 0 AND 100);
+  END IF;
+END $$;
+
+-- =============================================================================
+-- Migration (2026-07, devam): hareket bazlı finansal defter + yüksek indirim
+-- onayı + ödeme iptali/iade akışı.
+--
+-- patient_debts özet tablosu kaldırılmıyor (mevcut tüm okuma yolları onu
+-- kullanıyor) — bunun yanında her para hareketi ayrıca burada, değişmez bir
+-- kayıt olarak tutuluyor: kim/ne zaman/hangi gerekçeyle yaptı, onaylayan kim,
+-- hangi ödemeye/plana referans veriyor. "pending_approval" durumu, eşik üstü
+-- indirim ve iade taleplerinin patron onayından geçmeden bakiyeyi etkilememesini
+-- sağlıyor.
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS financial_transactions (
+  id SERIAL PRIMARY KEY,
+  patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  transaction_type VARCHAR(30) NOT NULL, -- charge, payment, discount, refund, reversal, adjustment, write_off
+  amount DECIMAL(10, 2) NOT NULL, -- her zaman pozitif; yön transaction_type'tan çıkarılır
+  currency VARCHAR(10) NOT NULL DEFAULT 'TRY',
+  treatment_plan_id INTEGER REFERENCES treatment_plans(id) ON DELETE SET NULL,
+  payment_id INTEGER REFERENCES payments(id) ON DELETE SET NULL,
+  reference_transaction_id INTEGER REFERENCES financial_transactions(id) ON DELETE SET NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'completed', -- completed, pending_approval, rejected, reversed
+  reason TEXT,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  approved_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  approved_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_financial_transactions_patient ON financial_transactions (patient_id);
+CREATE INDEX IF NOT EXISTS idx_financial_transactions_status ON financial_transactions (status);
+CREATE INDEX IF NOT EXISTS idx_financial_transactions_type ON financial_transactions (transaction_type);
+CREATE INDEX IF NOT EXISTS idx_financial_transactions_payment ON financial_transactions (payment_id);
+CREATE INDEX IF NOT EXISTS idx_financial_transactions_plan ON financial_transactions (treatment_plan_id);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_financial_transactions_amount_positive') THEN
+    ALTER TABLE financial_transactions ADD CONSTRAINT chk_financial_transactions_amount_positive CHECK (amount > 0);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_financial_transactions_type') THEN
+    ALTER TABLE financial_transactions ADD CONSTRAINT chk_financial_transactions_type CHECK (transaction_type IN ('charge', 'payment', 'discount', 'refund', 'reversal', 'adjustment', 'write_off'));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_financial_transactions_status') THEN
+    ALTER TABLE financial_transactions ADD CONSTRAINT chk_financial_transactions_status CHECK (status IN ('completed', 'pending_approval', 'rejected', 'reversed'));
+  END IF;
+END $$;
+
+-- =============================================================================
+-- Migration (2026-07, devam 2): onaylanmış bir tedavi planı iptal edildiğinde
+-- borcun ters kayıtla düşülmesi ("hayalet borç" — D8). Randevu iptalindeki
+-- cancellation_reason konvansiyonuyla tutarlı.
+-- =============================================================================
+ALTER TABLE treatment_plans ADD COLUMN IF NOT EXISTS cancellation_reason TEXT;
+ALTER TABLE treatment_plans ADD COLUMN IF NOT EXISTS cancelled_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE treatment_plans ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ;

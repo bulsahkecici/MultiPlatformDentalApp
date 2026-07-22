@@ -4,11 +4,15 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../core/mobile_access_policy.dart';
+import '../admin/admin_screen.dart';
+import '../agreements/agreements_screen.dart';
 import '../appointments/appointments_screen.dart';
 import '../dashboard/dashboard_screen.dart';
+import '../earnings/earnings_screen.dart';
 import '../financial/financial_overview_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../patients/patients_screen.dart';
+import '../payments/payments_screen.dart';
 import '../treatments/treatments_screen.dart';
 
 class _MenuEntry {
@@ -58,6 +62,17 @@ class _HomeShellState extends State<HomeShell> {
       if (access.canManageTreatments)
         _MenuEntry('Tedaviler', Icons.medical_services,
             () => const TreatmentsScreen()),
+      if (access.canViewEarnings)
+        _MenuEntry(
+            'Kazançlarım', Icons.savings, () => const EarningsScreen()),
+      if (access.canManagePayments)
+        _MenuEntry('Ödemeler', Icons.payments, () => const PaymentsScreen()),
+      if (access.canViewAgreements)
+        _MenuEntry('Kurum Anlaşmaları', Icons.handshake,
+            () => const AgreementsScreen()),
+      if (access.canManageUsers)
+        _MenuEntry(
+            'Kullanıcı Yönetimi', Icons.admin_panel_settings, () => const AdminScreen()),
     ];
   }
 

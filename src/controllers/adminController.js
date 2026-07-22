@@ -1,6 +1,7 @@
 const { query } = require('../db');
 const { AppError } = require('../utils/errorResponder');
 const logger = require('../utils/logger');
+const { toLocalDateString } = require('../utils/dateUtils');
 
 async function status(req, res) {
   return res.status(200).json({
@@ -17,21 +18,21 @@ async function getStatistics(req, res, next) {
   try {
     // Calculate date ranges
     const now = new Date();
-    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-      .toISOString()
-      .split('T')[0];
-    const thisMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-      .toISOString()
-      .split('T')[0];
-    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-      .toISOString()
-      .split('T')[0];
-    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
-      .toISOString()
-      .split('T')[0];
-    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-      .toISOString()
-      .split('T')[0];
+    const thisMonthStart = toLocalDateString(
+      new Date(now.getFullYear(), now.getMonth(), 1),
+    );
+    const thisMonthEnd = toLocalDateString(
+      new Date(now.getFullYear(), now.getMonth() + 1, 0),
+    );
+    const lastMonthStart = toLocalDateString(
+      new Date(now.getFullYear(), now.getMonth() - 1, 1),
+    );
+    const lastMonthEnd = toLocalDateString(
+      new Date(now.getFullYear(), now.getMonth(), 0),
+    );
+    const nextMonthStart = toLocalDateString(
+      new Date(now.getFullYear(), now.getMonth() + 1, 1),
+    );
 
     // Total patients
     const totalPatientsResult = await query(
@@ -94,9 +95,9 @@ async function getStatistics(req, res, next) {
 
     // Upcoming appointments count
     const upcomingAppointmentsResult = await query(
-      `SELECT COUNT(*) as count FROM appointments 
+      `SELECT COUNT(*) as count FROM appointments
        WHERE appointment_date >= $1 AND status NOT IN ('cancelled', 'no_show')`,
-      [now.toISOString().split('T')[0]],
+      [toLocalDateString(now)],
     );
     const upcomingAppointmentsCount = parseInt(
       upcomingAppointmentsResult.rows[0].count,

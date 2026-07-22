@@ -16,6 +16,7 @@ import { PatientService } from '../../../core/services/patient.service';
 import { UserService } from '../../../core/services/user.service';
 import { Appointment, Patient } from '../../../core/models/models';
 import { DataMapper } from '../../../core/utils/data-mapper';
+import { DateUtils } from '../../../core/utils/date-utils';
 
 @Component({
   selector: 'app-appointment-form-dialog',
@@ -253,7 +254,7 @@ export class AppointmentFormDialogComponent implements OnInit {
       const appointmentData: Partial<Appointment> = {
         patientId: formValue.patientId,
         dentistId: formValue.dentistId,
-        appointmentDate: formValue.appointmentDate.toISOString().split('T')[0],
+        appointmentDate: DateUtils.toLocalDateString(formValue.appointmentDate),
         startTime: `${formValue.startTime}:00`,
         endTime: `${formValue.endTime}:00`,
         appointmentType: formValue.appointmentType,

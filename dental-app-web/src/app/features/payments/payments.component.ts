@@ -15,7 +15,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { AuthService } from '../../core/services/auth.service';
 import { InstitutionAgreementService, InstitutionAgreement } from '../../core/services/institution-agreement.service';
-import { PaymentService, PendingPlan, PatientDebt, PaymentRecord } from '../../core/services/payment.service';
+import { PaymentService, PendingPlan, PatientDebt, PaymentRecord, FinancialTransaction } from '../../core/services/payment.service';
 import { PatientService } from '../../core/services/patient.service';
 import { DataMapper } from '../../core/utils/data-mapper';
 import { Patient } from '../../core/models/models';
@@ -69,6 +69,46 @@ import { Patient } from '../../core/models/models';
           </div>
         </mat-tab>
 
+        <!-- Onay Bekleyen İşlemler (yüksek indirim / iade talepleri) -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            Onay Bekleyen İşlemler
+            <span class="tab-badge" *ngIf="pendingApprovals.length > 0">{{ pendingApprovals.length }}</span>
+          </ng-template>
+          <div class="tab-content">
+            <div *ngIf="loadingApprovals" class="loading"><mat-spinner diameter="36"></mat-spinner></div>
+            <div *ngIf="!loadingApprovals && pendingApprovals.length === 0" class="empty-state">
+              <mat-icon>task_alt</mat-icon>
+              <div class="empty-title">Onay bekleyen indirim veya iade talebi yok</div>
+            </div>
+            <div class="approval-card" *ngFor="let approval of pendingApprovals">
+              <div class="approval-top">
+                <span class="chip" [class.chip-discount]="approval.transactionType === 'discount'" [class.chip-refund]="approval.transactionType === 'refund'">
+                  {{ approval.transactionType === 'discount' ? 'Yüksek İndirim' : 'İade' }}
+                </span>
+                <strong class="approval-amount">{{ approval.amount | number:'1.2-2' }} ₺</strong>
+              </div>
+              <p class="approval-patient">{{ approval.patientName || ('Hasta #' + approval.patientId) }}</p>
+              <p class="approval-reason" *ngIf="approval.reason"><em>"{{ approval.reason }}"</em></p>
+              <p class="approval-meta">
+                Talep eden: {{ approval.createdByName || approval.createdByEmail || '-' }} ·
+                {{ approval.createdAt | date:'dd.MM.yyyy HH:mm' }}
+              </p>
+              <div class="approval-actions" *ngIf="isAdmin">
+                <button mat-raised-button color="primary" [disabled]="processingApprovalId === approval.id"
+                        (click)="approveTransaction(approval)">
+                  <mat-icon>check</mat-icon> Onayla
+                </button>
+                <button mat-stroked-button color="warn" [disabled]="processingApprovalId === approval.id"
+                        (click)="rejectTransaction(approval)">
+                  <mat-icon>close</mat-icon> Reddet
+                </button>
+              </div>
+              <p class="approval-note" *ngIf="!isAdmin">Onaylama/reddetme yetkisi yalnızca patrondadır.</p>
+            </div>
+          </div>
+        </mat-tab>
+
         <!-- Tedavi Planı Onaylama -->
         <mat-tab label="Tedavi Planı Onaylama">
           <div class="tab-content">
@@ -82,7 +122,7 @@ import { Patient } from '../../core/models/models';
                 <mat-expansion-panel-header>
                   <mat-panel-title>{{ plan.patientName }} — {{ plan.title || ('Plan #' + plan.id) }}</mat-panel-title>
                   <mat-panel-description>
-                    {{ planTotal(plan) | number:'1.2-2' }} ₺ · {{ plan.dentistEmail || '-' }}
+                    {{ planTotal(plan) | number:'1.2-2' }} ₺ · {{ plan.dentistName || plan.dentistEmail || '-' }}
                   </mat-panel-description>
                 </mat-expansion-panel-header>
                 <table mat-table [dataSource]="plan.items" class="plan-items-table" *ngIf="plan.items.length > 0">
@@ -191,9 +231,38 @@ import { Patient } from '../../core/models/models';
                       <th mat-header-cell *matHeaderCellDef>Yöntem</th>
                       <td mat-cell *matCellDef="let pay">{{ pay.paymentMethod === 'cash' ? 'Nakit' : 'Kart' }}</td>
                     </ng-container>
+                    <ng-container matColumnDef="actions">
+                      <th mat-header-cell *matHeaderCellDef></th>
+                      <td mat-cell *matCellDef="let pay">
+                        <button mat-button color="warn" (click)="startRefund(pay)">
+                          <mat-icon>undo</mat-icon> İade
+                        </button>
+                      </td>
+                    </ng-container>
                     <tr mat-header-row *matHeaderRowDef="paymentColumns"></tr>
                     <tr mat-row *matRowDef="let row; columns: paymentColumns;"></tr>
                   </table>
+
+                  <div class="refund-form" *ngIf="refundingPayment">
+                    <h4>{{ refundingPayment.amount | number:'1.2-2' }} ₺ tutarındaki ödemeyi iade et</h4>
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>İade Tutarı (boş = tamamı)</mat-label>
+                      <input matInput type="number" min="0" [(ngModel)]="refundAmount">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>Gerekçe</mat-label>
+                      <input matInput [(ngModel)]="refundReason" required>
+                    </mat-form-field>
+                    <p class="approval-note" *ngIf="!isAdmin">Sekreter olarak gönderdiğiniz iade, patron onayından geçtikten sonra uygulanır.</p>
+                    <div class="agreement-actions">
+                      <button mat-button (click)="cancelRefund()">Vazgeç</button>
+                      <button mat-raised-button color="warn" [disabled]="submittingRefund || !refundReason.trim()"
+                              (click)="submitRefund()">
+                        <mat-spinner *ngIf="submittingRefund" diameter="18" class="inline-spinner"></mat-spinner>
+                        <span *ngIf="!submittingRefund">İadeyi Gönder</span>
+                      </button>
+                    </div>
+                  </div>
                 </mat-card-content>
               </mat-card>
             </div>
@@ -228,6 +297,15 @@ import { Patient } from '../../core/models/models';
                   <p><strong>Telefon:</strong> {{ selectedAgreement.contact_phone || '-' }}</p>
                   <p><strong>E-posta:</strong> {{ selectedAgreement.contact_email || '-' }}</p>
                   <p><strong>Genel İndirim:</strong> {{ selectedAgreement.discount_percentage }}%</p>
+                  <div class="category-discounts" *ngIf="selectedAgreement.category_discounts && (selectedAgreement.category_discounts | keyvalue)!.length">
+                    <strong>Kategori Bazlı İndirimler:</strong>
+                    <ul>
+                      <li *ngFor="let cat of selectedAgreement.category_discounts | keyvalue">
+                        {{ cat.key }}: %{{ cat.value }}
+                      </li>
+                    </ul>
+                    <p class="category-note">Bir tedavi kategorisi burada listelenmiyorsa genel indirim oranı uygulanır.</p>
+                  </div>
                   <p *ngIf="selectedAgreement.notes"><strong>Notlar:</strong> {{ selectedAgreement.notes }}</p>
                 </div>
 
@@ -385,6 +463,21 @@ import { Patient } from '../../core/models/models';
     .agreement-info p {
       margin: 8px 0;
     }
+    .category-discounts {
+      margin: 8px 0;
+      padding: 10px 14px;
+      background: var(--surface-muted);
+      border-radius: var(--radius-sm, 8px);
+    }
+    .category-discounts ul {
+      margin: 6px 0 0;
+      padding-left: 18px;
+    }
+    .category-note {
+      margin: 8px 0 0;
+      font-size: 12px;
+      color: var(--ink-500);
+    }
     .agreement-actions {
       margin-top: 20px;
       display: flex;
@@ -397,6 +490,79 @@ import { Patient } from '../../core/models/models';
     .inline-spinner {
       display: inline-block;
       margin-right: 8px;
+    }
+    .tab-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      margin-left: 8px;
+      border-radius: 999px;
+      background: var(--coral-500, #f43f5e);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .approval-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(15, 23, 42, 0.04);
+      padding: 16px 20px;
+      margin-bottom: 14px;
+    }
+    .approval-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .chip {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      padding: 3px 10px;
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
+    .chip-discount { background: var(--bulka-primary-50, #f0fdfa); color: var(--bulka-primary-700, #0f766e); }
+    .chip-refund { background: var(--amber-50); color: var(--amber-600); }
+    .approval-amount {
+      font-size: 18px;
+      color: var(--ink-900);
+    }
+    .approval-patient {
+      font-weight: 600;
+      margin: 4px 0;
+    }
+    .approval-reason {
+      color: var(--ink-500);
+      margin: 4px 0;
+    }
+    .approval-meta {
+      font-size: 12px;
+      color: var(--ink-500);
+      margin: 4px 0 12px;
+    }
+    .approval-actions {
+      display: flex;
+      gap: 12px;
+    }
+    .approval-note {
+      font-size: 12px;
+      color: var(--ink-500);
+      font-style: italic;
+    }
+    .refund-form {
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--surface-muted);
+      border-radius: var(--radius-md, 12px);
+    }
+    .refund-form h4 {
+      margin: 0 0 12px;
     }
   `]
 })
@@ -420,13 +586,24 @@ export class PaymentsComponent implements OnInit {
   loadingPlans = false;
   planItemColumns = ['treatmentType', 'toothNumber', 'cost'];
 
+  // Onay bekleyen yüksek indirim / iade talepleri
+  pendingApprovals: FinancialTransaction[] = [];
+  loadingApprovals = false;
+  processingApprovalId: number | null = null;
+
+  // İade formu
+  refundingPayment: PaymentRecord | null = null;
+  refundAmount: number | null = null;
+  refundReason = '';
+  submittingRefund = false;
+
   // Ödeme işleme
   patientSearch = '';
   patientResults: Patient[] = [];
   selectedPatient: Patient | null = null;
   patientDebt: PatientDebt | null = null;
   patientPayments: PaymentRecord[] = [];
-  paymentColumns = ['createdAt', 'amount', 'paymentMethod'];
+  paymentColumns = ['createdAt', 'amount', 'paymentMethod', 'actions'];
   paymentAmount: number | null = null;
   paymentMethod: 'card' | 'cash' = 'cash';
   paymentNotes = '';
@@ -454,6 +631,94 @@ export class PaymentsComponent implements OnInit {
     this.loadAgreements();
     this.loadSummary();
     this.loadPendingPlans();
+    this.loadPendingApprovals();
+  }
+
+  // --- Onay bekleyen indirim/iade talepleri ---
+  loadPendingApprovals(): void {
+    this.loadingApprovals = true;
+    this.paymentService.getPendingApprovals().subscribe({
+      next: approvals => {
+        this.pendingApprovals = approvals;
+        this.loadingApprovals = false;
+      },
+      error: () => {
+        this.loadingApprovals = false;
+        this.snackBar.open('Onay bekleyen işlemler yüklenirken hata oluştu', 'Kapat', { duration: 3000 });
+      }
+    });
+  }
+
+  approveTransaction(approval: FinancialTransaction): void {
+    this.processingApprovalId = approval.id;
+    this.paymentService.approveTransaction(approval.id).subscribe({
+      next: () => {
+        this.processingApprovalId = null;
+        this.snackBar.open('Talep onaylandı ve uygulandı', 'Kapat', { duration: 3000 });
+        this.loadPendingApprovals();
+        this.loadSummary();
+        if (this.selectedPatient?.id === approval.patientId) {
+          this.refreshPatientFinancials();
+        }
+      },
+      error: (error) => {
+        this.processingApprovalId = null;
+        this.snackBar.open(error.error?.message || 'Onaylama başarısız oldu', 'Kapat', { duration: 4000 });
+      }
+    });
+  }
+
+  rejectTransaction(approval: FinancialTransaction): void {
+    this.processingApprovalId = approval.id;
+    this.paymentService.rejectTransaction(approval.id).subscribe({
+      next: () => {
+        this.processingApprovalId = null;
+        this.snackBar.open('Talep reddedildi', 'Kapat', { duration: 3000 });
+        this.loadPendingApprovals();
+      },
+      error: (error) => {
+        this.processingApprovalId = null;
+        this.snackBar.open(error.error?.message || 'Reddetme başarısız oldu', 'Kapat', { duration: 4000 });
+      }
+    });
+  }
+
+  // --- Ödeme iadesi ---
+  startRefund(payment: PaymentRecord): void {
+    this.refundingPayment = payment;
+    this.refundAmount = null;
+    this.refundReason = '';
+  }
+
+  cancelRefund(): void {
+    this.refundingPayment = null;
+  }
+
+  submitRefund(): void {
+    if (!this.refundingPayment || !this.refundReason.trim()) return;
+    this.submittingRefund = true;
+    const paymentId = this.refundingPayment.id;
+    this.paymentService.refundPayment(paymentId, {
+      amount: this.refundAmount ?? undefined,
+      reason: this.refundReason.trim()
+    }).subscribe({
+      next: (res) => {
+        this.submittingRefund = false;
+        this.refundingPayment = null;
+        this.snackBar.open(
+          res.pending ? 'İade talebi patron onayına gönderildi' : 'İade işlendi',
+          'Kapat',
+          { duration: 3000 }
+        );
+        this.refreshPatientFinancials();
+        this.loadPendingApprovals();
+        this.loadSummary();
+      },
+      error: (error) => {
+        this.submittingRefund = false;
+        this.snackBar.open(error.error?.message || 'İade işlenemedi', 'Kapat', { duration: 4000 });
+      }
+    });
   }
 
   // --- Özet ---

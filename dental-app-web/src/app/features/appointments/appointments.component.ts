@@ -17,6 +17,7 @@ import { UserService } from '../../core/services/user.service';
 import { Appointment, Patient, User } from '../../core/models/models';
 import { AppointmentFormDialogComponent } from '../../shared/components/appointment-form-dialog/appointment-form-dialog.component';
 import { DataMapper } from '../../core/utils/data-mapper';
+import { DateUtils } from '../../core/utils/date-utils';
 
 interface TimeSlot {
   time: string;
@@ -306,8 +307,8 @@ export class AppointmentsComponent implements OnInit {
 
   loadAppointments(): void {
     this.isLoading = true;
-    const dateStr = this.selectedDate.toISOString().split('T')[0];
-    
+    const dateStr = DateUtils.toLocalDateString(this.selectedDate);
+
     this.appointmentService.getAppointments(1, 1000, undefined, undefined, dateStr, dateStr).subscribe({
       next: (response) => {
         // Map backend data to frontend format
@@ -330,7 +331,7 @@ export class AppointmentsComponent implements OnInit {
   getSlotAppointment(slot: TimeSlot, dentistId: number): Appointment | undefined {
     if (dentistId === 0) return undefined; // Skip placeholder dentist
     
-    const dateStr = this.selectedDate.toISOString().split('T')[0];
+    const dateStr = DateUtils.toLocalDateString(this.selectedDate);
     const slotTimeMinutes = slot.hour * 60 + slot.minute;
     
     return this.appointments.find(apt => {
@@ -361,10 +362,11 @@ export class AppointmentsComponent implements OnInit {
       this.openAppointmentForm(appointment);
     } else {
       // Create new appointment
+      const end = DateUtils.addMinutesToHHMM(slot.hour, slot.minute, 30);
       const newAppointment: Partial<Appointment> = {
-        appointmentDate: this.selectedDate.toISOString().split('T')[0],
-        startTime: `${slot.hour.toString().padStart(2, '0')}:${slot.minute.toString().padStart(2, '0')}:00`,
-        endTime: `${slot.hour.toString().padStart(2, '0')}:${(slot.minute + 30).toString().padStart(2, '0')}:00`,
+        appointmentDate: DateUtils.toLocalDateString(this.selectedDate),
+        startTime: DateUtils.formatHHMMSS(slot.hour, slot.minute),
+        endTime: DateUtils.formatHHMMSS(end.hour, end.minute),
         dentistId: dentistId,
         status: 'scheduled'
       };

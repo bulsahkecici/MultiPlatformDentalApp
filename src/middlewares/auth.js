@@ -10,6 +10,13 @@ function requireAuth(req, res, next) {
   }
   try {
     const payload = jwt.verify(token, config.security.jwtSecret);
+    // Refresh token'lar farklı bir secret ile imzalanır ve normalde burada
+    // zaten reddedilir, ama JWT_REFRESH_SECRET yapılandırılmamışsa (ikisi de
+    // JWT_SECRET'a düşer) imza doğrulaması tek başına yeterli olmaz — bu
+    // yüzden `tokenType` claim'i asıl kapıdır: yalnızca 'access' kabul edilir.
+    if (payload.tokenType !== 'access') {
+      return next(new AppError('Unauthorized', 401));
+    }
     req.user = payload;
     return next();
   } catch (e) {
@@ -103,6 +110,18 @@ function isDentist(req) {
   return req.user.roles.includes('dentist');
 }
 
+/**
+ * Check if user has the admin (patron) role — used to decide whether a
+ * high-discount or refund request needs approval, or can be executed
+ * directly (bkz. paymentController.js onay akışları).
+ */
+function isAdmin(req) {
+  if (!req.user || !req.user.roles || !Array.isArray(req.user.roles)) {
+    return false;
+  }
+  return req.user.roles.includes('admin');
+}
+
 module.exports = {
   requireAuth,
   requireRole,
@@ -111,4 +130,5 @@ module.exports = {
   requireAnyRole,
   canViewPrices,
   isDentist,
+  isAdmin,
 };

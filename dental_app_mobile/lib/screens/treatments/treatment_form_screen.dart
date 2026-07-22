@@ -30,7 +30,6 @@ class _TreatmentFormScreenState extends State<TreatmentFormScreen> {
   final Set<int> _selectedTeeth = {};
   TariffItem? _tariffItem;
   late final TextEditingController _typeController;
-  late final TextEditingController _costController;
   late final TextEditingController _descriptionController;
   late final TextEditingController _diagnosisController;
   DateTime _date = DateTime.now();
@@ -45,8 +44,6 @@ class _TreatmentFormScreenState extends State<TreatmentFormScreen> {
     final t = widget.treatment;
     _patient = widget.initialPatient;
     _typeController = TextEditingController(text: t?.treatmentType ?? '');
-    _costController =
-        TextEditingController(text: t?.cost?.toStringAsFixed(2) ?? '');
     _descriptionController =
         TextEditingController(text: t?.description ?? '');
     _diagnosisController = TextEditingController(text: t?.diagnosis ?? '');
@@ -69,19 +66,19 @@ class _TreatmentFormScreenState extends State<TreatmentFormScreen> {
   @override
   void dispose() {
     _typeController.dispose();
-    _costController.dispose();
     _descriptionController.dispose();
     _diagnosisController.dispose();
     super.dispose();
   }
 
   Future<void> _pickTariff() async {
+    // Ücret alanı diş hekiminden gizlidir (web/masaüstüyle tutarlı) — tarife
+    // seçici yalnızca işlem türünü/TDB kodunu dolduruyor, fiyatı değil.
     final item = await showTariffSelector(context);
     if (item != null) {
       setState(() {
         _tariffItem = item;
         _typeController.text = item.name;
-        _costController.text = item.priceInclVat.toStringAsFixed(2);
       });
     }
   }
@@ -105,14 +102,15 @@ class _TreatmentFormScreenState extends State<TreatmentFormScreen> {
     final toothNumbers =
         (_selectedTeeth.toList()..sort()).join(', ');
     try {
+      // Not: cost/currency kasıtlı olarak gönderilmiyor — diş hekimi fiyatı
+      // görmediği gibi API üzerinden de değiştiremiyor (web/masaüstüyle
+      // tutarlı; backend zaten bunu reddediyor — bkz. treatmentController.js).
       if (_isEdit) {
         await repo.updateTreatment(widget.treatment!.id, {
           'treatmentType': _typeController.text.trim(),
           'toothNumber': toothNumbers,
           'description': _descriptionController.text.trim(),
           'diagnosis': _diagnosisController.text.trim(),
-          'cost': double.tryParse(
-              _costController.text.replaceAll(',', '.')),
           'status': _status,
         });
       } else {
@@ -124,8 +122,6 @@ class _TreatmentFormScreenState extends State<TreatmentFormScreen> {
           toothNumber: toothNumbers.isEmpty ? null : toothNumbers,
           description: _descriptionController.text.trim(),
           diagnosis: _diagnosisController.text.trim(),
-          cost:
-              double.tryParse(_costController.text.replaceAll(',', '.')),
           status: _status,
         ));
       }
@@ -213,16 +209,6 @@ class _TreatmentFormScreenState extends State<TreatmentFormScreen> {
               child: Text('TDB kodu: ${_tariffItem!.code}',
                   style: Theme.of(context).textTheme.bodySmall),
             ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _costController,
-            decoration: const InputDecoration(
-              labelText: 'Ücret (₺)',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-          ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _status,

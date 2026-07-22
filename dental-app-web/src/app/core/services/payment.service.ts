@@ -16,6 +16,7 @@ export interface PendingPlan {
     patientId: number;
     dentistId: number | null;
     patientName: string;
+    dentistName: string | null;
     dentistEmail: string | null;
     title: string | null;
     status: string;
@@ -38,6 +39,26 @@ export interface PaymentRecord {
     paymentMethod: string;
     createdAt: string;
     notes: string | null;
+}
+
+/**
+ * Finansal hareket defteri kaydı (backend: financial_transactions).
+ * Onay bekleyen yüksek indirim/iade talepleri bu şekilde temsil edilir.
+ */
+export interface FinancialTransaction {
+    id: number;
+    patientId: number;
+    patientName: string;
+    transactionType: 'charge' | 'payment' | 'discount' | 'refund' | 'reversal' | 'adjustment' | 'write_off';
+    amount: number;
+    currency: string;
+    treatmentPlanId: number | null;
+    paymentId: number | null;
+    status: 'completed' | 'pending_approval' | 'rejected' | 'reversed';
+    reason: string | null;
+    createdByName: string | null;
+    createdByEmail: string | null;
+    createdAt: string;
 }
 
 /**
@@ -108,6 +129,50 @@ export class PaymentService {
         );
     }
 
+    /**
+     * Bir ödemeyi iade eder. Patron (admin) için hemen uygulanır; sekreter
+     * için patron onayı bekleyen bir talep oluşturur (backend 202 + pending:true
+     * döner). `amount` verilmezse ödemenin kalan iade edilebilir tamamı iade edilir.
+     */
+    refundPayment(paymentId: number, payload: { amount?: number; reason: string }): Observable<{ pending: boolean; transaction: any }> {
+        return this.apiService.post<{ pending: boolean; transaction: any }>(`/api/payments/${paymentId}/refund`, payload);
+    }
+
+    /** Patron onayı bekleyen yüksek indirim/iade talepleri. */
+    getPendingApprovals(): Observable<FinancialTransaction[]> {
+        return this.apiService.get<{ approvals: any[] }>('/api/payments/approvals/pending').pipe(
+            map(res => (res.approvals ?? []).map(a => this.mapTransaction(a)))
+        );
+    }
+
+    /** Sadece patron (admin) — bekleyen talebi onaylar, asıl bakiye/plan etkisi burada uygulanır. */
+    approveTransaction(id: number): Observable<unknown> {
+        return this.apiService.post(`/api/payments/approvals/${id}/approve`, {});
+    }
+
+    /** Sadece patron (admin) — bekleyen talebi reddeder, hiçbir bakiye/plan etkisi olmaz. */
+    rejectTransaction(id: number, reason?: string): Observable<unknown> {
+        return this.apiService.post(`/api/payments/approvals/${id}/reject`, { reason });
+    }
+
+    private mapTransaction(t: any): FinancialTransaction {
+        return {
+            id: t.id,
+            patientId: t.patient_id ?? t.patientId,
+            patientName: t.patient_name ?? t.patientName ?? '',
+            transactionType: t.transaction_type ?? t.transactionType,
+            amount: parseFloat(t.amount ?? 0),
+            currency: t.currency ?? 'TRY',
+            treatmentPlanId: t.treatment_plan_id ?? t.treatmentPlanId ?? null,
+            paymentId: t.payment_id ?? t.paymentId ?? null,
+            status: t.status,
+            reason: t.reason ?? null,
+            createdByName: t.created_by_name ?? t.createdByName ?? null,
+            createdByEmail: t.created_by_email ?? t.createdByEmail ?? null,
+            createdAt: t.created_at ?? t.createdAt ?? ''
+        };
+    }
+
     /** Borç yanıtı iki şekilde gelebilir: DB satırı (snake_case) ya da sıfır-durum (camelCase). */
     private mapDebt(debt: any, patientId: number): PatientDebt {
         return {
@@ -124,6 +189,7 @@ export class PaymentService {
             patientId: plan.patient_id ?? plan.patientId,
             dentistId: plan.dentist_id ?? plan.dentistId ?? null,
             patientName: plan.patient_name ?? plan.patientName ?? '',
+            dentistName: plan.dentist_name ?? plan.dentistName ?? null,
             dentistEmail: plan.dentist_email ?? plan.dentistEmail ?? null,
             title: plan.title ?? null,
             status: plan.status,

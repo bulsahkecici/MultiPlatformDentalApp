@@ -457,11 +457,11 @@ namespace DentalApp.Desktop.ViewModels
                 Treatment? savedTreatment;
                 if (IsEditMode)
                 {
-                    savedTreatment = await _treatmentService.UpdateTreatmentAsync(Treatment);
+                    savedTreatment = await _treatmentService.UpdateTreatmentAsync(Treatment, CanViewPrices);
                 }
                 else
                 {
-                    savedTreatment = await _treatmentService.CreateTreatmentAsync(Treatment);
+                    savedTreatment = await _treatmentService.CreateTreatmentAsync(Treatment, CanViewPrices);
                 }
 
                 if (savedTreatment != null)

@@ -6,6 +6,61 @@ const { isDentist } = require('../middlewares/auth');
 const logger = require('../utils/logger');
 const { notifyUser, notifyRole } = require('../services/notificationHub');
 
+// Sadece "HH:mm:ss" şekline değil, gerçek saat/dakika/saniye aralığına da
+// bakar — eski `\d{2}:\d{2}:\d{2}` deseni "09:60:00" gibi geçersiz bir saati
+// de kabul ediyordu (bkz. web'deki slot hesaplama hatasının backend'de neden
+// hiç yakalanmadığı).
+const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/;
+
+function isValidTimeString(value) {
+  return typeof value === 'string' && TIME_RE.test(value);
+}
+
+const NON_BLOCKING_STATUSES = ['cancelled', 'no_show'];
+
+/**
+ * Verilen dişhekimi+tarih+saat aralığı için, kendi ID'si hariç tutularak,
+ * çakışan (iptal/no-show olmayan) bir randevu olup olmadığını kontrol eder.
+ * Create ve update akışlarının ikisinde de aynı sorgu/kilit mantığını
+ * kullanmak için ortak fonksiyona çıkarıldı.
+ */
+async function assertNoConflict(
+  client,
+  { dentistId, appointmentDate, startTime, endTime, excludeAppointmentId },
+) {
+  await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [
+    `appointment:${dentistId}:${appointmentDate}`,
+  ]);
+
+  const params = [dentistId, appointmentDate, startTime, endTime];
+  let excludeClause = '';
+  if (excludeAppointmentId) {
+    params.push(excludeAppointmentId);
+    excludeClause = `AND id <> $${params.length}`;
+  }
+
+  const conflictCheck = await client.query(
+    `SELECT id FROM appointments
+     WHERE dentist_id = $1
+     AND appointment_date = $2
+     AND status NOT IN ('cancelled', 'no_show')
+     ${excludeClause}
+     AND (
+       (start_time <= $3 AND end_time > $3) OR
+       (start_time < $4 AND end_time >= $4) OR
+       (start_time >= $3 AND end_time <= $4)
+     )`,
+    params,
+  );
+
+  if (conflictCheck.rows.length > 0) {
+    throw new AppError(
+      'Bu tarih ve saatte zaten hasta randevusu bulunmaktadır',
+      409,
+    );
+  }
+}
+
 /**
  * Randevu bildirimlerini gönderir (fire-and-forget; notify* kendi hatasını yakalar).
  * İlgili dişhekimine kalıcı bildirim, sekreterlere canlı yayın.
@@ -67,18 +122,18 @@ async function createAppointment(req, res, next) {
   }
 
   // Validate time format
-  if (typeof startTime !== 'string' || !/^\d{2}:\d{2}:\d{2}$/.test(startTime)) {
+  if (!isValidTimeString(startTime)) {
     return next(
       new AppError(
-        `Invalid start time format. Expected HH:mm:ss, got: ${startTime} (type: ${typeof startTime})`,
+        `Invalid start time format. Expected HH:mm:ss (00-23:00-59:00-59), got: ${startTime}`,
         400,
       ),
     );
   }
-  if (typeof endTime !== 'string' || !/^\d{2}:\d{2}:\d{2}$/.test(endTime)) {
+  if (!isValidTimeString(endTime)) {
     return next(
       new AppError(
-        `Invalid end time format. Expected HH:mm:ss, got: ${endTime} (type: ${typeof endTime})`,
+        `Invalid end time format. Expected HH:mm:ss (00-23:00-59:00-59), got: ${endTime}`,
         400,
       ),
     );
@@ -92,6 +147,12 @@ async function createAppointment(req, res, next) {
     return next(
       new AppError('Invalid appointment date format. Expected YYYY-MM-DD', 400),
     );
+  }
+
+  // Bitiş saati başlangıçtan sonra olmalı — aksi halde negatif/sıfır süreli
+  // bir randevu veritabanına yazılabilirdi.
+  if (endTime <= startTime) {
+    return next(new AppError('End time must be after start time', 400));
   }
 
   const effectiveDentistId = dentistId || req.user.sub;
@@ -114,30 +175,12 @@ async function createAppointment(req, res, next) {
     // istek çakışma kontrolünü birlikte geçip aynı slota iki randevu yazabilir
     // (klasik TOCTOU yarış durumu).
     const appointment = await withTransaction(async (client) => {
-      await client.query(
-        'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))',
-        [`appointment:${effectiveDentistId}:${appointmentDate}`],
-      );
-
-      const conflictCheck = await client.query(
-        `SELECT id FROM appointments
-         WHERE dentist_id = $1
-         AND appointment_date = $2
-         AND status NOT IN ('cancelled', 'no_show')
-         AND (
-           (start_time <= $3 AND end_time > $3) OR
-           (start_time < $4 AND end_time >= $4) OR
-           (start_time >= $3 AND end_time <= $4)
-         )`,
-        [effectiveDentistId, appointmentDate, startTime, endTime],
-      );
-
-      if (conflictCheck.rows.length > 0) {
-        throw new AppError(
-          'Bu tarih ve saatte zaten hasta randevusu bulunmaktadır',
-          409,
-        );
-      }
+      await assertNoConflict(client, {
+        dentistId: effectiveDentistId,
+        appointmentDate,
+        startTime,
+        endTime,
+      });
 
       const inserted = await client.query(
         `INSERT INTO appointments (
@@ -394,18 +437,23 @@ async function updateAppointment(req, res, next) {
   try {
     const appointmentId = parseInt(req.params.id, 10);
 
+    // Mevcut kaydı önceden çekiyoruz: hem IDOR kontrolü hem de "sadece bazı
+    // alanlar gönderildiğinde" geçerli olacak nihai (effective) tarih/saat/
+    // dişhekimi değerlerini hesaplamak için gerekli — aksi halde ör. sadece
+    // startTime değişip endTime değişmediğinde çakışma/sıra kontrolü yanlış
+    // (eksik) verilerle yapılırdı.
+    const current = await query(
+      'SELECT dentist_id, appointment_date, start_time, end_time, status FROM appointments WHERE id = $1',
+      [appointmentId],
+    );
+    if (current.rows.length === 0) {
+      return next(new AppError('Appointment not found', 404));
+    }
+    const existing = current.rows[0];
+
     // Diş hekimi sadece kendi randevusunu güncelleyebilir (IDOR koruması)
-    if (isDentist(req)) {
-      const ownership = await query(
-        'SELECT dentist_id FROM appointments WHERE id = $1',
-        [appointmentId],
-      );
-      if (ownership.rows.length === 0) {
-        return next(new AppError('Appointment not found', 404));
-      }
-      if (ownership.rows[0].dentist_id !== req.user.sub) {
-        return next(new AppError('Forbidden', 403));
-      }
+    if (isDentist(req) && existing.dentist_id !== req.user.sub) {
+      return next(new AppError('Forbidden', 403));
     }
 
     const {
@@ -419,16 +467,62 @@ async function updateAppointment(req, res, next) {
       cancellationReason,
     } = req.body || {};
 
+    if (dentistId) {
+      // Dişhekimi randevusunu başka bir dişhekimine devredemez (IDOR koruması)
+      if (isDentist(req) && dentistId !== req.user.sub) {
+        return next(new AppError('Forbidden', 403));
+      }
+    }
+
+    if (startTime !== undefined && !isValidTimeString(startTime)) {
+      return next(
+        new AppError(
+          `Invalid start time format. Expected HH:mm:ss (00-23:00-59:00-59), got: ${startTime}`,
+          400,
+        ),
+      );
+    }
+    if (endTime !== undefined && !isValidTimeString(endTime)) {
+      return next(
+        new AppError(
+          `Invalid end time format. Expected HH:mm:ss (00-23:00-59:00-59), got: ${endTime}`,
+          400,
+        ),
+      );
+    }
+    if (
+      appointmentDate !== undefined &&
+      (typeof appointmentDate !== 'string' ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(appointmentDate))
+    ) {
+      return next(
+        new AppError(
+          'Invalid appointment date format. Expected YYYY-MM-DD',
+          400,
+        ),
+      );
+    }
+
+    // Değişmeyen alanlar için mevcut kayıttaki değerler kullanılır — böylece
+    // "sadece startTime gönderildi" gibi kısmi güncellemelerde de nihai
+    // (kaydedilecek) aralık doğru şekilde bitiş>başlangıç ve çakışma
+    // kontrolünden geçer.
+    const effectiveDentistId = dentistId || existing.dentist_id;
+    const effectiveDate = appointmentDate || existing.appointment_date;
+    const effectiveStart = startTime || existing.start_time;
+    const effectiveEnd = endTime || existing.end_time;
+    const effectiveStatus = status || existing.status;
+
+    if (effectiveEnd <= effectiveStart) {
+      return next(new AppError('End time must be after start time', 400));
+    }
+
     // Build update query
     const setClauses = [];
     const params = [];
     let paramIndex = 1;
 
     if (dentistId) {
-      // Dişhekimi randevusunu başka bir dişhekimine devredemez (IDOR koruması)
-      if (isDentist(req) && dentistId !== req.user.sub) {
-        return next(new AppError('Forbidden', 403));
-      }
       setClauses.push(`dentist_id = $${paramIndex++}`);
       params.push(dentistId);
     }
@@ -478,15 +572,42 @@ async function updateAppointment(req, res, next) {
 
     params.push(appointmentId);
 
-    const result = await query(
-      `UPDATE appointments 
-       SET ${setClauses.join(', ')}
-       WHERE id = $${paramIndex}
-       RETURNING *`,
-      params,
-    );
+    // Randevunun doktor/tarih/saatini etkileyen bir alan değişiyorsa ve yeni
+    // durum "engelleyici" ise (iptal/no-show değilse), create akışıyla aynı
+    // advisory-lock + çakışma kontrolünden geçirilir — kendi ID'si hariç
+    // tutularak. Böylece bir randevuyu "düzenle" ile başka bir doktorun dolu
+    // saatine taşımak artık create ile aynı korumadan geçer.
+    const touchesSchedule =
+      dentistId !== undefined ||
+      appointmentDate !== undefined ||
+      startTime !== undefined ||
+      endTime !== undefined;
+    const needsConflictCheck =
+      touchesSchedule && !NON_BLOCKING_STATUSES.includes(effectiveStatus);
 
-    if (result.rows.length === 0) {
+    const updated = await withTransaction(async (client) => {
+      if (needsConflictCheck) {
+        await assertNoConflict(client, {
+          dentistId: effectiveDentistId,
+          appointmentDate: effectiveDate,
+          startTime: effectiveStart,
+          endTime: effectiveEnd,
+          excludeAppointmentId: appointmentId,
+        });
+      }
+
+      const result = await client.query(
+        `UPDATE appointments
+         SET ${setClauses.join(', ')}
+         WHERE id = $${paramIndex}
+         RETURNING *`,
+        params,
+      );
+
+      return result.rows[0];
+    });
+
+    if (!updated) {
       return next(new AppError('Appointment not found', 404));
     }
 
@@ -503,10 +624,13 @@ async function updateAppointment(req, res, next) {
       changes: req.body,
     });
 
-    emitAppointmentNotification('updated', result.rows[0], req.user.sub);
+    emitAppointmentNotification('updated', updated, req.user.sub);
 
-    return res.status(200).json({ appointment: result.rows[0] });
+    return res.status(200).json({ appointment: updated });
   } catch (err) {
+    if (err instanceof AppError) {
+      return next(err);
+    }
     return next(new AppError('Failed to update appointment', 500));
   }
 }

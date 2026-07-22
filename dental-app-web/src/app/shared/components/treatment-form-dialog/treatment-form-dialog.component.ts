@@ -20,6 +20,7 @@ import { PatientService } from '../../../core/services/patient.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Treatment, Patient, TariffItem, TreatmentPlanItem } from '../../../core/models/models';
 import { DataMapper } from '../../../core/utils/data-mapper';
+import { DateUtils } from '../../../core/utils/date-utils';
 import { ToothChartComponent } from '../tooth-chart/tooth-chart.component';
 import { TariffSelectorComponent } from '../tariff-selector/tariff-selector.component';
 
@@ -362,17 +363,21 @@ export class TreatmentFormDialogComponent implements OnInit {
       } else {
         const treatmentData: Partial<Treatment> = {
           patientId: formValue.patientId,
-          treatmentDate: formValue.treatmentDate.toISOString().split('T')[0],
+          treatmentDate: DateUtils.toLocalDateString(formValue.treatmentDate),
           treatmentType: formValue.treatmentType,
           toothNumber: formValue.toothNumber || null,
           status: formValue.status || 'planned',
           diagnosis: formValue.diagnosis || null,
-          procedureNotes: formValue.procedureNotes || null,
-          currency: 'TRY'
+          procedureNotes: formValue.procedureNotes || null
         };
 
+        // cost/currency yalnızca fiyat görme yetkisi olanlar için gönderilir —
+        // backend artık bunu zorunlu kılıyor (dişhekimi fiyatı göremediği gibi
+        // API üzerinden de değiştiremiyor), currency'siz cost veya cost'suz
+        // currency göndermenin bir anlamı yok.
         if (this.canViewPrices && formValue.cost) {
           treatmentData.cost = formValue.cost;
+          treatmentData.currency = 'TRY';
         }
 
         const request = this.data

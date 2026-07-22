@@ -3,6 +3,22 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 const logger = require('../utils/logger');
 const { createNotification } = require('../models/notification');
+const { logAuditEvent, AuditEventType } = require('../utils/auditLogger');
+
+// `role:*` ve `user:*` odaları yalnızca sunucu tarafından, bağlantı anında
+// doğrulanmış JWT rollerine göre atanır (aşağıda socket.join). İstemcinin
+// 'subscribe' event'iyle bu odalara serbestçe katılabilmesi, örneğin bir
+// sekreter/dişhekimi hesabının role:admin yayınına (finansal bildirimler
+// dahil) abone olmasına izin verirdi — bu yüzden istemci kaynaklı subscribe
+// bu iki önek için kategorik olarak reddedilir.
+function isClientJoinableChannel(channel) {
+  return (
+    typeof channel === 'string' &&
+    channel.length > 0 &&
+    channel.length <= 200 &&
+    !/^(user|role):/i.test(channel)
+  );
+}
 
 let io = null;
 
@@ -32,6 +48,15 @@ function initializeSocketIO(server) {
       }
 
       const decoded = jwt.verify(token, config.security.jwtSecret);
+
+      // Yalnızca access token kabul edilir — refresh token ayrı bir secret
+      // ile imzalanır ve zaten burada doğrulanamaz, ama JWT_REFRESH_SECRET
+      // yapılandırılmamışsa (JWT_SECRET'a düşer) tokenType kontrolü asıl
+      // kapıdır (bkz. middlewares/auth.js requireAuth).
+      if (decoded.tokenType !== 'access') {
+        return next(new Error('Authentication error: Invalid token'));
+      }
+
       socket.userId = decoded.sub;
       socket.userEmail = decoded.email;
       socket.userRoles = decoded.roles || [];
@@ -74,19 +99,33 @@ function initializeSocketIO(server) {
 
     // Handle client events
     socket.on('subscribe', (data) => {
-      const { channel } = data;
-      if (channel) {
-        socket.join(channel);
-        logger.info(
+      const { channel } = data || {};
+      if (!channel) return;
+
+      if (!isClientJoinableChannel(channel)) {
+        logger.warn(
           { userId: socket.userId, channel },
-          'Subscribed to channel',
+          'Rejected unauthorized channel subscribe attempt',
         );
+        logAuditEvent({
+          eventType: AuditEventType.UNAUTHORIZED_ACCESS,
+          userId: socket.userId,
+          ipAddress: socket.handshake.address,
+          userAgent: socket.handshake.headers['user-agent'],
+          resourceType: 'socket_channel',
+          metadata: { channel },
+          success: false,
+        });
+        return;
       }
+
+      socket.join(channel);
+      logger.info({ userId: socket.userId, channel }, 'Subscribed to channel');
     });
 
     socket.on('unsubscribe', (data) => {
-      const { channel } = data;
-      if (channel) {
+      const { channel } = data || {};
+      if (channel && isClientJoinableChannel(channel)) {
         socket.leave(channel);
         logger.info(
           { userId: socket.userId, channel },

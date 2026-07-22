@@ -46,45 +46,79 @@ namespace DentalApp.Desktop.Services
             return response?.Treatment;
         }
 
-        public async Task<Treatment?> CreateTreatmentAsync(Treatment treatment)
+        // includeCost: fiyatı göremeyen roller (diş hekimi) için cost/currency
+        // isteğe hiç dahil edilmez — backend zaten bunu reddediyor (bkz.
+        // treatmentController.js), ama düzenleme ekranındaki Treatment nesnesi
+        // önceden yüklenmiş bir cost değeri taşıyabildiğinden (ör. sekreterin
+        // girdiği fiyat), bunu koşulsuz göndermek dişhekiminin sadece klinik
+        // notu değiştirdiği bir kaydı bile 403 ile reddettirirdi.
+        public async Task<Treatment?> CreateTreatmentAsync(Treatment treatment, bool includeCost = true)
         {
-            var request = new
-            {
-                patientId = treatment.PatientId,
-                appointmentId = treatment.AppointmentId,
-                dentistId = treatment.DentistId,
-                treatmentDate = treatment.TreatmentDate.ToString("yyyy-MM-dd"),
-                treatmentType = treatment.TreatmentType,
-                toothNumber = treatment.ToothNumber,
-                description = treatment.Description,
-                diagnosis = treatment.Diagnosis,
-                procedureNotes = treatment.ProcedureNotes,
-                cost = treatment.Cost,
-                currency = treatment.Currency,
-                status = treatment.Status
-            };
+            object request = includeCost
+                ? new
+                {
+                    patientId = treatment.PatientId,
+                    appointmentId = treatment.AppointmentId,
+                    dentistId = treatment.DentistId,
+                    treatmentDate = treatment.TreatmentDate.ToString("yyyy-MM-dd"),
+                    treatmentType = treatment.TreatmentType,
+                    toothNumber = treatment.ToothNumber,
+                    description = treatment.Description,
+                    diagnosis = treatment.Diagnosis,
+                    procedureNotes = treatment.ProcedureNotes,
+                    cost = treatment.Cost,
+                    currency = treatment.Currency,
+                    status = treatment.Status
+                }
+                : new
+                {
+                    patientId = treatment.PatientId,
+                    appointmentId = treatment.AppointmentId,
+                    dentistId = treatment.DentistId,
+                    treatmentDate = treatment.TreatmentDate.ToString("yyyy-MM-dd"),
+                    treatmentType = treatment.TreatmentType,
+                    toothNumber = treatment.ToothNumber,
+                    description = treatment.Description,
+                    diagnosis = treatment.Diagnosis,
+                    procedureNotes = treatment.ProcedureNotes,
+                    status = treatment.Status
+                };
 
             var response = await _apiService.PostAsync<TreatmentResponse>("/treatments", request);
             return response?.Treatment;
         }
 
-        public async Task<Treatment?> UpdateTreatmentAsync(Treatment treatment)
+        public async Task<Treatment?> UpdateTreatmentAsync(Treatment treatment, bool includeCost = true)
         {
-            var request = new
-            {
-                patientId = treatment.PatientId,
-                appointmentId = treatment.AppointmentId,
-                dentistId = treatment.DentistId,
-                treatmentDate = treatment.TreatmentDate.ToString("yyyy-MM-dd"),
-                treatmentType = treatment.TreatmentType,
-                toothNumber = treatment.ToothNumber,
-                description = treatment.Description,
-                diagnosis = treatment.Diagnosis,
-                procedureNotes = treatment.ProcedureNotes,
-                cost = treatment.Cost,
-                currency = treatment.Currency,
-                status = treatment.Status
-            };
+            object request = includeCost
+                ? new
+                {
+                    patientId = treatment.PatientId,
+                    appointmentId = treatment.AppointmentId,
+                    dentistId = treatment.DentistId,
+                    treatmentDate = treatment.TreatmentDate.ToString("yyyy-MM-dd"),
+                    treatmentType = treatment.TreatmentType,
+                    toothNumber = treatment.ToothNumber,
+                    description = treatment.Description,
+                    diagnosis = treatment.Diagnosis,
+                    procedureNotes = treatment.ProcedureNotes,
+                    cost = treatment.Cost,
+                    currency = treatment.Currency,
+                    status = treatment.Status
+                }
+                : new
+                {
+                    patientId = treatment.PatientId,
+                    appointmentId = treatment.AppointmentId,
+                    dentistId = treatment.DentistId,
+                    treatmentDate = treatment.TreatmentDate.ToString("yyyy-MM-dd"),
+                    treatmentType = treatment.TreatmentType,
+                    toothNumber = treatment.ToothNumber,
+                    description = treatment.Description,
+                    diagnosis = treatment.Diagnosis,
+                    procedureNotes = treatment.ProcedureNotes,
+                    status = treatment.Status
+                };
 
             var response = await _apiService.PutAsync<TreatmentResponse>($"/treatments/{treatment.Id}", request);
             return response?.Treatment;

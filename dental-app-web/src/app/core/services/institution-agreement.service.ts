@@ -12,6 +12,10 @@ export interface InstitutionAgreement {
   discount_percentage: number;
   is_active: boolean;
   notes?: string;
+  /** Kategori adı → indirim yüzdesi (ör. "İmplant": 40). Genel indirimden
+   * daha spesifik olduğunda plan onayında bu değer uygulanır (bkz. backend
+   * paymentController.getInstitutionDiscountForPlan). */
+  category_discounts?: Record<string, number>;
 }
 
 @Injectable({

@@ -15,6 +15,27 @@ namespace DentalApp.Desktop.ViewModels
         private readonly ApiService _apiService;
         private readonly PatientService _patientService;
         private readonly TariffService _tariffService;
+
+        // Backend yalnızca kanonik 'card'/'cash' değerlerini kabul eder (bkz.
+        // paymentController.js ALLOWED_PAYMENT_METHODS) — ComboBox'ta Türkçe
+        // etiket gösterilir, ama API'ye her zaman kanonik değer gönderilir.
+        // Daha önce bu dönüşüm hiç yapılmıyordu ve "Kart" gibi ham Türkçe
+        // etiket doğrudan veritabanına yazılıyordu (web/mobil zaten kanonik
+        // değer gönderiyor — bu masaüstüne özgü bir tutarsızlıktı).
+        private static string ToApiPaymentMethod(string display) => display switch
+        {
+            "Kart" => "card",
+            "Nakit" => "cash",
+            _ => display,
+        };
+
+        private static string ToDisplayPaymentMethod(string apiValue) => apiValue switch
+        {
+            "card" => "Kart",
+            "cash" => "Nakit",
+            _ => apiValue,
+        };
+
         private bool _isBusy;
         private bool _canViewPrices = true; // Patron ve Sekreter için true
         private bool _isSecretary = false; // Treatment plan approval sadece secretary'de
@@ -306,7 +327,7 @@ namespace DentalApp.Desktop.ViewModels
                     foreach (var payment in paymentsList)
                     {
                         var amount = payment?.amount;
-                        var method = payment?.payment_method?.ToString() ?? "";
+                        var method = ToDisplayPaymentMethod(payment?.payment_method?.ToString() ?? "");
                         var createdAt = payment?.created_at;
                         SelectedPatientPayments.Add(new PaymentHistoryItem
                         {
@@ -750,7 +771,7 @@ namespace DentalApp.Desktop.ViewModels
                 {
                     patientId = SelectedPaymentPatient.Id,
                     amount = PaymentAmount,
-                    paymentMethod = SelectedPaymentMethod,
+                    paymentMethod = ToApiPaymentMethod(SelectedPaymentMethod),
                     treatmentPlanId = (int?)null, // Can be set if needed
                     notes = (string?)null
                 };
