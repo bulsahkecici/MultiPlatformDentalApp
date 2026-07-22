@@ -2,6 +2,7 @@ const { query } = require('../db');
 const { AppError } = require('../utils/errorResponder');
 const { logDataEvent, AuditEventType } = require('../utils/auditLogger');
 const { getClientIp } = require('../middlewares/accountLockout');
+const { sanitizeAuditChanges } = require('../utils/auditSanitizer');
 
 /**
  * Get all institution agreements
@@ -288,7 +289,7 @@ async function updateInstitutionAgreement(req, res, next) {
       userAgent: req.headers['user-agent'] || '',
       resourceType: 'institution_agreement',
       resourceId: agreementId,
-      changes: updates,
+      changes: sanitizeAuditChanges('institution_agreement', updates),
     });
 
     return res.status(200).json({ agreement: agreementWithDiscounts });

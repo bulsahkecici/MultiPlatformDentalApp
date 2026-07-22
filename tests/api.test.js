@@ -97,10 +97,20 @@ describe('Randevu iptali', () => {
 
     const res = await request(app)
       .delete('/api/appointments/6')
-      .set('Authorization', `Bearer ${adminToken()}`);
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({ reason: 'Hasta talep etti' });
 
     expect(res.status).toBe(200);
     expect(res.body.appointment.status).toBe('cancelled');
+  });
+
+  it('PUT /api/appointments/:id/cancel — gerekçesiz iptal 400 döner', async () => {
+    const res = await request(app)
+      .put('/api/appointments/5/cancel')
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({});
+
+    expect(res.status).toBe(400);
   });
 });
 
@@ -112,6 +122,11 @@ describe('Tedavi güncelleme (deleted_at regresyonu)', () => {
 
   it('PUT /api/treatments/:id — UPDATE sorgusu voided (deleted_at dolu) kaydı hariç tutar', async () => {
     db.query.mockImplementation((sql) => {
+      if (sql.includes('SELECT dentist_id, status, currency FROM treatments')) {
+        return Promise.resolve({
+          rows: [{ dentist_id: null, status: 'in_progress', currency: 'TRY' }],
+        });
+      }
       if (sql.includes('UPDATE treatments')) {
         return Promise.resolve({
           rows: [{ id: 7, status: 'completed', dentist_id: null }],
@@ -144,6 +159,11 @@ describe('DELETE /api/treatments/:id — tedavi kaydı asla hard-delete edilmez 
 
   it('DELETE isteği bir UPDATE (soft void) üretir, hiçbir zaman DELETE FROM treatments çalıştırmaz', async () => {
     db.query.mockImplementation((sql) => {
+      if (sql.includes('SELECT dentist_id, void_status FROM treatments')) {
+        return Promise.resolve({
+          rows: [{ dentist_id: null, void_status: null }],
+        });
+      }
       if (
         sql.includes('UPDATE treatments') &&
         sql.includes('deleted_at = NOW()')
@@ -179,9 +199,18 @@ describe('DELETE /api/treatments/:id — tedavi kaydı asla hard-delete edilmez 
     const res = await request(app)
       .delete('/api/treatments/9')
       .set('Authorization', `Bearer ${adminToken()}`)
-      .send({});
+      .send({ reason: 'Tekrar deneme' });
 
     expect(res.status).toBe(404);
+  });
+
+  it('void nedeni boş olamaz', async () => {
+    const res = await request(app)
+      .delete('/api/treatments/9')
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({});
+
+    expect(res.status).toBe(400);
   });
 });
 
@@ -560,6 +589,18 @@ describe('Tedavi planı oluşturma — plan ve kalemler tek transaction', () => 
         return Promise.resolve({
           rows: [
             { id: 1, tooth_number: '36', treatment_type: 'Dolgu', cost: 500 },
+          ],
+        });
+      }
+      if (sql.includes('UPDATE treatment_plans SET total_estimated_cost')) {
+        return Promise.resolve({
+          rows: [
+            {
+              id: 41,
+              patient_id: 5,
+              title: 'Dolgu',
+              total_estimated_cost: 500,
+            },
           ],
         });
       }

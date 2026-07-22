@@ -231,10 +231,16 @@ async function applyDiscount(req, res, next) {
           return { notFound: false, pending: true, transaction: pendingTx };
         }
 
-        // Eşik altında ya da admin — hemen uygula.
+        // Eşik altında ya da admin — hemen uygula. manual_discount_amount
+        // ayrıca birikimli olarak tutulur: plan hâlâ 'pending' ise
+        // approveTreatmentPlan, kurum/kategori indirimini institution_agreement
+        // anlaşmasından yeniden hesaplarken total_estimated_cost'u SIFIRDAN
+        // yazar (bkz. o fonksiyon) — bu manuel indirim kaydı olmasaydı, burada
+        // uygulanmış manuel indirim onay anında sessizce kaybolurdu (D8).
         await client.query(
           `UPDATE treatment_plans
            SET total_estimated_cost = total_estimated_cost - $1,
+               manual_discount_amount = manual_discount_amount + $1,
                updated_at = NOW()
            WHERE id = $2`,
           [finalDiscount, treatmentPlanId],
@@ -687,6 +693,18 @@ async function approveTreatmentPlan(req, res, next) {
         [planId],
       );
 
+      // Plan pending durumdayken uygulanmış olabilecek manuel indirimlerin
+      // birikimli toplamı (bkz. applyDiscount/approveFinancialTransaction'daki
+      // manual_discount_amount yorumu, D8). Bu, aşağıdaki kurum/kategori
+      // indirimli toplamdan ayrıca düşülür — aksi halde onay anında sessizce
+      // kaybolurdu.
+      const manualDiscountResult = await client.query(
+        'SELECT manual_discount_amount FROM treatment_plans WHERE id = $1',
+        [planId],
+      );
+      const manualDiscountAmount =
+        parseFloat(manualDiscountResult.rows[0]?.manual_discount_amount) || 0;
+
       // Kurum/kategori indirimi burada, tek merkezi noktada hesaplanır —
       // önceden bu hiç yapılmıyor, hasta anlaşmalı olsa bile borç tam liste
       // fiyatından yazılıyordu (bkz. denetim raporu, Kritik #1).
@@ -707,10 +725,16 @@ async function approveTreatmentPlan(req, res, next) {
         return { id: item.id, discountPercentage, discountedCost };
       });
 
-      const totalCost =
+      const institutionDiscountedTotal =
         Math.round(
           pricedItems.reduce((sum, item) => sum + item.discountedCost, 0) * 100,
         ) / 100;
+
+      const totalCost = Math.max(
+        0,
+        Math.round((institutionDiscountedTotal - manualDiscountAmount) * 100) /
+          100,
+      );
 
       const updateResult = await client.query(
         `UPDATE treatment_plans
@@ -1011,12 +1035,24 @@ async function getTotalReceivables(req, res, next) {
  */
 async function getTotalIncome(req, res, next) {
   try {
+    // Net tahsilat = tamamlanmış ödemeler - tamamlanmış iadeler (D4).
+    // Ham SUM(payments.amount) yalnızca brüt tahsilatı verir; iade edilmiş
+    // tutarlar hâlâ "gelir" sayılırdı (bkz. denetim raporu).
     const result = await query(
-      'SELECT COALESCE(SUM(amount), 0) as total_income FROM payments',
+      `SELECT
+         COALESCE(SUM(CASE WHEN transaction_type = 'payment' AND status = 'completed' THEN amount ELSE 0 END), 0) as gross_payments,
+         COALESCE(SUM(CASE WHEN transaction_type = 'refund' AND status = 'completed' THEN amount ELSE 0 END), 0) as total_refunds
+       FROM financial_transactions`,
     );
 
+    const grossPayments = parseFloat(result.rows[0].gross_payments || 0);
+    const totalRefunds = parseFloat(result.rows[0].total_refunds || 0);
+    const netIncome = Math.round((grossPayments - totalRefunds) * 100) / 100;
+
     return res.status(200).json({
-      totalIncome: parseFloat(result.rows[0].total_income || 0),
+      totalIncome: netIncome,
+      grossPayments,
+      totalRefunds,
     });
   } catch (err) {
     logger.error({ err }, 'Failed to fetch total income');
@@ -1223,9 +1259,14 @@ async function approveFinancialTransaction(req, res, next) {
           parseFloat(planResult.rows[0].total_estimated_cost) || 0;
         const appliedAmount = Math.min(parseFloat(tx.amount), currentTotal);
 
+        // manual_discount_amount da birikimli tutulur (applyDiscount'daki
+        // aynı D8 düzeltmesi) — plan hâlâ 'pending' ise approveTreatmentPlan
+        // bu onaylanmış talebin tutarını da hesaba katarak toplamı yeniden kurar.
         await client.query(
           `UPDATE treatment_plans
-           SET total_estimated_cost = total_estimated_cost - $1, updated_at = NOW()
+           SET total_estimated_cost = total_estimated_cost - $1,
+               manual_discount_amount = manual_discount_amount + $1,
+               updated_at = NOW()
            WHERE id = $2`,
           [appliedAmount, tx.treatment_plan_id],
         );

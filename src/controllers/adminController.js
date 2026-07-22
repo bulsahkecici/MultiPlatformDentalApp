@@ -62,10 +62,14 @@ async function getStatistics(req, res, next) {
       10,
     );
 
-    // Last month financial (from treatments)
+    // Last month financial (from treatments) — yalnızca gerçekten tamamlanmış
+    // ve void edilmemiş tedaviler üretime dahil edilir (D4); aksi halde
+    // planlanmış-ama-yapılmamış ya da void edilmiş tedaviler de "ciro"ya
+    // sayılırdı (bkz. denetim raporu).
     const lastMonthFinancialResult = await query(
-      `SELECT COALESCE(SUM(cost), 0) as total FROM treatments 
-       WHERE treatment_date >= $1 AND treatment_date <= $2 AND cost IS NOT NULL`,
+      `SELECT COALESCE(SUM(cost), 0) as total FROM treatments
+       WHERE treatment_date >= $1 AND treatment_date <= $2 AND cost IS NOT NULL
+       AND status = 'completed' AND deleted_at IS NULL`,
       [lastMonthStart, lastMonthEnd],
     );
     const lastMonthFinancial = parseFloat(
@@ -74,18 +78,20 @@ async function getStatistics(req, res, next) {
 
     // This month financial
     const thisMonthFinancialResult = await query(
-      `SELECT COALESCE(SUM(cost), 0) as total FROM treatments 
-       WHERE treatment_date >= $1 AND treatment_date <= $2 AND cost IS NOT NULL`,
+      `SELECT COALESCE(SUM(cost), 0) as total FROM treatments
+       WHERE treatment_date >= $1 AND treatment_date <= $2 AND cost IS NOT NULL
+       AND status = 'completed' AND deleted_at IS NULL`,
       [thisMonthStart, thisMonthEnd],
     );
     const thisMonthFinancial = parseFloat(
       thisMonthFinancialResult.rows[0].total || 0,
     );
 
-    // Last month transactions (treatments count)
+    // Last month transactions (treatments count) — void edilmiş kayıtlar
+    // varsayılan listelerden gizlendiği gibi burada da sayılmaz.
     const lastMonthTransactionsResult = await query(
-      `SELECT COUNT(*) as count FROM treatments 
-       WHERE treatment_date >= $1 AND treatment_date <= $2`,
+      `SELECT COUNT(*) as count FROM treatments
+       WHERE treatment_date >= $1 AND treatment_date <= $2 AND deleted_at IS NULL`,
       [lastMonthStart, lastMonthEnd],
     );
     const lastMonthTransactions = parseInt(
@@ -113,28 +119,41 @@ async function getStatistics(req, res, next) {
     );
     const appointments = appointmentsResult.rows[0];
 
-    // Total treatments
+    // Total treatments — totalRevenue de aynı şekilde yalnızca tamamlanmış,
+    // void edilmemiş tedavileri sayar (D4); count ise void'ler hariç tüm
+    // kayıtları gösterir (planned/in_progress/cancelled dahil, void hariç).
     const treatmentsResult = await query(
-      `SELECT COUNT(*) as count, 
-       COALESCE(SUM(cost), 0) as total_revenue
+      `SELECT COUNT(*) FILTER (WHERE deleted_at IS NULL) as count,
+       COALESCE(SUM(cost) FILTER (WHERE status = 'completed' AND deleted_at IS NULL), 0) as total_revenue
        FROM treatments`,
     );
     const treatments = treatmentsResult.rows[0];
 
     // Financials from payments/patient_debts (invoices tablosuna hiç yazılmıyor;
-    // gerçek veriler payments + patient_debts'te — JSON şekli istemciler için korunuyor)
+    // gerçek veriler payments + patient_debts'te — JSON şekli istemciler için korunuyor).
+    // paid_revenue artık hareket defterinden (financial_transactions) net
+    // olarak hesaplanır: tamamlanmış ödemeler - tamamlanmış iadeler (D4) —
+    // ham SUM(payments.amount) iade edilmiş tutarları da "tahsil edilmiş"
+    // gösterirdi.
     const paymentsAggResult = await query(
-      `SELECT COUNT(*) as count,
-       COALESCE(SUM(amount), 0) as paid_revenue
-       FROM payments`,
+      'SELECT COUNT(*) as count FROM payments',
     );
+    const ledgerAggResult = await query(
+      `SELECT
+         COALESCE(SUM(CASE WHEN transaction_type = 'payment' AND status = 'completed' THEN amount ELSE 0 END), 0) as gross_payments,
+         COALESCE(SUM(CASE WHEN transaction_type = 'refund' AND status = 'completed' THEN amount ELSE 0 END), 0) as total_refunds
+       FROM financial_transactions`,
+    );
+    const netPaidRevenue =
+      parseFloat(ledgerAggResult.rows[0].gross_payments || 0) -
+      parseFloat(ledgerAggResult.rows[0].total_refunds || 0);
     const debtsAggResult = await query(
       'SELECT COALESCE(SUM(total_debt), 0) as total_billed FROM patient_debts',
     );
     const invoices = {
       count: paymentsAggResult.rows[0].count,
       total_revenue: debtsAggResult.rows[0].total_billed,
-      paid_revenue: paymentsAggResult.rows[0].paid_revenue,
+      paid_revenue: netPaidRevenue,
     };
 
     // Dentists count

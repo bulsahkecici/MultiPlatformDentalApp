@@ -5,6 +5,7 @@ const {
   getAppointmentById,
   updateAppointment,
   cancelAppointment,
+  reopenAppointment,
 } = require('../controllers/appointmentController');
 const { requireAuth } = require('../middlewares/auth');
 const { mutateLimiter } = require('../middlewares/rateLimit');
@@ -32,6 +33,14 @@ router.delete(
   requireAuth,
   mutateLimiter,
   cancelAppointment,
+);
+// İptal edilmiş bir randevuyu yeniden açar — çakışma kontrolü koşulsuz çalışır
+// (bkz. appointmentController.reopenAppointment).
+router.post(
+  '/api/appointments/:id/reopen',
+  requireAuth,
+  mutateLimiter,
+  reopenAppointment,
 );
 
 module.exports = router;
