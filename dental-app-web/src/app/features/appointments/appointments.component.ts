@@ -309,7 +309,7 @@ export class AppointmentsComponent implements OnInit {
     this.isLoading = true;
     const dateStr = DateUtils.toLocalDateString(this.selectedDate);
 
-    this.appointmentService.getAppointments(1, 1000, undefined, undefined, dateStr, dateStr).subscribe({
+    this.appointmentService.getAppointments(1, 100, undefined, undefined, dateStr, dateStr).subscribe({
       next: (response) => {
         // Map backend data to frontend format
         this.appointments = (response.appointments || []).map((a: any) => DataMapper.mapAppointment(a));

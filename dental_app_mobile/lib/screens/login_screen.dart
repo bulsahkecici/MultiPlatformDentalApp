@@ -14,12 +14,15 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _mfaCodeController = TextEditingController();
   bool _isLoading = false;
+  bool _mfaRequired = false;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _mfaCodeController.dispose();
     super.dispose();
   }
 
@@ -32,10 +35,14 @@ class _LoginScreenState extends State<LoginScreen> {
       await context.read<AuthProvider>().login(
             _emailController.text.trim(),
             _passwordController.text,
+            mfaCode: _mfaCodeController.text.trim(),
           );
       // Yönlendirme AuthWrapper tarafından reaktif yapılır
     } on ApiException catch (e) {
       if (mounted) {
+        if (e.code == 'MFA_REQUIRED') {
+          setState(() => _mfaRequired = true);
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message)),
         );
@@ -71,6 +78,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 validator: (value) =>
                     value?.isEmpty ?? true ? 'Lütfen e-posta giriniz' : null,
               ),
+              if (_mfaRequired) ...[
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _mfaCodeController,
+                  decoration:
+                      const InputDecoration(labelText: 'Doğrulama kodu'),
+                  keyboardType: TextInputType.number,
+                  autofillHints: const [AutofillHints.oneTimeCode],
+                  validator: (value) => _mfaRequired &&
+                          (value == null || value.trim().isEmpty)
+                      ? 'Doğrulama kodunu giriniz'
+                      : null,
+                ),
+              ],
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,

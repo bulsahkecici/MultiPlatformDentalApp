@@ -7,6 +7,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent)
   },
   {
+    path: 'mfa-setup',
+    canActivate: [AuthGuard],
+    loadComponent: () => import('./features/auth/mfa-setup/mfa-setup.component').then(m => m.MfaSetupComponent)
+  },
+  {
     path: '',
     canActivate: [AuthGuard],
     loadComponent: () => import('./features/layout/main-layout/main-layout.component').then(m => m.MainLayoutComponent),

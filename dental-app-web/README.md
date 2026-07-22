@@ -21,7 +21,7 @@ npm start          # ng serve — http://localhost:4200
 
 ```bash
 npx ng build                                  # geliştirme build'i
-npx ng build --configuration production       # prod build (dist/dental-app-web/browser)
+npx ng build --configuration production       # prod build (dist/dental-app-web)
 ```
 
 Prod dağıtımından önce `src/environments/environment.prod.ts` içindeki

@@ -84,7 +84,7 @@ import { TariffSelectorComponent } from '../tariff-selector/tariff-selector.comp
               <mat-select formControlName="status">
                 <mat-option value="planned">Planlandı</mat-option>
                 <mat-option value="in_progress">Devam Ediyor</mat-option>
-                <mat-option value="completed">Tamamlandı</mat-option>
+                <mat-option value="completed" *ngIf="canManageClinical">Tamamlandı</mat-option>
                 <mat-option value="cancelled">İptal Edildi</mat-option>
               </mat-select>
             </mat-form-field>
@@ -94,12 +94,12 @@ import { TariffSelectorComponent } from '../tariff-selector/tariff-selector.comp
               <input matInput type="number" formControlName="cost" step="0.01">
             </mat-form-field>
 
-            <mat-form-field appearance="outline" class="full-width">
+            <mat-form-field appearance="outline" class="full-width" *ngIf="isPlanMode || canManageClinical">
               <mat-label>Tanı / Plan Başlığı</mat-label>
               <textarea matInput formControlName="diagnosis" rows="2"></textarea>
             </mat-form-field>
 
-            <mat-form-field appearance="outline" class="full-width">
+            <mat-form-field appearance="outline" class="full-width" *ngIf="isPlanMode || canManageClinical">
               <mat-label>Prosedür Notları / Açıklama</mat-label>
               <textarea matInput formControlName="procedureNotes" rows="3"></textarea>
             </mat-form-field>
@@ -227,6 +227,7 @@ export class TreatmentFormDialogComponent implements OnInit {
   patients: Patient[] = [];
   isLoading = false;
   canViewPrices = false;
+  canManageClinical = false;
 
   // Advanced features
   activeTab = 0;
@@ -247,6 +248,7 @@ export class TreatmentFormDialogComponent implements OnInit {
     this.authService.currentUser$.subscribe(user => {
       if (user) {
         this.canViewPrices = user.roles.includes('admin') || user.roles.includes('secretary');
+        this.canManageClinical = user.roles.includes('dentist');
       }
     });
 
@@ -287,7 +289,7 @@ export class TreatmentFormDialogComponent implements OnInit {
   }
 
   loadPatients(): void {
-    this.patientService.getPatients(1, 1000).subscribe({
+    this.patientService.getPatients(1, 100).subscribe({
       next: (response) => {
         this.patients = (response.patients || []).map((p: any) => DataMapper.mapPatient(p));
       }
@@ -307,7 +309,7 @@ export class TreatmentFormDialogComponent implements OnInit {
         this.plannedProcedures.push({
           toothNumber: tooth,
           treatmentType: item.name,
-          cost: item.priceInclVat || item.price_incl_vat || 0,
+          cost: this.canViewPrices ? (item.priceInclVat || item.price_incl_vat || 0) : 0,
           currency: item.currency || 'TRY',
           notes: `Kod: ${item.code}`
         });
@@ -367,8 +369,10 @@ export class TreatmentFormDialogComponent implements OnInit {
           treatmentType: formValue.treatmentType,
           toothNumber: formValue.toothNumber || null,
           status: formValue.status || 'planned',
-          diagnosis: formValue.diagnosis || null,
-          procedureNotes: formValue.procedureNotes || null
+          ...(this.canManageClinical ? {
+            diagnosis: formValue.diagnosis || null,
+            procedureNotes: formValue.procedureNotes || null
+          } : {})
         };
 
         // cost/currency yalnızca fiyat görme yetkisi olanlar için gönderilir —
@@ -394,7 +398,7 @@ export class TreatmentFormDialogComponent implements OnInit {
 
   private handleError(error: any) {
     console.error('Error saving:', error);
-    const errorMessage = error.error?.message || 'Kaydedilirken hata oluştu';
+    const errorMessage = error.error?.error?.message || error.error?.message || 'Kaydedilirken hata oluştu';
     this.snackBar.open(errorMessage, 'Kapat', { duration: 5000 });
     this.isLoading = false;
   }

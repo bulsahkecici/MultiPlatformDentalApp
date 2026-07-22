@@ -226,7 +226,7 @@ export class AppointmentFormDialogComponent implements OnInit {
   }
 
   loadPatients(): void {
-    this.patientService.getPatients(1, 1000).subscribe({
+    this.patientService.getPatients(1, 100).subscribe({
       next: (response) => {
         this.patients = (response.patients || []).map((p: any) => DataMapper.mapPatient(p));
       }

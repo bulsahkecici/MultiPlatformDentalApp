@@ -27,6 +27,17 @@ export class ApiService {
         return this.http.post<T>(`${this.baseUrl}${endpoint}`, data);
     }
 
+    postForm<T>(endpoint: string, data: FormData): Observable<T> {
+        return this.http.post<T>(`${this.baseUrl}${endpoint}`, data);
+    }
+
+    getBlob(endpoint: string, params?: Record<string, string>): Observable<Blob> {
+        return this.http.get(`${this.baseUrl}${endpoint}`, {
+            params,
+            responseType: 'blob'
+        });
+    }
+
     put<T>(endpoint: string, data: any): Observable<T> {
         return this.http.put<T>(`${this.baseUrl}${endpoint}`, data);
     }

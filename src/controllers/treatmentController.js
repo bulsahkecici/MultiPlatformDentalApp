@@ -4,6 +4,7 @@ const { logDataEvent, AuditEventType } = require('../utils/auditLogger');
 const { getClientIp } = require('../middlewares/accountLockout');
 const { isDentist, isAdmin, canViewPrices } = require('../middlewares/auth');
 const { resolveEffectiveDentistId } = require('../utils/authorizationHelpers');
+const { parsePagePagination } = require('../utils/inputValidation');
 const { sanitizeAuditChanges } = require('../utils/auditSanitizer');
 const logger = require('../utils/logger');
 const { notifyUser, notifyRole } = require('../services/notificationHub');
@@ -21,6 +22,7 @@ const CLINICAL_FIELDS = [
   'procedure_notes',
   'status',
 ];
+const DENTIST_ONLY_FIELDS = ['diagnosis', 'procedure_notes'];
 
 function toSnakeCase(key) {
   return key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
@@ -56,6 +58,18 @@ async function createTreatment(req, res, next) {
       );
     }
 
+    if (
+      (diagnosis || procedureNotes || status === 'completed') &&
+      !isDentist(req)
+    ) {
+      return next(
+        new AppError(
+          'Only dentists can enter diagnosis, procedure notes, or complete a treatment',
+          403,
+        ),
+      );
+    }
+
     // Diş hekimi fiyatı göremez (canViewPrices), dolayısıyla API üzerinden
     // de belirleyemez — arayüzde gizli bir alanın ham istekle set edilebilmesi
     // yalnızca UI kontrolüne güvenmek anlamına gelirdi. Aynı yetki kontrolü
@@ -82,6 +96,48 @@ async function createTreatment(req, res, next) {
       query,
       dentistId,
     );
+
+    if (status === 'completed' && (!diagnosis || !procedureNotes)) {
+      return next(
+        new AppError(
+          'Completed treatments require diagnosis and procedure notes',
+          400,
+        ),
+      );
+    }
+
+    // Bir tedavi bir randevuya bağlanıyorsa hasta ve hekim bağlamı aynı
+    // olmalıdır; aksi halde klinik kayıt yanlış hastanın dosyasına bağlanabilir.
+    if (appointmentId) {
+      const appointmentResult = await query(
+        `SELECT patient_id, dentist_id, status
+         FROM appointments WHERE id = $1`,
+        [appointmentId],
+      );
+      if (appointmentResult.rows.length === 0) {
+        return next(new AppError('Appointment not found', 404));
+      }
+      const appointment = appointmentResult.rows[0];
+      if (
+        Number(appointment.patient_id) !== Number(patientId) ||
+        Number(appointment.dentist_id) !== Number(effectiveDentistId)
+      ) {
+        return next(
+          new AppError(
+            'Appointment, patient and dentist must belong to the same clinical encounter',
+            409,
+          ),
+        );
+      }
+      if (['cancelled', 'no_show'].includes(appointment.status)) {
+        return next(
+          new AppError(
+            'Cannot attach treatment to a cancelled/no-show appointment',
+            409,
+          ),
+        );
+      }
+    }
 
     // Create treatment
     const result = await query(
@@ -153,16 +209,8 @@ async function createTreatment(req, res, next) {
  */
 async function getTreatments(req, res, next) {
   try {
-    const {
-      page = 1,
-      limit = 20,
-      patientId,
-      dentistId,
-      startDate,
-      endDate,
-    } = req.query;
-
-    const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+    const { patientId, dentistId, startDate, endDate } = req.query;
+    const { page, limit, offset } = parsePagePagination(req.query);
     // Voided (soft-deleted) kayıtlar varsayılan listeden gizlenir — patients
     // tablosuyla aynı konvansiyon (bkz. patientController.js).
     const conditions = ['deleted_at IS NULL'];
@@ -208,7 +256,7 @@ async function getTreatments(req, res, next) {
     const canViewPrice = canViewPrices(req);
     const costField = canViewPrice ? 't.cost' : 'NULL as cost';
 
-    params.push(parseInt(limit, 10), offset);
+    params.push(limit, offset);
     const result = await query(
       `SELECT 
         t.id, t.patient_id, t.appointment_id, t.dentist_id,
@@ -231,13 +279,14 @@ async function getTreatments(req, res, next) {
     return res.status(200).json({
       treatments: result.rows,
       pagination: {
-        page: parseInt(page, 10),
-        limit: parseInt(limit, 10),
+        page,
+        limit,
         total,
-        pages: Math.ceil(total / parseInt(limit, 10)),
+        pages: Math.ceil(total / limit),
       },
     });
   } catch (err) {
+    if (err instanceof AppError) return next(err);
     logger.error({ err }, 'Failed to fetch treatments');
     return next(new AppError('Failed to fetch treatments', 500));
   }
@@ -298,7 +347,8 @@ async function updateTreatment(req, res, next) {
     // tedavi klinik olarak salt okunur" kuralı VE currency'nin gerçekten
     // değişip değişmediğini görmek için gerekli.
     const current = await query(
-      'SELECT dentist_id, status, currency FROM treatments WHERE id = $1 AND deleted_at IS NULL',
+      `SELECT dentist_id, status, currency, diagnosis, procedure_notes
+       FROM treatments WHERE id = $1 AND deleted_at IS NULL`,
       [treatmentId],
     );
     if (current.rows.length === 0) {
@@ -307,7 +357,11 @@ async function updateTreatment(req, res, next) {
     const existingTreatment = current.rows[0];
 
     // Diş hekimi sadece kendi tedavisini güncelleyebilir (IDOR koruması)
-    if (isDentist(req) && existingTreatment.dentist_id !== req.user.sub) {
+    if (
+      isDentist(req) &&
+      !isAdmin(req) &&
+      existingTreatment.dentist_id !== req.user.sub
+    ) {
       return next(new AppError('Forbidden', 403));
     }
 
@@ -356,17 +410,70 @@ async function updateTreatment(req, res, next) {
     const params = [];
     let paramIndex = 1;
     const touchedClinicalFields = [];
+    const touchedDentistOnlyFields = [];
 
     Object.keys(updates).forEach((key) => {
       const snakeKey = toSnakeCase(key);
       if (allowedFields.includes(snakeKey)) {
+        if (
+          DENTIST_ONLY_FIELDS.includes(snakeKey) &&
+          !isDentist(req) &&
+          (updates[key] === null || updates[key] === '')
+        ) {
+          return;
+        }
         if (CLINICAL_FIELDS.includes(snakeKey)) {
           touchedClinicalFields.push(snakeKey);
+        }
+        if (DENTIST_ONLY_FIELDS.includes(snakeKey)) {
+          touchedDentistOnlyFields.push(snakeKey);
         }
         setClauses.push(`${snakeKey} = $${paramIndex++}`);
         params.push(updates[key]);
       }
     });
+
+    const isCompleting =
+      updates.status === 'completed' &&
+      existingTreatment.status !== 'completed';
+    if (
+      (touchedDentistOnlyFields.length > 0 || isCompleting) &&
+      !isDentist(req)
+    ) {
+      return next(
+        new AppError('Only dentists can change clinical treatment fields', 403),
+      );
+    }
+    if (
+      (touchedDentistOnlyFields.length > 0 || isCompleting) &&
+      existingTreatment.dentist_id !== req.user.sub
+    ) {
+      return next(
+        new AppError(
+          'Only the treating dentist can change clinical treatment fields',
+          403,
+        ),
+      );
+    }
+
+    const resultingStatus = updates.status ?? existingTreatment.status;
+    const resultingDiagnosis = updates.diagnosis ?? existingTreatment.diagnosis;
+    const resultingProcedureNotes =
+      updates.procedureNotes ??
+      updates.procedure_notes ??
+      existingTreatment.procedure_notes;
+    if (
+      resultingStatus === 'completed' &&
+      (isCompleting || touchedDentistOnlyFields.length > 0) &&
+      (!resultingDiagnosis || !resultingProcedureNotes)
+    ) {
+      return next(
+        new AppError(
+          'Completed treatments require diagnosis and procedure notes',
+          400,
+        ),
+      );
+    }
 
     // Tamamlanmış bir tedavinin klinik alanları artık doğrudan PUT ile
     // değiştirilemez — sekreter ya da hekim, tanı/prosedür notu/diş no/
@@ -528,7 +635,7 @@ async function deleteTreatment(req, res, next) {
       return res.status(204).send();
     }
 
-    // Sekreter veya dişhekimi: doğrudan void yok, talep oluşturulur.
+    // Dişhekimi veya sekreter: doğrudan void yok, patron onayına talep oluşturulur.
     if (existingTreatment.void_status === 'pending') {
       return next(
         new AppError('This treatment already has a pending void request', 409),
@@ -943,6 +1050,13 @@ async function createTreatmentPlan(req, res, next) {
     ) {
       return next(
         new AppError('Patient ID, title, and items are required', 400),
+      );
+    }
+
+    const containsPrice = items.some((item) => Number(item?.cost) > 0);
+    if (containsPrice && !canViewPrices(req)) {
+      return next(
+        new AppError('Only admin/secretary can set treatment plan prices', 403),
       );
     }
 

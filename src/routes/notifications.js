@@ -8,6 +8,7 @@ const {
 } = require('../models/notification');
 const { requireAuth } = require('../middlewares/auth');
 const { AppError } = require('../utils/errorResponder');
+const { parseOffsetPagination } = require('../utils/inputValidation');
 
 const router = express.Router();
 
@@ -16,11 +17,11 @@ const router = express.Router();
  */
 router.get('/api/notifications', requireAuth, async (req, res, next) => {
   try {
-    const { limit = 50, offset = 0 } = req.query;
+    const { limit, offset } = parseOffsetPagination(req.query);
     const notifications = await getUserNotifications(
       req.user.sub,
-      parseInt(limit, 10),
-      parseInt(offset, 10),
+      limit,
+      offset,
     );
     const unreadCount = await getUnreadCount(req.user.sub);
 
@@ -29,6 +30,7 @@ router.get('/api/notifications', requireAuth, async (req, res, next) => {
       unreadCount,
     });
   } catch (err) {
+    if (err instanceof AppError) return next(err);
     return next(new AppError('Failed to fetch notifications', 500));
   }
 });

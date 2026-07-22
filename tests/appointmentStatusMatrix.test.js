@@ -114,6 +114,67 @@ describe('PUT /api/appointments/:id — durum geçiş matrisi (D6)', () => {
   });
 });
 
+describe('Randevu iptal endpointi — durum geçiş matrisi', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    db.query.mockResolvedValue({ rows: [], rowCount: 0 });
+  });
+
+  it('completed randevu ayrı cancel endpointi üzerinden de iptal edilemez', async () => {
+    db.query.mockImplementation((sql) => {
+      if (
+        sql.includes('SELECT dentist_id, status') &&
+        sql.includes('FOR UPDATE')
+      ) {
+        return Promise.resolve({
+          rows: [{ dentist_id: 5, status: 'completed' }],
+        });
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
+    });
+
+    const res = await request(app)
+      .put('/api/appointments/50/cancel')
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({ reason: 'Yanlış kayıt' });
+
+    expect(res.status).toBe(409);
+    expect(res.body.error.message).toContain('completed -> cancelled');
+    expect(
+      db.query.mock.calls.some(([sql]) =>
+        sql.includes("SET status = 'cancelled'"),
+      ),
+    ).toBe(false);
+  });
+
+  it('scheduled randevu iptal edilebilir', async () => {
+    db.query.mockImplementation((sql) => {
+      if (
+        sql.includes('SELECT dentist_id, status') &&
+        sql.includes('FOR UPDATE')
+      ) {
+        return Promise.resolve({
+          rows: [{ dentist_id: 5, status: 'scheduled' }],
+        });
+      }
+      if (sql.includes("SET status = 'cancelled'")) {
+        return Promise.resolve({
+          rows: [{ id: 50, dentist_id: 5, status: 'cancelled' }],
+        });
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
+    });
+
+    const res = await request(app)
+      .put('/api/appointments/50/cancel')
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({ reason: 'Hasta talebi' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.appointment.status).toBe('cancelled');
+  });
+});
+
 describe('POST /api/appointments/:id/reopen — koşulsuz çakışma kontrolü (D6)', () => {
   beforeEach(() => {
     jest.clearAllMocks();

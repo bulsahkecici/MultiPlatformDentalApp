@@ -7,7 +7,7 @@ export default [
     // kendi araçları var (ng lint, dotnet, flutter analyze)
     ignores: [
       '**/node_modules/**',
-      'eslint.config.js',
+      'eslint.config.mjs',
       'coverage/**',
       'dental-app-web/**',
       'DentalApp.Desktop/**',

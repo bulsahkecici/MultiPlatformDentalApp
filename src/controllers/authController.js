@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
-const { query } = require('../db');
+const { query, withTransaction } = require('../db');
 const { AppError } = require('../utils/errorResponder');
 const { parseRolesCsv } = require('../utils/roles');
 const {
@@ -31,6 +31,8 @@ const {
   sendWelcomeEmail,
 } = require('../utils/emailService');
 const config = require('../config');
+const { normalizeEmail } = require('../utils/inputValidation');
+const { verifyMfaCode } = require('../services/mfaService');
 
 /**
  * Login endpoint
@@ -38,7 +40,8 @@ const config = require('../config');
  */
 async function login(req, res, next) {
   try {
-    const { email, password } = req.body || {};
+    const { email: rawEmail, password, mfaCode } = req.body || {};
+    const email = normalizeEmail(rawEmail);
 
     // Validate input
     if (!email || !password) {
@@ -80,6 +83,7 @@ async function login(req, res, next) {
     // Get user from database (include profile fields from users table)
     const result = await query(
       `SELECT id, email, password_hash, roles, email_verified, deleted_at, last_login_at,
+              mfa_enabled, mfa_secret_encrypted, mfa_recovery_codes,
               first_name, last_name, phone, tc_no, created_at
        FROM users WHERE email = $1`,
       [email],
@@ -135,6 +139,40 @@ async function login(req, res, next) {
       return next(new AppError('Invalid credentials', 401));
     }
 
+    if (user.mfa_enabled) {
+      if (!mfaCode) {
+        return next(
+          new AppError('Multi-factor authentication code is required', 401, {
+            code: 'MFA_REQUIRED',
+          }),
+        );
+      }
+      if (!(await verifyMfaCode(user, mfaCode, query))) {
+        const failureResult = await recordFailedAttempt(
+          email,
+          ipAddress,
+          userAgent,
+        );
+        await logAuthEvent({
+          eventType: AuditEventType.MFA_FAILED,
+          userId: user.id,
+          email,
+          ipAddress,
+          userAgent,
+          success: false,
+          reason: 'Invalid MFA code',
+        });
+        if (failureResult.locked) {
+          return next(
+            new AppError('Too many failed attempts. Account locked.', 403),
+          );
+        }
+        return next(
+          new AppError('Invalid multi-factor authentication code', 401),
+        );
+      }
+    }
+
     // Check if email is verified (if email service is enabled)
     if (config.email.enabled && !user.email_verified) {
       return next(
@@ -152,10 +190,14 @@ async function login(req, res, next) {
 
     // Generate tokens
     const roles = parseRolesCsv(user.roles);
+    const mfaEnrollmentRequired =
+      !user.mfa_enabled &&
+      config.security.mfaRequiredRoles.some((role) => roles.includes(role));
     const tokenPayload = {
       sub: user.id,
       email: user.email,
       roles,
+      mfaEnrollmentRequired,
     };
 
     const accessToken = generateAccessToken(tokenPayload);
@@ -177,6 +219,7 @@ async function login(req, res, next) {
     return res.status(200).json({
       accessToken,
       refreshToken,
+      mfaEnrollmentRequired,
       user: {
         id: user.id,
         email: user.email,
@@ -214,10 +257,14 @@ async function refreshToken(req, res, next) {
 
     // Generate new access token
     const roles = parseRolesCsv(tokenData.roles);
+    const mfaEnrollmentRequired =
+      !tokenData.mfa_enabled &&
+      config.security.mfaRequiredRoles.some((role) => roles.includes(role));
     const tokenPayload = {
       sub: tokenData.id,
       email: tokenData.email,
       roles,
+      mfaEnrollmentRequired,
     };
 
     const newAccessToken = generateAccessToken(tokenPayload);
@@ -237,6 +284,7 @@ async function refreshToken(req, res, next) {
 
     return res.status(200).json({
       accessToken: newAccessToken,
+      mfaEnrollmentRequired,
     });
   } catch (err) {
     return next(new AppError('Token refresh failed', 401));
@@ -279,7 +327,7 @@ async function logout(req, res, next) {
  */
 async function requestPasswordReset(req, res, next) {
   try {
-    const { email } = req.body || {};
+    const email = normalizeEmail(req.body?.email);
 
     if (!email || !validator.isEmail(email)) {
       return next(new AppError('Valid email is required', 400));
@@ -378,22 +426,27 @@ async function resetPassword(req, res, next) {
     // Hash new password
     const passwordHash = await bcrypt.hash(newPassword, 10);
 
-    // Update password and clear reset token
-    await query(
-      `UPDATE users 
-       SET password_hash = $1, 
-           password_reset_token = NULL, 
-           password_reset_expires = NULL,
-           updated_at = NOW()
-       WHERE id = $2`,
-      [passwordHash, user.id],
-    );
-
-    // Add to password history
-    await query(
-      'INSERT INTO password_history (user_id, password_hash) VALUES ($1, $2)',
-      [user.id, passwordHash],
-    );
+    // Şifre, geçmiş ve aktif oturumların iptali tek atomik işlem olmalı.
+    // Aksi halde ele geçirilmiş bir refresh token şifre sıfırlandıktan sonra
+    // yedi güne kadar yeni access token üretmeye devam edebilirdi.
+    await withTransaction(async (client) => {
+      await client.query(
+        `UPDATE users
+         SET password_hash = $1,
+             password_reset_token = NULL,
+             password_reset_expires = NULL,
+             updated_at = NOW()
+         WHERE id = $2`,
+        [passwordHash, user.id],
+      );
+      await client.query(
+        'INSERT INTO password_history (user_id, password_hash) VALUES ($1, $2)',
+        [user.id, passwordHash],
+      );
+      await client.query('DELETE FROM refresh_tokens WHERE user_id = $1', [
+        user.id,
+      ]);
+    });
 
     const ipAddress = getClientIp(req);
     const userAgent = req.headers['user-agent'] || '';
@@ -473,7 +526,7 @@ async function verifyEmail(req, res, next) {
  */
 async function resendVerification(req, res, next) {
   try {
-    const { email } = req.body || {};
+    const email = normalizeEmail(req.body?.email);
 
     if (!email || !validator.isEmail(email)) {
       return next(new AppError('Valid email is required', 400));
@@ -514,7 +567,9 @@ async function getMe(req, res, next) {
   try {
     const userId = req.user.sub;
     const result = await query(
-      'SELECT id, email, roles, email_verified, created_at, last_login_at FROM users WHERE id = $1',
+      `SELECT id, email, roles, email_verified, created_at, last_login_at,
+              mfa_enabled
+       FROM users WHERE id = $1`,
       [userId],
     );
 
@@ -533,6 +588,7 @@ async function getMe(req, res, next) {
         emailVerified: user.email_verified,
         createdAt: user.created_at,
         lastLoginAt: user.last_login_at,
+        mfaEnabled: user.mfa_enabled,
       },
     });
   } catch (err) {

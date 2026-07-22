@@ -13,18 +13,24 @@ namespace DentalApp.Desktop.Services
             _apiService = apiService;
         }
 
-        public async Task<bool> LoginAsync(string email, string password)
+        public async Task<bool> LoginAsync(string email, string password, string? mfaCode = null)
         {
             try
             {
                 var response = await _apiService.PostAsync<LoginResponse>("/auth/login", new
                 {
                     email,
-                    password
+                    password,
+                    mfaCode
                 });
 
                 if (response != null && !string.IsNullOrEmpty(response.AccessToken) && response.User != null)
                 {
+                    if (response.MfaEnrollmentRequired)
+                    {
+                        _apiService.ClearTokens();
+                        throw new InvalidOperationException("MFA_ENROLLMENT_REQUIRED");
+                    }
                     CurrentUser = response.User;
                     _apiService.SetTokens(response.AccessToken, response.RefreshToken);
                     return true;

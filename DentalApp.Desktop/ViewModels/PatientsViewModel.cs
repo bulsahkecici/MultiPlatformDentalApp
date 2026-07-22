@@ -197,11 +197,19 @@ namespace DentalApp.Desktop.ViewModels
             
             try
             {
+                var selectedId = SelectedPatient.Id;
+                var fullPatient = await _patientService.GetPatientAsync(selectedId);
+                if (fullPatient != null && SelectedPatient?.Id == selectedId)
+                {
+                    _selectedPatient = fullPatient;
+                    OnPropertyChanged(nameof(SelectedPatient));
+                }
+
                 // Load appointments
                 var (appointments, _) = await _appointmentService.GetAppointmentsAsync(
                     page: 1,
-                    limit: 1000,
-                    patientId: SelectedPatient.Id);
+                    limit: 100,
+                    patientId: selectedId);
                 
                 PatientAppointments.Clear();
                 foreach (var apt in appointments.OrderByDescending(a => a.AppointmentDate))
@@ -212,8 +220,8 @@ namespace DentalApp.Desktop.ViewModels
                 // Load treatments
                 var (treatments, _) = await _treatmentService.GetTreatmentsAsync(
                     page: 1,
-                    limit: 1000,
-                    patientId: SelectedPatient.Id);
+                    limit: 100,
+                    patientId: selectedId);
                 
                 PatientTreatments.Clear();
                 foreach (var treatment in treatments.OrderByDescending(t => t.TreatmentDate))

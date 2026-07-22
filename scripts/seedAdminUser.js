@@ -3,9 +3,10 @@ const bcrypt = require('bcryptjs');
 const { pool } = require('../src/db');
 const logger = require('../src/utils/logger');
 const { serializeRolesCsv } = require('../src/utils/roles');
+const { normalizeEmail } = require('../src/utils/inputValidation');
 
 async function ensureAdminUser() {
-  const email = process.env.ADMIN_EMAIL || 'admin@mail.com';
+  const email = normalizeEmail(process.env.ADMIN_EMAIL || 'admin@mail.com');
   const password = process.env.ADMIN_PASSWORD || 'Admin@123456';
   const rolesCsv = serializeRolesCsv(['admin']);
 

@@ -76,7 +76,14 @@ Gerçek zamanlı bildirimler tüm istemcilerde **Socket.IO** ile çalışır
 ## ✨ Özellikler
 
 ### Güvenlik
-- ✅ Refresh token'lı JWT kimlik doğrulama (15dk access, 7 gün refresh)
+
+- Production ortamında admin ve diş hekimi rolleri için zorunlu TOTP MFA ve tek
+  kullanımlık kurtarma kodları
+- Hasta kimliği/protokolü tekilleştirme; gerekçeli, değişmez anamnez revizyonları
+- Klinik alanlarda diş hekimi yetkisi; sekreter için klinik veri redaksiyonu
+- Röntgen, fotoğraf, rapor ve imzalı onamlar için AES-256-GCM şifreli arşiv
+- Şifreli PostgreSQL yedekleme ve bütünlük doğrulamalı geri yükleme komutları
+- ✅ Refresh token'lı JWT kimlik doğrulama (1 saat access, 7 gün refresh)
 - ✅ Başarısız girişten sonra hesap kilitleme (5 deneme, 15dk kilit)
 - ✅ Şifre güçlülük kontrolü ve şifre geçmişi takibi
 - ✅ E-posta doğrulama ve şifre sıfırlama

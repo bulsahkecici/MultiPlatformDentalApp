@@ -125,6 +125,15 @@
                                  Margin="0,20,0,0"
                                  Visibility="{Binding SelectedPatient, Converter={StaticResource ObjectToCollapsedConverter}}"/>
 
+                        <Border BorderBrush="#DC2626" BorderThickness="2" CornerRadius="8"
+                                Background="#FEF2F2" Padding="10" Margin="0,0,0,12"
+                                Visibility="{Binding SelectedPatient.CriticalAlerts, Converter={StaticResource ObjectToVisibilityConverter}}">
+                            <StackPanel>
+                                <TextBlock Text="KRİTİK KLİNİK UYARI" Foreground="#991B1B" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding SelectedPatient.CriticalAlerts}" Foreground="#991B1B" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+
                         <!-- Hasta Bilgileri -->
                         <Expander Header="Hasta Bilgileri"
                                 IsExpanded="True"
@@ -132,6 +141,8 @@
                                 Visibility="{Binding SelectedPatient, Converter={StaticResource ObjectToVisibilityConverter}}">
                             <StackPanel Margin="10,10,0,10">
                                 <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.FullName, StringFormat='Ad Soyad: {0}'}"/>
+                                <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.ProtocolNumber, StringFormat='Protokol: {0}'}"/>
+                                <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.IdentityNumber, StringFormat='Kimlik: {0}'}"/>
                                 <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.Email, StringFormat='E-posta: {0}'}"/>
                                 <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.Phone, StringFormat='Telefon: {0}'}"/>
                                 <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.Address, StringFormat='Adres: {0}'}"/>
@@ -140,6 +151,9 @@
                                 <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.DateOfBirth, StringFormat='Doğum Tarihi: {0:dd.MM.yyyy}'}"/>
                                 <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.Gender, Converter={StaticResource GenderToTurkishConverter}, StringFormat='Cinsiyet: {0}'}"/>
                                 <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.BloodType, StringFormat='Kan Grubu: {0}'}"/>
+                                <TextBlock Margin="0,5,0,5" Foreground="#B91C1C" Text="{Binding SelectedPatient.Allergies, StringFormat='Alerjiler: {0}'}" TextWrapping="Wrap"/>
+                                <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.MedicalConditions, StringFormat='Tıbbi Durumlar: {0}'}" TextWrapping="Wrap"/>
+                                <TextBlock Margin="0,5,0,5" Text="{Binding SelectedPatient.CurrentMedications, StringFormat='Mevcut İlaçlar: {0}'}" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Expander>
                         

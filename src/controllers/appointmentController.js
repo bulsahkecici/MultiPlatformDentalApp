@@ -7,6 +7,7 @@ const { resolveEffectiveDentistId } = require('../utils/authorizationHelpers');
 const { sanitizeAuditChanges } = require('../utils/auditSanitizer');
 const logger = require('../utils/logger');
 const { notifyUser, notifyRole } = require('../services/notificationHub');
+const { parsePagePagination } = require('../utils/inputValidation');
 
 // Merkezi randevu durum geçiş matrisi (D6). Aynı duruma "geçiş" (no-op) her
 // zaman serbesttir; burada listelenmeyen HERHANGİ bir geçiş 409 ile reddedilir.
@@ -350,17 +351,8 @@ async function createAppointment(req, res, next) {
  */
 async function getAppointments(req, res, next) {
   try {
-    const {
-      page = 1,
-      limit = 20,
-      patientId,
-      dentistId,
-      startDate,
-      endDate,
-      status,
-    } = req.query;
-
-    const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+    const { patientId, dentistId, startDate, endDate, status } = req.query;
+    const { page, limit, offset } = parsePagePagination(req.query);
     const conditions = []; // appointments table doesn't have deleted_at
     const params = [];
     let paramIndex = 1;
@@ -405,7 +397,7 @@ async function getAppointments(req, res, next) {
     const total = parseInt(countResult.rows[0].count, 10);
 
     // Get appointments with patient and dentist info
-    params.push(parseInt(limit, 10), offset);
+    params.push(limit, offset);
     const result = await query(
       `SELECT 
         a.*,
@@ -426,13 +418,14 @@ async function getAppointments(req, res, next) {
     return res.status(200).json({
       appointments: result.rows,
       pagination: {
-        page: parseInt(page, 10),
-        limit: parseInt(limit, 10),
+        page,
+        limit,
         total,
-        pages: Math.ceil(total / parseInt(limit, 10)),
+        pages: Math.ceil(total / limit),
       },
     });
   } catch (err) {
+    if (err instanceof AppError) return next(err);
     logger.error({ err }, 'Failed to fetch appointments');
     return next(new AppError('Failed to fetch appointments', 500));
   }
@@ -522,6 +515,19 @@ async function updateAppointment(req, res, next) {
     // yalnızca ayrı reopenAppointment endpoint'inden mümkündür.
     if (status !== undefined && status !== existing.status) {
       assertValidStatusTransition(existing.status, status);
+    }
+
+    if (
+      status === 'completed' &&
+      existing.status !== 'completed' &&
+      !isDentist(req)
+    ) {
+      return next(
+        new AppError(
+          'Only the treating dentist can complete an appointment',
+          403,
+        ),
+      );
     }
 
     // Dişhekimi randevusunu başka bir dişhekimine devredemez (IDOR koruması);
@@ -637,7 +643,13 @@ async function updateAppointment(req, res, next) {
     params.push(req.user.sub);
     setClauses.push('updated_at = NOW()');
 
+    // İlk okumadan sonra durum başka bir istek tarafından değiştirilmişse
+    // eski duruma göre doğrulanmış bir güncellemenin yeni durumu ezmesine izin
+    // verme (optimistic concurrency guard).
+    const idParamIndex = paramIndex++;
     params.push(appointmentId);
+    const expectedStatusParamIndex = paramIndex++;
+    params.push(existing.status);
 
     // Randevunun doktor/tarih/saatini etkileyen bir alan değişiyorsa ve yeni
     // durum "engelleyici" ise (iptal/no-show değilse), create akışıyla aynı
@@ -666,7 +678,7 @@ async function updateAppointment(req, res, next) {
       const result = await client.query(
         `UPDATE appointments
          SET ${setClauses.join(', ')}
-         WHERE id = $${paramIndex}
+         WHERE id = $${idParamIndex} AND status = $${expectedStatusParamIndex}
          RETURNING *`,
         params,
       );
@@ -675,7 +687,12 @@ async function updateAppointment(req, res, next) {
     });
 
     if (!updated) {
-      return next(new AppError('Appointment not found', 404));
+      return next(
+        new AppError(
+          'Appointment was modified concurrently; reload and try again',
+          409,
+        ),
+      );
     }
 
     const ipAddress = getClientIp(req);
@@ -716,34 +733,43 @@ async function cancelAppointment(req, res, next) {
       return next(new AppError('Cancellation reason is required', 400));
     }
 
-    // Diş hekimi sadece kendi randevusunu iptal edebilir (IDOR koruması)
-    if (isDentist(req)) {
-      const ownership = await query(
-        'SELECT dentist_id FROM appointments WHERE id = $1',
+    // Durum kontrolü ve yazma aynı transaction/row lock altında yapılır.
+    // Böylece ayrı cancel endpoint'i merkezi geçiş matrisini atlayamaz ve iki
+    // eşzamanlı durum değişikliği birbirinin kararını ezemez.
+    const appointment = await withTransaction(async (client) => {
+      const current = await client.query(
+        'SELECT dentist_id, status FROM appointments WHERE id = $1 FOR UPDATE',
         [appointmentId],
       );
-      if (ownership.rows.length === 0) {
-        return next(new AppError('Appointment not found', 404));
+      if (current.rows.length === 0) {
+        throw new AppError('Appointment not found', 404);
       }
-      if (ownership.rows[0].dentist_id !== req.user.sub) {
-        return next(new AppError('Forbidden', 403));
+
+      const existing = current.rows[0];
+      if (isDentist(req) && existing.dentist_id !== req.user.sub) {
+        throw new AppError('Forbidden', 403);
       }
-    }
 
-    const result = await query(
-      `UPDATE appointments 
-       SET status = 'cancelled',
-           cancellation_reason = $1,
-           updated_by = $2,
-           updated_at = NOW()
-       WHERE id = $3
-       RETURNING *`,
-      [cancellationReason || null, req.user.sub, appointmentId],
-    );
+      assertValidStatusTransition(existing.status, 'cancelled');
 
-    if (result.rows.length === 0) {
-      return next(new AppError('Appointment not found', 404));
-    }
+      const result = await client.query(
+        `UPDATE appointments
+         SET status = 'cancelled',
+             cancellation_reason = $1,
+             updated_by = $2,
+             updated_at = NOW()
+         WHERE id = $3 AND status = $4
+         RETURNING *`,
+        [cancellationReason, req.user.sub, appointmentId, existing.status],
+      );
+      if (result.rows.length === 0) {
+        throw new AppError(
+          'Appointment was modified concurrently; reload and try again',
+          409,
+        );
+      }
+      return result.rows[0];
+    });
 
     const ipAddress = getClientIp(req);
     const userAgent = req.headers['user-agent'] || '';
@@ -761,9 +787,9 @@ async function cancelAppointment(req, res, next) {
       }),
     });
 
-    emitAppointmentNotification('cancelled', result.rows[0], req.user.sub);
+    emitAppointmentNotification('cancelled', appointment, req.user.sub);
 
-    return res.status(200).json({ appointment: result.rows[0] });
+    return res.status(200).json({ appointment });
   } catch (err) {
     if (err instanceof AppError) {
       return next(err);
@@ -857,6 +883,7 @@ async function reopenAppointment(req, res, next) {
              updated_by = $5,
              updated_at = NOW()
          WHERE id = $6
+           AND status = 'cancelled'
          RETURNING *`,
         [
           effectiveDentistId,
@@ -867,6 +894,12 @@ async function reopenAppointment(req, res, next) {
           appointmentId,
         ],
       );
+      if (result.rows.length === 0) {
+        throw new AppError(
+          'Appointment was modified concurrently; reload and try again',
+          409,
+        );
+      }
       return result.rows[0];
     });
 

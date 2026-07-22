@@ -27,12 +27,15 @@ const notificationsRouter = require('./routes/notifications');
 const dentistRouter = require('./routes/dentist');
 const paymentsRouter = require('./routes/payments');
 const institutionAgreementsRouter = require('./routes/institutionAgreements');
+const patientRecordsRouter = require('./routes/patientRecords');
 
 const app = express();
 const server = http.createServer(app);
 
-// Reverse proxy (nginx vb.) arkasında gerçek istemci IP'sini al — rate limit ve lockout için kritik
-app.set('trust proxy', 1);
+// Yalnızca yapılandırılmış proxy kaynaklarından gelen X-Forwarded-* başlıklarına
+// güven. Production varsayılanı "loopback" olduğundan internete açık backend
+// portuna doğrudan gelen istemci IP/rate-limit anahtarını taklit edemez.
+app.set('trust proxy', config.trustProxy);
 
 // Initialize Socket.IO
 initializeSocketIO(server);
@@ -76,6 +79,7 @@ app.use('/', notificationsRouter);
 app.use('/', dentistRouter);
 app.use('/', paymentsRouter);
 app.use('/', institutionAgreementsRouter);
+app.use('/', patientRecordsRouter);
 
 // 404 and error handlers
 app.use(notFoundHandler);

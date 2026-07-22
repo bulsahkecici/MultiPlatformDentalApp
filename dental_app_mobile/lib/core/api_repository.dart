@@ -10,9 +10,15 @@ class ApiRepository {
 
   // ---- Auth ----
 
-  Future<LoginResponse> login(String email, String password) async {
+  Future<LoginResponse> login(String email, String password,
+      {String? mfaCode}) async {
     final data = await client.post('/api/auth/login',
-        data: {'email': email, 'password': password});
+        data: {
+          'email': email,
+          'password': password,
+          if (mfaCode != null && mfaCode.isNotEmpty) 'mfaCode': mfaCode,
+        },
+        allowTokenRefresh: false);
     return LoginResponse.fromJson(data as Map<String, dynamic>);
   }
 
@@ -264,7 +270,7 @@ class ApiRepository {
         (data as Map<String, dynamic>)['statistics'] as Map<String, dynamic>);
   }
 
-  Future<List<User>> getUsers({int limit = 1000}) async {
+  Future<List<User>> getUsers({int limit = 100}) async {
     final data = await client.get('/api/users', query: {'limit': limit});
     final list = ((data as Map<String, dynamic>)['users'] ?? []) as List;
     return list.map((u) => User.fromJson(u as Map<String, dynamic>)).toList();

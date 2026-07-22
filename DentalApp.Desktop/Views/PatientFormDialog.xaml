@@ -22,6 +22,27 @@
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
+                <TextBox Text="{Binding Patient.ProtocolNumber}"
+                         materialDesign:HintAssist.Hint="Protokol Numarası"
+                         IsReadOnly="True"
+                         Visibility="{Binding IsEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"
+                         Margin="0,0,0,10"/>
+
+                <ComboBox SelectedValue="{Binding Patient.IdentityType}"
+                          SelectedValuePath="Tag"
+                          materialDesign:HintAssist.Hint="Kimlik Türü"
+                          Margin="0,0,0,10">
+                    <ComboBoxItem Content="T.C. Kimlik" Tag="tc"/>
+                    <ComboBoxItem Content="Yabancı Kimlik" Tag="ykn"/>
+                    <ComboBoxItem Content="Pasaport" Tag="passport"/>
+                    <ComboBoxItem Content="Diğer" Tag="other"/>
+                </ComboBox>
+
+                <TextBox Text="{Binding Patient.IdentityNumber, UpdateSourceTrigger=PropertyChanged}"
+                         materialDesign:HintAssist.Hint="Kimlik Numarası"
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,10"/>
+
                 <TextBox Text="{Binding Patient.FirstName, UpdateSourceTrigger=PropertyChanged}" 
                          materialDesign:HintAssist.Hint="Ad *" 
                          Style="{StaticResource MaterialDesignFloatingHintTextBox}"
@@ -110,6 +131,15 @@
                          MinHeight="60"
                          Margin="0,0,0,10"/>
 
+                <TextBox Text="{Binding Patient.CriticalAlerts, UpdateSourceTrigger=PropertyChanged}"
+                         materialDesign:HintAssist.Hint="Kritik Klinik Uyarılar"
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         BorderBrush="#DC2626"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         MinHeight="60"
+                         Margin="0,0,0,10"/>
+
                 <TextBox Text="{Binding Patient.MedicalConditions, UpdateSourceTrigger=PropertyChanged}" 
                          materialDesign:HintAssist.Hint="Tıbbi Durumlar" 
                          Style="{StaticResource MaterialDesignFloatingHintTextBox}"
@@ -152,6 +182,15 @@
                          TextWrapping="Wrap"
                          AcceptsReturn="True"
                          MinHeight="80"
+                         Margin="0,0,0,10"/>
+
+                <TextBox Text="{Binding Patient.AnamnesisReason, UpdateSourceTrigger=PropertyChanged}"
+                         materialDesign:HintAssist.Hint="Anamnez Değişiklik Gerekçesi *"
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Visibility="{Binding IsEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         MinHeight="60"
                          Margin="0,0,0,10"/>
             </StackPanel>
         </ScrollViewer>

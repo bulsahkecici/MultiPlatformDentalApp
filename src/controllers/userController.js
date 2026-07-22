@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
-const { query } = require('../db');
+const { query, withTransaction } = require('../db');
 const { AppError } = require('../utils/errorResponder');
 const { parseRolesCsv, serializeRolesCsv } = require('../utils/roles');
 const {
@@ -12,6 +12,10 @@ const { sendVerificationEmail } = require('../utils/emailService');
 const { logDataEvent, AuditEventType } = require('../utils/auditLogger');
 const { getClientIp } = require('../middlewares/accountLockout');
 const config = require('../config');
+const {
+  normalizeEmail,
+  parsePagePagination,
+} = require('../utils/inputValidation');
 
 /**
  * Create new user
@@ -20,7 +24,7 @@ const config = require('../config');
 async function createUser(req, res, next) {
   try {
     const {
-      email,
+      email: rawEmail,
       password,
       roles = [],
       firstName,
@@ -36,6 +40,7 @@ async function createUser(req, res, next) {
       diplomaNo,
       specializations, // Array of specialization names
     } = req.body || {};
+    const email = normalizeEmail(rawEmail);
 
     // Validate input
     if (!email || !validator.isEmail(email)) {
@@ -212,9 +217,8 @@ async function getDentists(req, res, next) {
 
 async function getUsers(req, res, next) {
   try {
-    const { page = 1, limit = 20, search = '', role = '' } = req.query;
-
-    const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+    const { search = '', role = '' } = req.query;
+    const { page, limit, offset } = parsePagePagination(req.query);
     const conditions = ['deleted_at IS NULL'];
     const params = [];
     let paramIndex = 1;
@@ -241,7 +245,7 @@ async function getUsers(req, res, next) {
     const total = parseInt(countResult.rows[0].count, 10);
 
     // Get users (first_name, last_name, phone, tc_no are on users table)
-    params.push(parseInt(limit, 10), offset);
+    params.push(limit, offset);
     const result = await query(
       `SELECT id, email, roles, email_verified, last_login_at, created_at, updated_at,
                     first_name, last_name, phone, tc_no
@@ -269,13 +273,14 @@ async function getUsers(req, res, next) {
     return res.status(200).json({
       users,
       pagination: {
-        page: parseInt(page, 10),
-        limit: parseInt(limit, 10),
+        page,
+        limit,
         total,
-        pages: Math.ceil(total / parseInt(limit, 10)),
+        pages: Math.ceil(total / limit),
       },
     });
   } catch (err) {
+    if (err instanceof AppError) return next(err);
     return next(new AppError('Failed to fetch users', 500));
   }
 }
@@ -324,7 +329,7 @@ async function getUserById(req, res, next) {
 async function updateUser(req, res, next) {
   try {
     const userId = parseInt(req.params.id, 10);
-    const { email } = req.body || {};
+    const email = normalizeEmail(req.body?.email);
 
     // Only allow email updates for now (roles handled separately)
     if (!email || !validator.isEmail(email)) {
@@ -506,17 +511,21 @@ async function changePassword(req, res, next) {
     // Hash new password
     const passwordHash = await bcrypt.hash(newPassword, 10);
 
-    // Update password
-    await query(
-      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
-      [passwordHash, userId],
-    );
-
-    // Add to password history
-    await query(
-      'INSERT INTO password_history (user_id, password_hash) VALUES ($1, $2)',
-      [userId, passwordHash],
-    );
+    // Şifre değişimi, geçmiş kaydı ve tüm refresh token'ların iptali atomik
+    // yürütülür. Kullanıcı değişiklikten sonra tüm cihazlarda yeniden giriş yapar.
+    await withTransaction(async (client) => {
+      await client.query(
+        'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+        [passwordHash, userId],
+      );
+      await client.query(
+        'INSERT INTO password_history (user_id, password_hash) VALUES ($1, $2)',
+        [userId, passwordHash],
+      );
+      await client.query('DELETE FROM refresh_tokens WHERE user_id = $1', [
+        userId,
+      ]);
+    });
 
     const ipAddress = getClientIp(req);
     const userAgent = req.headers['user-agent'] || '';

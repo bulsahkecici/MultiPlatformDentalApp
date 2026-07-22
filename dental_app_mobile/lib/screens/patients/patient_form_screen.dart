@@ -20,15 +20,20 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _firstName;
   late final TextEditingController _lastName;
+  late final TextEditingController _identityNumber;
   late final TextEditingController _phone;
   late final TextEditingController _email;
   late final TextEditingController _city;
   late final TextEditingController _address;
   late final TextEditingController _allergies;
   late final TextEditingController _medicalConditions;
+  late final TextEditingController _currentMedications;
+  late final TextEditingController _criticalAlerts;
+  late final TextEditingController _anamnesisReason;
   late final TextEditingController _notes;
   DateTime? _dateOfBirth;
   String? _gender;
+  String? _identityType;
   bool _saving = false;
 
   bool get _isEdit => widget.patient != null;
@@ -39,6 +44,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
     final p = widget.patient;
     _firstName = TextEditingController(text: p?.firstName ?? '');
     _lastName = TextEditingController(text: p?.lastName ?? '');
+    _identityNumber = TextEditingController(text: p?.identityNumber ?? '');
     _phone = TextEditingController(text: p?.phone ?? '');
     _email = TextEditingController(text: p?.email ?? '');
     _city = TextEditingController(text: p?.city ?? '');
@@ -46,8 +52,13 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
     _allergies = TextEditingController(text: p?.allergies ?? '');
     _medicalConditions =
         TextEditingController(text: p?.medicalConditions ?? '');
+    _currentMedications =
+        TextEditingController(text: p?.currentMedications ?? '');
+    _criticalAlerts = TextEditingController(text: p?.criticalAlerts ?? '');
+    _anamnesisReason = TextEditingController();
     _notes = TextEditingController(text: p?.notes ?? '');
     _gender = p?.gender;
+    _identityType = p?.identityType;
     if (p?.dateOfBirth != null && p!.dateOfBirth!.length >= 10) {
       _dateOfBirth = DateTime.tryParse(p.dateOfBirth!.substring(0, 10));
     }
@@ -58,12 +69,16 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
     for (final c in [
       _firstName,
       _lastName,
+      _identityNumber,
       _phone,
       _email,
       _city,
       _address,
       _allergies,
       _medicalConditions,
+      _currentMedications,
+      _criticalAlerts,
+      _anamnesisReason,
       _notes
     ]) {
       c.dispose();
@@ -79,6 +94,9 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
       id: widget.patient?.id ?? 0,
       firstName: _firstName.text.trim(),
       lastName: _lastName.text.trim(),
+      protocolNumber: widget.patient?.protocolNumber,
+      identityType: _identityType,
+      identityNumber: _identityNumber.text.trim(),
       dateOfBirth: _dateOfBirth != null
           ? DateFormat('yyyy-MM-dd').format(_dateOfBirth!)
           : null,
@@ -89,6 +107,9 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
       address: _address.text.trim(),
       allergies: _allergies.text.trim(),
       medicalConditions: _medicalConditions.text.trim(),
+      currentMedications: _currentMedications.text.trim(),
+      criticalAlerts: _criticalAlerts.text.trim(),
+      anamnesisReason: _isEdit ? _anamnesisReason.text.trim() : null,
       notes: _notes.text.trim(),
     );
     try {
@@ -120,6 +141,38 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (_isEdit && widget.patient?.protocolNumber != null) ...[
+              InputDecorator(
+                decoration: const InputDecoration(labelText: 'Protokol No'),
+                child: Text(widget.patient!.protocolNumber!),
+              ),
+              const SizedBox(height: 12),
+            ],
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _identityType,
+                    decoration: const InputDecoration(labelText: 'Kimlik Türü'),
+                    items: const [
+                      DropdownMenuItem(value: 'tc', child: Text('T.C. Kimlik')),
+                      DropdownMenuItem(value: 'ykn', child: Text('Yabancı Kimlik')),
+                      DropdownMenuItem(value: 'passport', child: Text('Pasaport')),
+                      DropdownMenuItem(value: 'other', child: Text('Diğer')),
+                    ],
+                    onChanged: (v) => setState(() => _identityType = v),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _identityNumber,
+                    decoration: const InputDecoration(labelText: 'Kimlik No'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _firstName,
               decoration: const InputDecoration(labelText: 'Ad *'),
@@ -198,6 +251,15 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
             ),
             const SizedBox(height: 12),
             TextFormField(
+              controller: _criticalAlerts,
+              decoration: const InputDecoration(
+                labelText: 'Kritik Klinik Uyarılar',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
               controller: _allergies,
               decoration: const InputDecoration(labelText: 'Alerjiler'),
             ),
@@ -208,6 +270,23 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
                   const InputDecoration(labelText: 'Tıbbi Durumlar'),
               maxLines: 2,
             ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _currentMedications,
+              decoration: const InputDecoration(labelText: 'Mevcut İlaçlar'),
+              maxLines: 2,
+            ),
+            if (_isEdit) ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _anamnesisReason,
+                decoration: const InputDecoration(
+                    labelText: 'Anamnez Değişiklik Gerekçesi *'),
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Değişiklik gerekçesi zorunludur'
+                    : null,
+              ),
+            ],
             const SizedBox(height: 12),
             TextFormField(
               controller: _notes,
