@@ -13,8 +13,15 @@ const {
   authLimiter,
   passwordResetLimiter,
   emailVerificationLimiter,
+  mutateLimiter,
 } = require('../middlewares/rateLimit');
 const { requireAuth } = require('../middlewares/auth');
+const {
+  getMfaStatus,
+  setupMfa,
+  enableMfa,
+  disableMfa,
+} = require('../controllers/mfaController');
 
 const router = express.Router();
 
@@ -23,6 +30,10 @@ router.post('/api/auth/login', authLimiter, login);
 router.post('/api/auth/refresh', authLimiter, refreshToken);
 router.post('/api/auth/logout', requireAuth, logout);
 router.get('/api/auth/me', requireAuth, getMe);
+router.get('/api/auth/mfa/status', requireAuth, getMfaStatus);
+router.post('/api/auth/mfa/setup', requireAuth, mutateLimiter, setupMfa);
+router.post('/api/auth/mfa/enable', requireAuth, mutateLimiter, enableMfa);
+router.post('/api/auth/mfa/disable', requireAuth, mutateLimiter, disableMfa);
 
 // Password reset
 router.post(

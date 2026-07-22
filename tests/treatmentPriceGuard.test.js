@@ -104,9 +104,21 @@ describe('Diş hekimi fiyatı göremediği gibi API üzerinden de değiştiremez
 
   it('PUT /api/treatments/:id — diş hekimi cost değiştirmeye çalışırsa 403 döner', async () => {
     db.query.mockImplementation((sql) => {
-      if (sql.includes('SELECT dentist_id, status, currency FROM treatments')) {
+      if (
+        sql.includes(
+          'SELECT dentist_id, status, currency, diagnosis, procedure_notes',
+        )
+      ) {
         return Promise.resolve({
-          rows: [{ dentist_id: 7, status: 'in_progress', currency: 'TRY' }],
+          rows: [
+            {
+              dentist_id: 7,
+              status: 'in_progress',
+              currency: 'TRY',
+              diagnosis: 'Karies',
+              procedure_notes: 'Dolgu tamamlandı',
+            },
+          ],
         });
       }
       return Promise.resolve({ rows: [], rowCount: 0 });
@@ -126,9 +138,21 @@ describe('Diş hekimi fiyatı göremediği gibi API üzerinden de değiştiremez
 
   it('PUT /api/treatments/:id — cost açıkça null gönderilirse (WPF/JSON serileştirme) engellenmez', async () => {
     db.query.mockImplementation((sql) => {
-      if (sql.includes('SELECT dentist_id, status, currency FROM treatments')) {
+      if (
+        sql.includes(
+          'SELECT dentist_id, status, currency, diagnosis, procedure_notes',
+        )
+      ) {
         return Promise.resolve({
-          rows: [{ dentist_id: 7, status: 'in_progress', currency: 'TRY' }],
+          rows: [
+            {
+              dentist_id: 7,
+              status: 'in_progress',
+              currency: 'TRY',
+              diagnosis: 'Karies',
+              procedure_notes: 'Dolgu tamamlandı',
+            },
+          ],
         });
       }
       if (sql.includes('UPDATE treatments')) {
@@ -147,7 +171,11 @@ describe('Diş hekimi fiyatı göremediği gibi API üzerinden de değiştiremez
 
   it('PUT /api/treatments/:id — cost içermeyen bir currency değeri tek başına engellenmez (istemciler klinik not güncellerken sabit "TRY" gönderebiliyor)', async () => {
     db.query.mockImplementation((sql) => {
-      if (sql.includes('SELECT dentist_id, status, currency FROM treatments')) {
+      if (
+        sql.includes(
+          'SELECT dentist_id, status, currency, diagnosis, procedure_notes',
+        )
+      ) {
         return Promise.resolve({
           rows: [{ dentist_id: 7, status: 'in_progress', currency: 'TRY' }],
         });
@@ -168,7 +196,11 @@ describe('Diş hekimi fiyatı göremediği gibi API üzerinden de değiştiremez
 
   it('PUT /api/treatments/:id — diş hekimi kendi tedavisinin klinik notunu (cost hariç) değiştirebilir', async () => {
     db.query.mockImplementation((sql) => {
-      if (sql.includes('SELECT dentist_id, status, currency FROM treatments')) {
+      if (
+        sql.includes(
+          'SELECT dentist_id, status, currency, diagnosis, procedure_notes',
+        )
+      ) {
         return Promise.resolve({
           rows: [{ dentist_id: 7, status: 'in_progress' }],
         });
@@ -191,7 +223,11 @@ describe('Diş hekimi fiyatı göremediği gibi API üzerinden de değiştiremez
 
   it('PUT /api/treatments/:id — admin/sekreter cost değiştirebilir', async () => {
     db.query.mockImplementation((sql) => {
-      if (sql.includes('SELECT dentist_id, status, currency FROM treatments')) {
+      if (
+        sql.includes(
+          'SELECT dentist_id, status, currency, diagnosis, procedure_notes',
+        )
+      ) {
         return Promise.resolve({
           rows: [{ dentist_id: null, status: 'in_progress' }],
         });

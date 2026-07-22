@@ -5,6 +5,7 @@ class AppError extends Error {
     this.statusCode = statusCode;
     if (details) {
       this.details = details;
+      if (typeof details.code === 'string') this.code = details.code;
     }
     Error.captureStackTrace?.(this, this.constructor);
   }
@@ -25,6 +26,10 @@ function errorResponder(err, req, res, next) {
           : err.message || 'Request failed.',
     },
   };
+
+  if (typeof err.code === 'string') {
+    response.error.code = err.code;
+  }
 
   if (isDevelopment) {
     if (err.details) {

@@ -262,7 +262,7 @@ namespace DentalApp.Desktop.ViewModels
                     return;
                 }
                 
-                var (patients, _) = await patientService.GetPatientsAsync(page: 1, limit: 1000);
+                var (patients, _) = await patientService.GetPatientsAsync(page: 1, limit: 100);
                 Patients.Clear();
                 foreach (var p in patients)
                 {

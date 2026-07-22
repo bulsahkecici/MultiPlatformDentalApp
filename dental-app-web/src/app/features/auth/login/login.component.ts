@@ -45,6 +45,12 @@ import { AuthService } from '../../../core/services/auth.service';
             </mat-error>
           </mat-form-field>
 
+          <mat-form-field appearance="outline" class="full-width" *ngIf="mfaRequired">
+            <mat-label>Doğrulama Kodu</mat-label>
+            <input matInput formControlName="mfaCode" inputmode="numeric" autocomplete="one-time-code">
+            <mat-icon matPrefix class="field-icon">security</mat-icon>
+          </mat-form-field>
+
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Şifre</mat-label>
             <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" required autocomplete="current-password">
@@ -163,6 +169,7 @@ export class LoginComponent {
   isLoading = false;
   errorMessage = '';
   hidePassword = true;
+  mfaRequired = false;
 
   constructor(
     private fb: FormBuilder,
@@ -171,7 +178,8 @@ export class LoginComponent {
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required]]
+      password: ['', [Validators.required]],
+      mfaCode: ['']
     });
   }
 
@@ -180,28 +188,34 @@ export class LoginComponent {
       this.isLoading = true;
       this.errorMessage = '';
       
-      const { email, password } = this.loginForm.value;
+      const { email, password, mfaCode } = this.loginForm.value;
       
-      this.authService.login(email, password).subscribe({
-        next: () => {
+      this.authService.login(email, password, mfaCode).subscribe({
+        next: (response) => {
           this.isLoading = false;
-          this.router.navigate(['/dashboard']);
+          this.router.navigate([response.mfaEnrollmentRequired ? '/mfa-setup' : '/dashboard']);
         },
         error: (error) => {
           this.isLoading = false;
           console.error('Login error:', error);
           
           // Daha detaylı hata mesajları
-          if (error.status === 0) {
+          const apiError = error.error?.error;
+          if (apiError?.code === 'MFA_REQUIRED') {
+            this.mfaRequired = true;
+            this.loginForm.get('mfaCode')?.setValidators([Validators.required]);
+            this.loginForm.get('mfaCode')?.updateValueAndValidity();
+            this.errorMessage = 'Kimlik doğrulama uygulamanızdaki 6 haneli kodu girin.';
+          } else if (error.status === 0) {
             this.errorMessage = 'Backend sunucusuna bağlanılamıyor. Sunucunun çalıştığından emin olun.';
           } else if (error.status === 401) {
-            this.errorMessage = error.error?.message || 'E-posta veya şifre hatalı.';
+            this.errorMessage = apiError?.message || 'E-posta, şifre veya doğrulama kodu hatalı.';
           } else if (error.status === 403) {
-            this.errorMessage = error.error?.message || 'Hesabınız kilitli veya e-posta doğrulanmamış.';
+            this.errorMessage = apiError?.message || 'Hesabınız kilitli veya e-posta doğrulanmamış.';
           } else if (error.status === 500) {
             this.errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.';
           } else {
-            this.errorMessage = error.error?.message || 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.';
+            this.errorMessage = apiError?.message || 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.';
           }
         }
       });

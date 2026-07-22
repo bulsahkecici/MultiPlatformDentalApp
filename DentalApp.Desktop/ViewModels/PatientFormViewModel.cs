@@ -193,7 +193,8 @@ namespace DentalApp.Desktop.ViewModels
         private bool IsValid()
         {
             return !string.IsNullOrWhiteSpace(Patient.FirstName) &&
-                   !string.IsNullOrWhiteSpace(Patient.LastName);
+                   !string.IsNullOrWhiteSpace(Patient.LastName) &&
+                   (!IsEditMode || !string.IsNullOrWhiteSpace(Patient.AnamnesisReason));
         }
 
         private async Task SavePatientAsync()

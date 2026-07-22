@@ -31,6 +31,10 @@ Thumbs.db
 dist/
 build/
 
+# Şifreli klinik belgeler ve veritabanı yedekleri çalışma verisidir
+data/patient-documents/
+backups/
+
 # Temporary files
 tmp/
 

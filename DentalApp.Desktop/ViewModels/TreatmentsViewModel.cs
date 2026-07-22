@@ -160,7 +160,7 @@ namespace DentalApp.Desktop.ViewModels
             {
                 var (treatments, pagination) = await _treatmentService.GetTreatmentsAsync(
                     page: CurrentPage,
-                    limit: 1000, // Tüm tedavileri almak için limit artırıldı
+                    limit: 100, // API'nin güvenli sayfa üst sınırı
                     patientId: SelectedPatientId,
                     startDate: StartDate,
                     endDate: EndDate);
@@ -245,7 +245,7 @@ namespace DentalApp.Desktop.ViewModels
         {
             try
             {
-                var (patients, _) = await _patientService.GetPatientsAsync(page: 1, limit: 1000);
+                var (patients, _) = await _patientService.GetPatientsAsync(page: 1, limit: 100);
                 Patients.Clear();
                 foreach (var p in patients)
                 {

@@ -16,6 +16,7 @@ import { Patient, Appointment, Treatment } from '../../core/models/models';
 import { PatientFormDialogComponent } from '../../shared/components/patient-form-dialog/patient-form-dialog.component';
 import { DataMapper } from '../../core/utils/data-mapper';
 import { MatListModule } from '@angular/material/list';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-patients',
@@ -105,7 +106,20 @@ import { MatListModule } from '@angular/material/list';
             </div>
           </div>
 
+          <div class="clinical-alert" *ngIf="hasClinicalAlert(selectedPatient)">
+            <mat-icon>warning</mat-icon>
+            <div>
+              <strong>Kritik klinik uyarı</strong>
+              <div *ngIf="selectedPatient.criticalAlerts">{{ selectedPatient.criticalAlerts }}</div>
+              <div *ngIf="selectedPatient.allergies"><b>Alerji:</b> {{ selectedPatient.allergies }}</div>
+              <div *ngIf="selectedPatient.medicalConditions"><b>Tıbbi durum:</b> {{ selectedPatient.medicalConditions }}</div>
+              <div *ngIf="selectedPatient.currentMedications"><b>İlaç:</b> {{ selectedPatient.currentMedications }}</div>
+            </div>
+          </div>
+
           <div class="info-grid">
+            <div class="info-item"><mat-icon>badge</mat-icon><span>{{ selectedPatient.protocolNumber || '-' }}</span></div>
+            <div class="info-item"><mat-icon>fingerprint</mat-icon><span>{{ selectedPatient.identityNumber || '-' }}</span></div>
             <div class="info-item"><mat-icon>call</mat-icon><span>{{ selectedPatient.phone || '-' }}</span></div>
             <div class="info-item"><mat-icon>mail_outline</mat-icon><span>{{ selectedPatient.email || '-' }}</span></div>
             <div class="info-item"><mat-icon>cake</mat-icon><span>{{ formatDate(selectedPatient.dateOfBirth) }}</span></div>
@@ -130,6 +144,39 @@ import { MatListModule } from '@angular/material/list';
                 {{ treatment.treatmentType }} · {{ treatment.status }}
               </mat-list-item>
             </mat-list>
+          </div>
+
+          <div class="section" *ngIf="canAccessClinicalRecords">
+            <h3><mat-icon>folder_shared</mat-icon>Şifreli Klinik Belgeler</h3>
+            <div class="document-upload">
+              <select [(ngModel)]="documentCategory">
+                <option value="radiograph">Röntgen / DICOM</option>
+                <option value="photo">Klinik fotoğraf</option>
+                <option value="consent">İmzalı onam</option>
+                <option value="report">Rapor</option>
+                <option value="other">Diğer</option>
+              </select>
+              <input [(ngModel)]="documentTitle" placeholder="Belge başlığı">
+              <input #documentFile type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.dcm">
+              <button mat-stroked-button (click)="uploadDocument(documentFile)">Yükle</button>
+            </div>
+            <mat-list dense *ngIf="patientDocuments.length">
+              <mat-list-item *ngFor="let document of patientDocuments">
+                <span>{{ document.title }} · {{ document.category }}</span>
+                <button mat-button (click)="downloadDocument(document)">İndir</button>
+                <button mat-button color="primary" *ngIf="document.category === 'consent' && canRecordConsent"
+                        (click)="recordConsent(document)">Onam Kaydı Oluştur</button>
+              </mat-list-item>
+            </mat-list>
+            <div *ngIf="patientConsents.length" class="consent-summary">
+              <strong>Onamlar:</strong>
+              <div *ngFor="let consent of patientConsents">
+                {{ consent.procedure_name }} · v{{ consent.form_version }} · {{ consent.status }}
+              </div>
+            </div>
+            <button mat-raised-button color="primary" (click)="exportPatientRecord()">
+              <mat-icon>download</mat-icon>Hasta Dosyasını Dışa Aktar
+            </button>
           </div>
 
           <div class="patient-actions">
@@ -251,6 +298,19 @@ import { MatListModule } from '@angular/material/list';
       text-align: center;
     }
     .no-selection mat-icon { font-size: 36px; width: 36px; height: 36px; color: var(--ink-300); }
+    .clinical-alert {
+      display: flex;
+      gap: 12px;
+      margin: 16px 0;
+      padding: 14px;
+      border: 2px solid #dc2626;
+      border-radius: 12px;
+      background: #fef2f2;
+      color: #991b1b;
+    }
+    .document-upload { display: grid; gap: 8px; margin-bottom: 12px; }
+    .document-upload select, .document-upload input { padding: 9px; border: 1px solid #cbd5e1; border-radius: 8px; }
+    .consent-summary { margin: 12px 0; padding: 10px; background: #ecfeff; border-radius: 8px; }
   `]
 })
 export class PatientsComponent implements OnInit {
@@ -258,6 +318,10 @@ export class PatientsComponent implements OnInit {
   selectedPatient: Patient | null = null;
   patientAppointments: Appointment[] = [];
   patientTreatments: Treatment[] = [];
+  patientDocuments: any[] = [];
+  patientConsents: any[] = [];
+  documentCategory = 'radiograph';
+  documentTitle = '';
   displayedColumns: string[] = ['name', 'phone', 'email'];
   searchTerm = '';
   isLoading = false;
@@ -266,7 +330,8 @@ export class PatientsComponent implements OnInit {
     private patientService: PatientService,
     private appointmentService: AppointmentService,
     private treatmentService: TreatmentService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -293,8 +358,13 @@ export class PatientsComponent implements OnInit {
   }
 
   selectPatient(patient: Patient): void {
-    this.selectedPatient = patient;
-    this.loadPatientDetails();
+    this.patientService.getPatient(patient.id).subscribe({
+      next: (response) => {
+        this.selectedPatient = DataMapper.mapPatient(response.patient);
+        this.loadPatientDetails();
+      },
+      error: (error) => console.error('Error loading patient detail:', error)
+    });
   }
 
   loadPatientDetails(): void {
@@ -313,6 +383,15 @@ export class PatientsComponent implements OnInit {
         this.patientTreatments = (response.treatments || []).map((t: any) => DataMapper.mapTreatment(t));
       }
     });
+
+    if (this.canAccessClinicalRecords) {
+      this.patientService.getDocuments(this.selectedPatient.id).subscribe({
+        next: response => this.patientDocuments = response.documents || []
+      });
+      this.patientService.getConsents(this.selectedPatient.id).subscribe({
+        next: response => this.patientConsents = response.consents || []
+      });
+    }
   }
 
   openPatientForm(): void {
@@ -364,5 +443,84 @@ export class PatientsComponent implements OnInit {
   formatDate(date?: string): string {
     if (!date) return '-';
     return new Date(date).toLocaleDateString('tr-TR');
+  }
+
+  hasClinicalAlert(patient: Patient): boolean {
+    return !!(
+      patient.clinicalAccess &&
+      (patient.criticalAlerts || patient.allergies || patient.medicalConditions || patient.currentMedications)
+    );
+  }
+
+  get canAccessClinicalRecords(): boolean {
+    const roles = this.authService.currentUser?.roles || [];
+    return roles.includes('dentist') || roles.includes('admin');
+  }
+
+  get canRecordConsent(): boolean {
+    return this.authService.currentUser?.roles?.includes('dentist') ?? false;
+  }
+
+  uploadDocument(input: HTMLInputElement): void {
+    if (!this.selectedPatient || !input.files?.length) return;
+    const file = input.files[0];
+    const title = this.documentTitle.trim() || file.name;
+    this.patientService.uploadDocument(this.selectedPatient.id, file, this.documentCategory, title)
+      .subscribe({
+        next: () => {
+          input.value = '';
+          this.documentTitle = '';
+          this.loadPatientDetails();
+        },
+        error: error => alert(error.error?.error?.message || 'Belge yüklenemedi')
+      });
+  }
+
+  downloadDocument(document: any): void {
+    if (!this.selectedPatient) return;
+    this.patientService.downloadDocument(this.selectedPatient.id, document.id).subscribe(blob => {
+      const url = URL.createObjectURL(blob);
+      const anchor = window.document.createElement('a');
+      anchor.href = url;
+      anchor.download = document.original_name || 'belge';
+      anchor.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  exportPatientRecord(): void {
+    if (!this.selectedPatient) return;
+    this.patientService.exportRecord(this.selectedPatient.id).subscribe(blob => {
+      const url = URL.createObjectURL(blob);
+      const anchor = window.document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${this.selectedPatient?.protocolNumber || 'hasta-dosyasi'}.html`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  recordConsent(document: any): void {
+    if (!this.selectedPatient) return;
+    const procedureName = prompt('Onam verilen işlem adı:');
+    const informationText = prompt('Hastaya aktarılan bilgilendirme özeti:');
+    const risks = prompt('Açıklanan risk ve komplikasyonlar:');
+    const alternatives = prompt('Açıklanan alternatifler:');
+    const signer = prompt('Hasta / kanuni temsilci adı soyadı:');
+    if (!procedureName || !informationText || !risks || !alternatives || !signer) return;
+    this.patientService.createConsent(this.selectedPatient.id, {
+      signedDocumentId: document.id,
+      consentType: 'procedure',
+      procedureName,
+      formVersion: '1.0',
+      informationText,
+      risks,
+      alternatives,
+      patientOrRepresentativeName: signer,
+      signedAt: new Date().toISOString()
+    }).subscribe({
+      next: () => this.loadPatientDetails(),
+      error: error => alert(error.error?.error?.message || 'Onam kaydı oluşturulamadı')
+    });
   }
 }

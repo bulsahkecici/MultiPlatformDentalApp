@@ -42,14 +42,14 @@ export class AuthService {
             catchError(() => {
                 this.clearTokens();
                 this.currentUserSubject.next(null);
-                localStorage.removeItem('currentUser');
+                sessionStorage.removeItem('currentUser');
                 return of(null);
             })
         ) as Observable<User | null>;
     }
 
-    login(email: string, password: string): Observable<LoginResponse> {
-        return this.apiService.post<LoginResponse>('/api/auth/login', { email, password })
+    login(email: string, password: string, mfaCode?: string): Observable<LoginResponse> {
+        return this.apiService.post<LoginResponse>('/api/auth/login', { email, password, mfaCode })
             .pipe(
                 tap(response => {
                     this.setTokens(response.accessToken, response.refreshToken);
@@ -66,29 +66,29 @@ export class AuthService {
         }
         this.clearTokens();
         this.currentUserSubject.next(null);
-        localStorage.removeItem('currentUser');
+        sessionStorage.removeItem('currentUser');
     }
 
     getAccessToken(): string | null {
-        return localStorage.getItem(this.accessTokenKey);
+        return sessionStorage.getItem(this.accessTokenKey);
     }
 
     getRefreshToken(): string | null {
-        return localStorage.getItem(this.refreshTokenKey);
+        return sessionStorage.getItem(this.refreshTokenKey);
     }
 
     setTokens(accessToken: string, refreshToken: string): void {
-        localStorage.setItem(this.accessTokenKey, accessToken);
-        localStorage.setItem(this.refreshTokenKey, refreshToken);
+        sessionStorage.setItem(this.accessTokenKey, accessToken);
+        sessionStorage.setItem(this.refreshTokenKey, refreshToken);
     }
 
     clearTokens(): void {
-        localStorage.removeItem(this.accessTokenKey);
-        localStorage.removeItem(this.refreshTokenKey);
+        sessionStorage.removeItem(this.accessTokenKey);
+        sessionStorage.removeItem(this.refreshTokenKey);
     }
 
     private loadUserFromStorage(): void {
-        const userJson = localStorage.getItem('currentUser');
+        const userJson = sessionStorage.getItem('currentUser');
         if (userJson) {
             try {
                 const user = JSON.parse(userJson);
@@ -100,6 +100,6 @@ export class AuthService {
     }
 
     private saveUserToStorage(user: User): void {
-        localStorage.setItem('currentUser', JSON.stringify(user));
+        sessionStorage.setItem('currentUser', JSON.stringify(user));
     }
 }

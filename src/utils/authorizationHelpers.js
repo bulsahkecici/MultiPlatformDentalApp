@@ -24,19 +24,23 @@ const { isDentist, isAdmin } = require('../middlewares/auth');
  * @returns {Promise<number|null>}
  */
 async function resolveEffectiveDentistId(req, queryFn, requestedDentistId) {
-  if (isDentist(req) && !isAdmin(req)) {
+  if (isDentist(req)) {
     if (
-      requestedDentistId !== undefined &&
-      requestedDentistId !== null &&
-      requestedDentistId !== '' &&
-      Number(requestedDentistId) !== Number(req.user.sub)
+      requestedDentistId === undefined ||
+      requestedDentistId === null ||
+      requestedDentistId === ''
     ) {
+      return req.user.sub;
+    }
+    if (!isAdmin(req) && Number(requestedDentistId) !== Number(req.user.sub)) {
       throw new AppError(
         'Dentists cannot create or take over records on behalf of another dentist',
         403,
       );
     }
-    return req.user.sub;
+    if (Number(requestedDentistId) === Number(req.user.sub)) {
+      return req.user.sub;
+    }
   }
 
   if (

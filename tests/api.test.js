@@ -44,6 +44,14 @@ describe('Randevu iptali', () => {
 
   it('PUT /api/appointments/:id/cancel — reason anahtarıyla iptal eder (web istemcisi)', async () => {
     db.query.mockImplementation((sql) => {
+      if (
+        sql.includes('SELECT dentist_id, status') &&
+        sql.includes('FOR UPDATE')
+      ) {
+        return Promise.resolve({
+          rows: [{ dentist_id: null, status: 'scheduled' }],
+        });
+      }
       if (sql.includes("status = 'cancelled'")) {
         return Promise.resolve({
           rows: [
@@ -78,6 +86,14 @@ describe('Randevu iptali', () => {
 
   it('DELETE /api/appointments/:id — desktop istemcisi için alias çalışır', async () => {
     db.query.mockImplementation((sql) => {
+      if (
+        sql.includes('SELECT dentist_id, status') &&
+        sql.includes('FOR UPDATE')
+      ) {
+        return Promise.resolve({
+          rows: [{ dentist_id: null, status: 'scheduled' }],
+        });
+      }
       if (sql.includes("status = 'cancelled'")) {
         return Promise.resolve({
           rows: [
@@ -122,7 +138,11 @@ describe('Tedavi güncelleme (deleted_at regresyonu)', () => {
 
   it('PUT /api/treatments/:id — UPDATE sorgusu voided (deleted_at dolu) kaydı hariç tutar', async () => {
     db.query.mockImplementation((sql) => {
-      if (sql.includes('SELECT dentist_id, status, currency FROM treatments')) {
+      if (
+        sql.includes(
+          'SELECT dentist_id, status, currency, diagnosis, procedure_notes',
+        )
+      ) {
         return Promise.resolve({
           rows: [{ dentist_id: null, status: 'in_progress', currency: 'TRY' }],
         });
@@ -138,7 +158,7 @@ describe('Tedavi güncelleme (deleted_at regresyonu)', () => {
     const res = await request(app)
       .put('/api/treatments/7')
       .set('Authorization', `Bearer ${adminToken()}`)
-      .send({ status: 'completed' });
+      .send({ cost: 1250 });
 
     expect(res.status).toBe(200);
 
@@ -354,8 +374,13 @@ describe('Randevu yetkilendirme (IDOR koruması — diş hekimi sadece kendi ran
 
   it('PUT /api/appointments/:id/cancel — başka dişhekiminin randevusunu iptal edemez', async () => {
     db.query.mockImplementation((sql) => {
-      if (sql.includes('SELECT dentist_id FROM appointments')) {
-        return Promise.resolve({ rows: [{ dentist_id: 1 }] });
+      if (
+        sql.includes('SELECT dentist_id, status') &&
+        sql.includes('FOR UPDATE')
+      ) {
+        return Promise.resolve({
+          rows: [{ dentist_id: 1, status: 'scheduled' }],
+        });
       }
       return Promise.resolve({ rows: [], rowCount: 0 });
     });

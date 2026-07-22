@@ -51,7 +51,7 @@ describe('Auth login (POST /api/auth/login)', () => {
 
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'admin@mail.com', password: 'Admin@123456' });
+      .send({ email: '  Admin@MAIL.COM ', password: 'Admin@123456' });
 
     expect(res.status).toBe(200);
     expect(res.body.accessToken).toBeDefined();
@@ -61,6 +61,10 @@ describe('Auth login (POST /api/auth/login)', () => {
       email: 'admin@mail.com',
       roles: ['admin'],
     });
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringContaining('FROM users WHERE email = $1'),
+      ['admin@mail.com'],
+    );
   });
 
   it('yanlış şifrede 401 döner', async () => {

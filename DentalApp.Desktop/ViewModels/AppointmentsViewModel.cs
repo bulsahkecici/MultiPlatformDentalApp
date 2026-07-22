@@ -313,7 +313,7 @@ namespace DentalApp.Desktop.ViewModels
                 
                 var (appointments, pagination) = await _appointmentService.GetAppointmentsAsync(
                     page: CurrentPage,
-                    limit: 1000, // Load all for scheduler
+                    limit: 100, // API'nin güvenli sayfa üst sınırı
                     startDate: SelectedDate,
                     endDate: SelectedDate);
 
@@ -347,7 +347,7 @@ namespace DentalApp.Desktop.ViewModels
         {
             try
             {
-                var (patients, _) = await _patientService.GetPatientsAsync(page: 1, limit: 1000);
+                var (patients, _) = await _patientService.GetPatientsAsync(page: 1, limit: 100);
                 Patients.Clear();
                 foreach (var p in patients)
                 {

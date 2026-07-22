@@ -260,14 +260,18 @@ class _PatientInfoCard extends StatelessWidget {
     final rows = <(IconData, String, String?)>[
       (Icons.phone, 'Telefon', patient.phone),
       (Icons.email_outlined, 'E-posta', patient.email),
+      (Icons.badge_outlined, 'Protokol no', patient.protocolNumber),
+      (Icons.fingerprint, 'Kimlik no', patient.identityNumber),
       (Icons.cake_outlined, 'Doğum tarihi', patient.dateOfBirth),
       (Icons.location_on_outlined, 'Adres', _address(patient)),
       (Icons.warning_amber, 'Alerjiler', patient.allergies),
+      (Icons.report_problem, 'Kritik klinik uyarılar', patient.criticalAlerts),
       (
         Icons.health_and_safety_outlined,
         'Tıbbi durumlar',
         patient.medicalConditions
       ),
+      (Icons.medication_outlined, 'Mevcut ilaçlar', patient.currentMedications),
       (Icons.notes, 'Notlar', patient.notes),
     ];
     return Card(

@@ -124,12 +124,24 @@ namespace DentalApp.Desktop.Models
         
         [JsonProperty("user")]
         public User User { get; set; } = new();
+
+        [JsonProperty("mfaEnrollmentRequired")]
+        public bool MfaEnrollmentRequired { get; set; }
     }
 
     public class Patient
     {
         [JsonProperty("id")]
         public int Id { get; set; }
+
+        [JsonProperty("protocol_number")]
+        public string? ProtocolNumber { get; set; }
+
+        [JsonProperty("identity_type")]
+        public string? IdentityType { get; set; }
+
+        [JsonProperty("identity_number")]
+        public string? IdentityNumber { get; set; }
         
         [JsonProperty("first_name")]
         public string FirstName { get; set; } = string.Empty;
@@ -172,6 +184,12 @@ namespace DentalApp.Desktop.Models
         
         [JsonProperty("current_medications")]
         public string? CurrentMedications { get; set; }
+
+        [JsonProperty("critical_alerts")]
+        public string? CriticalAlerts { get; set; }
+
+        [JsonIgnore]
+        public string? AnamnesisReason { get; set; }
         
         [JsonProperty("emergency_contact_name")]
         public string? EmergencyContactName { get; set; }

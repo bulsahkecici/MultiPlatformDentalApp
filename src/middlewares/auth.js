@@ -17,6 +17,19 @@ function requireAuth(req, res, next) {
     if (payload.tokenType !== 'access') {
       return next(new AppError('Unauthorized', 401));
     }
+    if (payload.mfaEnrollmentRequired) {
+      const allowedDuringEnrollment =
+        req.originalUrl.startsWith('/api/auth/mfa') ||
+        req.originalUrl === '/api/auth/me' ||
+        req.originalUrl === '/api/auth/logout';
+      if (!allowedDuringEnrollment) {
+        return next(
+          new AppError('MFA enrollment is required before continuing', 403, {
+            code: 'MFA_ENROLLMENT_REQUIRED',
+          }),
+        );
+      }
+    }
     req.user = payload;
     return next();
   } catch (e) {

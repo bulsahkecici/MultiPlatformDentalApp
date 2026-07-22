@@ -31,9 +31,21 @@ describe('PUT /api/treatments/:id — tamamlanmış tedavi klinik olarak salt ok
 
   it('tamamlanmış tedavinin tanısını doğrudan PUT ile değiştirmek 409 döner', async () => {
     db.query.mockImplementation((sql) => {
-      if (sql.includes('SELECT dentist_id, status, currency FROM treatments')) {
+      if (
+        sql.includes(
+          'SELECT dentist_id, status, currency, diagnosis, procedure_notes',
+        )
+      ) {
         return Promise.resolve({
-          rows: [{ dentist_id: 7, status: 'completed', currency: 'TRY' }],
+          rows: [
+            {
+              dentist_id: 7,
+              status: 'completed',
+              currency: 'TRY',
+              diagnosis: 'Karies',
+              procedure_notes: 'Dolgu tamamlandı',
+            },
+          ],
         });
       }
       return Promise.resolve({ rows: [], rowCount: 0 });
@@ -41,7 +53,7 @@ describe('PUT /api/treatments/:id — tamamlanmış tedavi klinik olarak salt ok
 
     const res = await request(app)
       .put('/api/treatments/9')
-      .set('Authorization', `Bearer ${adminToken()}`)
+      .set('Authorization', `Bearer ${dentistToken(7)}`)
       .send({ diagnosis: 'Yeni tanı' });
 
     expect(res.status).toBe(409);
@@ -53,9 +65,21 @@ describe('PUT /api/treatments/:id — tamamlanmış tedavi klinik olarak salt ok
 
   it('tamamlanmış tedavide cost admin/sekreter tarafından hâlâ PUT ile değiştirilebilir (finansal alan klinik revizyondan bağımsız)', async () => {
     db.query.mockImplementation((sql) => {
-      if (sql.includes('SELECT dentist_id, status, currency FROM treatments')) {
+      if (
+        sql.includes(
+          'SELECT dentist_id, status, currency, diagnosis, procedure_notes',
+        )
+      ) {
         return Promise.resolve({
-          rows: [{ dentist_id: 7, status: 'completed', currency: 'TRY' }],
+          rows: [
+            {
+              dentist_id: 7,
+              status: 'completed',
+              currency: 'TRY',
+              diagnosis: 'Karies',
+              procedure_notes: 'Dolgu tamamlandı',
+            },
+          ],
         });
       }
       if (sql.includes('UPDATE treatments')) {

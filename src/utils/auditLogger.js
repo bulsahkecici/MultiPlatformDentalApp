@@ -16,6 +16,9 @@ const AuditEventType = {
   EMAIL_VERIFICATION: 'email_verification',
   ACCOUNT_LOCKED: 'account_locked',
   ACCOUNT_UNLOCKED: 'account_unlocked',
+  MFA_ENABLED: 'mfa_enabled',
+  MFA_DISABLED: 'mfa_disabled',
+  MFA_FAILED: 'mfa_failed',
 
   // User management events
   USER_CREATED: 'user_created',
@@ -28,6 +31,7 @@ const AuditEventType = {
   PATIENT_UPDATED: 'patient_updated',
   PATIENT_DELETED: 'patient_deleted',
   PATIENT_VIEWED: 'patient_viewed',
+  PATIENT_EXPORTED: 'patient_exported',
 
   APPOINTMENT_CREATED: 'appointment_created',
   APPOINTMENT_UPDATED: 'appointment_updated',

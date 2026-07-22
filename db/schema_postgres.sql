@@ -21,6 +21,12 @@ CREATE TABLE IF NOT EXISTS users (
   failed_login_attempts INTEGER NOT NULL DEFAULT 0,
   account_locked_until TIMESTAMPTZ,
   last_login_at TIMESTAMPTZ,
+
+  -- TOTP multi-factor authentication
+  mfa_enabled BOOLEAN NOT NULL DEFAULT false,
+  mfa_secret_encrypted TEXT,
+  mfa_pending_secret_encrypted TEXT,
+  mfa_recovery_codes JSONB,
   
   -- Soft delete
   deleted_at TIMESTAMPTZ,
@@ -31,6 +37,21 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
+-- Uygulama e-postaları lowercase saklar; bu indeks eski/elle eklenen farklı
+-- büyük-küçük harfli kopyaların da aynı hesap olarak çakışmasını garanti eder.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM users
+    GROUP BY LOWER(BTRIM(email))
+    HAVING COUNT(*) > 1
+  ) THEN
+    RAISE EXCEPTION 'Case-insensitive duplicate user emails must be resolved before migration';
+  END IF;
+  UPDATE users SET email = LOWER(BTRIM(email))
+  WHERE email <> LOWER(BTRIM(email));
+END $$;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_lower ON users (LOWER(email));
 CREATE INDEX IF NOT EXISTS idx_users_email_verification_token ON users (email_verification_token);
 CREATE INDEX IF NOT EXISTS idx_users_password_reset_token ON users (password_reset_token);
 CREATE INDEX IF NOT EXISTS idx_users_deleted_at ON users (deleted_at);
@@ -81,8 +102,15 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs (created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs (resource_type, resource_id);
 
 -- Patients table
+CREATE SEQUENCE IF NOT EXISTS patient_protocol_seq;
 CREATE TABLE IF NOT EXISTS patients (
   id SERIAL PRIMARY KEY,
+  protocol_number VARCHAR(30) NOT NULL UNIQUE DEFAULT (
+    'P-' || TO_CHAR(CURRENT_DATE, 'YYYY') || '-' ||
+    LPAD(nextval('patient_protocol_seq')::TEXT, 6, '0')
+  ),
+  identity_type VARCHAR(20), -- tc, ykn, passport, other
+  identity_number VARCHAR(50),
   first_name VARCHAR(100) NOT NULL,
   last_name VARCHAR(100) NOT NULL,
   date_of_birth DATE,
@@ -98,6 +126,9 @@ CREATE TABLE IF NOT EXISTS patients (
   allergies TEXT,
   medical_conditions TEXT,
   current_medications TEXT,
+  critical_alerts TEXT,
+  anamnesis_confirmed_at TIMESTAMPTZ,
+  anamnesis_confirmed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
   emergency_contact_name VARCHAR(200),
   emergency_contact_phone VARCHAR(50),
   
@@ -119,9 +150,48 @@ CREATE TABLE IF NOT EXISTS patients (
 );
 
 CREATE INDEX IF NOT EXISTS idx_patients_name ON patients (last_name, first_name);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_patients_identity
+  ON patients (identity_type, UPPER(BTRIM(identity_number)))
+  WHERE identity_type IS NOT NULL AND identity_number IS NOT NULL AND deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_patients_protocol_number ON patients (protocol_number);
 CREATE INDEX IF NOT EXISTS idx_patients_email ON patients (email);
 CREATE INDEX IF NOT EXISTS idx_patients_phone ON patients (phone);
 CREATE INDEX IF NOT EXISTS idx_patients_deleted_at ON patients (deleted_at);
+
+-- Anamnez alanları doğrudan ezilmez; her klinik değişiklik önceki ve yeni
+-- değerleriyle ayrı bir revizyon olarak saklanır.
+CREATE TABLE IF NOT EXISTS patient_anamnesis_revisions (
+  id SERIAL PRIMARY KEY,
+  patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  previous_values JSONB NOT NULL,
+  new_values JSONB NOT NULL,
+  reason TEXT NOT NULL,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_patient_anamnesis_revisions_patient
+  ON patient_anamnesis_revisions (patient_id, created_at DESC);
+
+-- Şifreli dosya içeriği disk üzerinde tutulur; DB yalnızca klinik metadata,
+-- bütünlük hash'i ve rastgele storage anahtarını taşır.
+CREATE TABLE IF NOT EXISTS patient_documents (
+  id SERIAL PRIMARY KEY,
+  patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  category VARCHAR(30) NOT NULL CONSTRAINT chk_patient_documents_category
+    CHECK (category IN ('radiograph', 'photo', 'consent', 'report', 'identity', 'other')),
+  title VARCHAR(200) NOT NULL,
+  original_name VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(120) NOT NULL,
+  size_bytes INTEGER NOT NULL,
+  storage_key VARCHAR(100) NOT NULL UNIQUE,
+  sha256 VARCHAR(64) NOT NULL,
+  uploaded_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ,
+  deleted_by INTEGER REFERENCES users(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_patient_documents_patient
+  ON patient_documents (patient_id, created_at DESC);
 
 -- Appointments table
 CREATE TABLE IF NOT EXISTS appointments (
@@ -188,6 +258,44 @@ CREATE INDEX IF NOT EXISTS idx_treatments_patient_id ON treatments (patient_id);
 CREATE INDEX IF NOT EXISTS idx_treatments_appointment_id ON treatments (appointment_id);
 CREATE INDEX IF NOT EXISTS idx_treatments_dentist_id ON treatments (dentist_id);
 CREATE INDEX IF NOT EXISTS idx_treatments_date ON treatments (treatment_date);
+
+CREATE TABLE IF NOT EXISTS patient_consents (
+  id SERIAL PRIMARY KEY,
+  patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  treatment_id INTEGER REFERENCES treatments(id) ON DELETE SET NULL,
+  consent_type VARCHAR(80) NOT NULL,
+  procedure_name VARCHAR(200) NOT NULL,
+  form_version VARCHAR(40) NOT NULL,
+  information_text TEXT NOT NULL,
+  risks TEXT NOT NULL,
+  alternatives TEXT NOT NULL,
+  patient_or_representative_name VARCHAR(200) NOT NULL,
+  representative_relationship VARCHAR(100),
+  clinician_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  signed_document_id INTEGER NOT NULL REFERENCES patient_documents(id) ON DELETE RESTRICT,
+  signed_document_sha256 VARCHAR(64) NOT NULL,
+  signed_at TIMESTAMPTZ NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'signed'
+    CONSTRAINT chk_patient_consents_status CHECK (status IN ('signed', 'revoked')),
+  revoked_at TIMESTAMPTZ,
+  revoked_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  revocation_reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_patient_consents_patient
+  ON patient_consents (patient_id, signed_at DESC);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_patient_documents_category') THEN
+    ALTER TABLE patient_documents ADD CONSTRAINT chk_patient_documents_category
+      CHECK (category IN ('radiograph', 'photo', 'consent', 'report', 'identity', 'other'));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_patient_consents_status') THEN
+    ALTER TABLE patient_consents ADD CONSTRAINT chk_patient_consents_status
+      CHECK (status IN ('signed', 'revoked'));
+  END IF;
+END $$;
 
 -- Treatment plans table (multi-step treatment plans)
 CREATE TABLE IF NOT EXISTS treatment_plans (
@@ -400,6 +508,10 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS university VARCHAR(200);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS diploma_date DATE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS diploma_no VARCHAR(100);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS specializations TEXT; -- Comma-separated uzmanlık alanları
+ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_enabled BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_secret_encrypted TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_pending_secret_encrypted TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_recovery_codes JSONB;
 
 CREATE INDEX IF NOT EXISTS idx_users_name ON users (last_name, first_name);
 
@@ -615,3 +727,47 @@ END $$;
 -- kurum/kategori indirimini yeniden hesaplarken bu tutarı da düşer, böylece
 -- daha önce uygulanmış manuel indirim onay sırasında sessizce kaybolmaz.
 ALTER TABLE treatment_plans ADD COLUMN IF NOT EXISTS manual_discount_amount DECIMAL(10, 2) NOT NULL DEFAULT 0;
+
+-- =============================================================================
+-- Migration (2026-07, devam 4): hasta kimliği ve anamnez izlenebilirliği.
+-- =============================================================================
+CREATE SEQUENCE IF NOT EXISTS patient_protocol_seq;
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS protocol_number VARCHAR(30);
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS identity_type VARCHAR(20);
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS identity_number VARCHAR(50);
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS critical_alerts TEXT;
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS anamnesis_confirmed_at TIMESTAMPTZ;
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS anamnesis_confirmed_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE patients ALTER COLUMN protocol_number SET DEFAULT (
+  'P-' || TO_CHAR(CURRENT_DATE, 'YYYY') || '-' ||
+  LPAD(nextval('patient_protocol_seq')::TEXT, 6, '0')
+);
+UPDATE patients
+SET protocol_number = 'LEGACY-' || LPAD(id::TEXT, 8, '0')
+WHERE protocol_number IS NULL;
+ALTER TABLE patients ALTER COLUMN protocol_number SET NOT NULL;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_patients_identity_type') THEN
+    ALTER TABLE patients ADD CONSTRAINT chk_patients_identity_type
+      CHECK (identity_type IS NULL OR identity_type IN ('tc', 'ykn', 'passport', 'other'));
+  END IF;
+END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_patients_identity
+  ON patients (identity_type, UPPER(BTRIM(identity_number)))
+  WHERE identity_type IS NOT NULL AND identity_number IS NOT NULL AND deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_patients_protocol_number ON patients (protocol_number);
+
+CREATE TABLE IF NOT EXISTS patient_anamnesis_revisions (
+  id SERIAL PRIMARY KEY,
+  patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  previous_values JSONB NOT NULL,
+  new_values JSONB NOT NULL,
+  reason TEXT NOT NULL,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_patient_anamnesis_revisions_patient
+  ON patient_anamnesis_revisions (patient_id, created_at DESC);

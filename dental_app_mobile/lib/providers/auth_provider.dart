@@ -33,15 +33,24 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _isAuthenticated;
   bool get initialized => _initialized;
 
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(String email, String password, {String? mfaCode}) async {
     try {
-      final response = await _repository.login(email, password);
+      final response =
+          await _repository.login(email, password, mfaCode: mfaCode);
       final access = MobileAccessPolicy.forUser(response.user);
       if (!access.isSupported) {
         await _client.clearTokens();
         throw ApiException(
           'Mobil uygulamaya yalnızca patron ve diş hekimi hesapları giriş yapabilir.',
           statusCode: 403,
+        );
+      }
+      if (response.mfaEnrollmentRequired) {
+        await _client.clearTokens();
+        throw ApiException(
+          'Hesabınız için iki aşamalı doğrulama kurulumu zorunlu. İlk kurulumu web uygulamasından tamamlayın.',
+          statusCode: 403,
+          code: 'MFA_ENROLLMENT_REQUIRED',
         );
       }
       await _client.saveTokens(response.accessToken, response.refreshToken);
@@ -87,7 +96,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> logout() async {
     try {
-      await _repository.logout(null);
+      await _repository.logout(_client.refreshToken);
     } catch (_) {
       // Sunucuya ulaşılamıyorsa yoksay — lokal çıkış yeterli
     }

@@ -7,9 +7,10 @@ import 'config.dart';
 /// API hata sarmalayıcısı — kullanıcıya gösterilebilir Türkçe mesaj taşır.
 class ApiException implements Exception {
   final int? statusCode;
+  final String? code;
   final String message;
 
-  ApiException(this.message, {this.statusCode});
+  ApiException(this.message, {this.statusCode, this.code});
 
   @override
   String toString() => message;
@@ -51,6 +52,7 @@ class ApiClient {
   }
 
   String? get accessToken => _accessToken;
+  String? get refreshToken => _refreshToken;
   bool get hasToken => _accessToken != null;
 
   // ---- Token yönetimi ----
@@ -99,8 +101,10 @@ class ApiClient {
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) =>
       _request(() => _dio.get(path, queryParameters: query));
 
-  Future<dynamic> post(String path, {Object? data}) =>
-      _request(() => _dio.post(path, data: data));
+  Future<dynamic> post(String path,
+          {Object? data, bool allowTokenRefresh = true}) =>
+      _request(() => _dio.post(path, data: data),
+          allowTokenRefresh: allowTokenRefresh);
 
   Future<dynamic> put(String path, {Object? data}) =>
       _request(() => _dio.put(path, data: data));
@@ -109,7 +113,7 @@ class ApiClient {
       _request(() => _dio.delete(path, data: data));
 
   Future<dynamic> _request(Future<Response> Function() send,
-      {bool retried = false}) async {
+      {bool retried = false, bool allowTokenRefresh = true}) async {
     try {
       final response = await send();
       return response.data;
@@ -117,10 +121,12 @@ class ApiClient {
       final status = e.response?.statusCode;
 
       // 401 → bir kez refresh dene
-      if (status == 401 && !retried) {
+      final code = _extractCode(e);
+      if (status == 401 && allowTokenRefresh && !retried) {
         final refreshed = await _tryRefresh();
         if (refreshed) {
-          return _request(send, retried: true);
+          return _request(send,
+              retried: true, allowTokenRefresh: allowTokenRefresh);
         }
         await clearTokens();
         onSessionExpired?.call();
@@ -128,8 +134,19 @@ class ApiClient {
             statusCode: 401);
       }
 
-      throw ApiException(_extractMessage(e), statusCode: status);
+      throw ApiException(_extractMessage(e), statusCode: status, code: code);
     }
+  }
+
+  String? _extractCode(DioException e) {
+    final data = e.response?.data;
+    if (data is Map<String, dynamic>) {
+      final error = data['error'];
+      if (error is Map<String, dynamic> && error['code'] is String) {
+        return error['code'] as String;
+      }
+    }
+    return null;
   }
 
   String _extractMessage(DioException e) {

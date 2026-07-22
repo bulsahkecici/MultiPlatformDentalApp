@@ -8,16 +8,24 @@ export interface User {
     lastName?: string;
     phone?: string;
     tcNo?: string;
+    mfaEnabled?: boolean;
 }
 
 export interface LoginResponse {
     accessToken: string;
     refreshToken: string;
     user: User;
+    mfaEnrollmentRequired?: boolean;
 }
 
 export interface Patient {
     id: number;
+    protocolNumber?: string;
+    protocol_number?: string;
+    identityType?: string;
+    identity_type?: string;
+    identityNumber?: string;
+    identity_number?: string;
     firstName?: string;
     first_name?: string; // Backend format
     lastName?: string;
@@ -39,6 +47,12 @@ export interface Patient {
     medical_conditions?: string; // Backend format
     currentMedications?: string;
     current_medications?: string; // Backend format
+    criticalAlerts?: string;
+    critical_alerts?: string;
+    anamnesisConfirmedAt?: string;
+    anamnesis_confirmed_at?: string;
+    clinicalAccess?: boolean;
+    clinical_access?: boolean;
     emergencyContactName?: string;
     emergency_contact_name?: string; // Backend format
     emergencyContactPhone?: string;

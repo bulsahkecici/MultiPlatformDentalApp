@@ -7,6 +7,9 @@ export class DataMapper {
   static mapPatient(patient: any): Patient {
     return {
       id: patient.id,
+      protocolNumber: patient.protocol_number || patient.protocolNumber,
+      identityType: patient.identity_type || patient.identityType,
+      identityNumber: patient.identity_number || patient.identityNumber,
       firstName: patient.first_name || patient.firstName,
       lastName: patient.last_name || patient.lastName,
       dateOfBirth: patient.date_of_birth || patient.dateOfBirth,
@@ -21,6 +24,9 @@ export class DataMapper {
       allergies: patient.allergies,
       medicalConditions: patient.medical_conditions || patient.medicalConditions,
       currentMedications: patient.current_medications || patient.currentMedications,
+      criticalAlerts: patient.critical_alerts || patient.criticalAlerts,
+      anamnesisConfirmedAt: patient.anamnesis_confirmed_at || patient.anamnesisConfirmedAt,
+      clinicalAccess: patient.clinical_access ?? patient.clinicalAccess,
       emergencyContactName: patient.emergency_contact_name || patient.emergencyContactName,
       emergencyContactPhone: patient.emergency_contact_phone || patient.emergencyContactPhone,
       insuranceProvider: patient.insurance_provider || patient.insuranceProvider,
@@ -72,6 +78,8 @@ export class DataMapper {
   static mapPatientToBackend(patient: Partial<Patient>): any {
     return {
       first_name: patient.firstName || patient.first_name,
+      identity_type: patient.identityType || patient.identity_type,
+      identity_number: patient.identityNumber || patient.identity_number,
       last_name: patient.lastName || patient.last_name,
       date_of_birth: patient.dateOfBirth || patient.date_of_birth,
       gender: patient.gender,
@@ -85,6 +93,7 @@ export class DataMapper {
       allergies: patient.allergies,
       medical_conditions: patient.medicalConditions || patient.medical_conditions,
       current_medications: patient.currentMedications || patient.current_medications,
+      critical_alerts: patient.criticalAlerts || patient.critical_alerts,
       emergency_contact_name: patient.emergencyContactName || patient.emergency_contact_name,
       emergency_contact_phone: patient.emergencyContactPhone || patient.emergency_contact_phone,
       insurance_provider: patient.insuranceProvider || patient.insurance_provider,

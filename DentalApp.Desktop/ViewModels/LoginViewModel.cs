@@ -10,6 +10,7 @@ namespace DentalApp.Desktop.ViewModels
         private readonly AuthService _authService;
         private string _email = string.Empty;
         private string _password = string.Empty;
+        private string _mfaCode = string.Empty;
         private bool _isBusy;
         private string _errorMessage = string.Empty;
 
@@ -23,6 +24,12 @@ namespace DentalApp.Desktop.ViewModels
         {
             get => _password;
             set => SetProperty(ref _password, value);
+        }
+
+        public string MfaCode
+        {
+            get => _mfaCode;
+            set => SetProperty(ref _mfaCode, value);
         }
 
         public bool IsBusy
@@ -68,6 +75,10 @@ namespace DentalApp.Desktop.ViewModels
                 return "Giriş yapmadan önce e-posta adresinizi doğrulamanız gerekiyor.";
             if (msg.Contains("Oturum süresi doldu") || msg.Contains("Unauthorized"))
                 return "Oturum süresi doldu. Lütfen tekrar giriş yapın.";
+            if (msg.Contains("MFA_ENROLLMENT_REQUIRED"))
+                return "İki aşamalı doğrulama kurulumu zorunlu. İlk kurulumu web uygulamasından tamamlayın.";
+            if (msg.Contains("Multi-factor") || msg.Contains("MFA_REQUIRED"))
+                return "Kimlik doğrulama uygulamanızdaki 6 haneli kodu girin.";
 
             // JSON / yanıt hatası
             if (msg.Contains("parse") || msg.Contains("Failed to parse"))
@@ -97,7 +108,7 @@ namespace DentalApp.Desktop.ViewModels
 
             try
             {
-                var success = await _authService.LoginAsync(Email, Password);
+                var success = await _authService.LoginAsync(Email, Password, MfaCode);
                 if (success)
                 {
                     OnLoginSuccess?.Invoke();

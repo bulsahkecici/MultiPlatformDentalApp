@@ -3,8 +3,10 @@ const bcrypt = require('bcryptjs');
 const { pool } = require('../src/db');
 const logger = require('../src/utils/logger');
 const { serializeRolesCsv } = require('../src/utils/roles');
+const { normalizeEmail } = require('../src/utils/inputValidation');
 
 async function createUser(email, password, roles, commissionRate = null) {
+  email = normalizeEmail(email);
   const existing = await pool.query('SELECT id FROM users WHERE email = $1', [
     email,
   ]);

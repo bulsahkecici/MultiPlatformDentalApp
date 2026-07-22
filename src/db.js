@@ -18,7 +18,9 @@ const pool = new Pool({
   password: config.db.pass,
   max: config.db.max,
   idleTimeoutMillis: config.db.idleTimeoutMillis,
-  ssl: config.db.ssl ? { rejectUnauthorized: false } : undefined,
+  ssl: config.db.ssl
+    ? { rejectUnauthorized: config.db.sslRejectUnauthorized }
+    : undefined,
 });
 
 pool.on('error', (err) => {

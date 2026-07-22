@@ -405,7 +405,7 @@ namespace DentalApp.Desktop.ViewModels
         {
             try
             {
-                var response = await _apiService.GetAsync<UsersResponse>("/users?limit=1000");
+                var response = await _apiService.GetAsync<UsersResponse>("/users?limit=100");
                 if (response?.Users != null)
                 {
                     var list = response.Users;

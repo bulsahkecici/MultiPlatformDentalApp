@@ -52,6 +52,7 @@ class User {
   final bool emailVerified;
   final String firstName;
   final String lastName;
+  final bool mfaEnabled;
 
   User({
     required this.id,
@@ -60,6 +61,7 @@ class User {
     this.emailVerified = false,
     this.firstName = '',
     this.lastName = '',
+    this.mfaEnabled = false,
   });
 
   bool get isAdmin => roles.contains('admin');
@@ -83,6 +85,7 @@ class User {
           (_pick(json, 'email_verified', 'emailVerified') ?? false) == true,
       firstName: _toStr(_pick(json, 'first_name', 'firstName')),
       lastName: _toStr(_pick(json, 'last_name', 'lastName')),
+      mfaEnabled: (_pick(json, 'mfa_enabled', 'mfaEnabled') ?? false) == true,
     );
   }
 }
@@ -91,17 +94,20 @@ class LoginResponse {
   final String accessToken;
   final String refreshToken;
   final User user;
+  final bool mfaEnrollmentRequired;
 
   LoginResponse({
     required this.accessToken,
     required this.refreshToken,
     required this.user,
+    this.mfaEnrollmentRequired = false,
   });
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) => LoginResponse(
         accessToken: _toStr(json['accessToken']),
         refreshToken: _toStr(json['refreshToken']),
         user: User.fromJson(json['user'] as Map<String, dynamic>),
+        mfaEnrollmentRequired: json['mfaEnrollmentRequired'] == true,
       );
 }
 
@@ -138,6 +144,9 @@ class DentistSummary {
 
 class Patient {
   final int id;
+  final String? protocolNumber;
+  final String? identityType;
+  final String? identityNumber;
   final String firstName;
   final String lastName;
   final String? dateOfBirth;
@@ -149,11 +158,17 @@ class Patient {
   final String? notes;
   final String? allergies;
   final String? medicalConditions;
+  final String? currentMedications;
+  final String? criticalAlerts;
+  final String? anamnesisReason;
 
   Patient({
     required this.id,
     required this.firstName,
     required this.lastName,
+    this.protocolNumber,
+    this.identityType,
+    this.identityNumber,
     this.dateOfBirth,
     this.gender,
     this.email,
@@ -163,12 +178,21 @@ class Patient {
     this.notes,
     this.allergies,
     this.medicalConditions,
+    this.currentMedications,
+    this.criticalAlerts,
+    this.anamnesisReason,
   });
 
   String get fullName => '$firstName $lastName'.trim();
 
   factory Patient.fromJson(Map<String, dynamic> json) => Patient(
         id: _toInt(json['id']),
+        protocolNumber:
+            _toStrOrNull(_pick(json, 'protocol_number', 'protocolNumber')),
+        identityType:
+            _toStrOrNull(_pick(json, 'identity_type', 'identityType')),
+        identityNumber:
+            _toStrOrNull(_pick(json, 'identity_number', 'identityNumber')),
         firstName: _toStr(_pick(json, 'first_name', 'firstName')),
         lastName: _toStr(_pick(json, 'last_name', 'lastName')),
         dateOfBirth:
@@ -182,12 +206,20 @@ class Patient {
         allergies: _toStrOrNull(json['allergies']),
         medicalConditions: _toStrOrNull(
             _pick(json, 'medical_conditions', 'medicalConditions')),
+        currentMedications: _toStrOrNull(
+            _pick(json, 'current_medications', 'currentMedications')),
+        criticalAlerts:
+            _toStrOrNull(_pick(json, 'critical_alerts', 'criticalAlerts')),
       );
 
   Map<String, dynamic> toJson() => {
         // createPatient camelCase bekler; updatePatient iki biçimi de kabul eder.
         'firstName': firstName,
         'lastName': lastName,
+        if (identityType != null && identityType!.isNotEmpty)
+          'identityType': identityType,
+        if (identityNumber != null && identityNumber!.isNotEmpty)
+          'identityNumber': identityNumber,
         if (dateOfBirth != null && dateOfBirth!.isNotEmpty)
           'dateOfBirth': dateOfBirth,
         if (gender != null && gender!.isNotEmpty) 'gender': gender,
@@ -200,6 +232,12 @@ class Patient {
           'allergies': allergies,
         if (medicalConditions != null && medicalConditions!.isNotEmpty)
           'medicalConditions': medicalConditions,
+        if (currentMedications != null && currentMedications!.isNotEmpty)
+          'currentMedications': currentMedications,
+        if (criticalAlerts != null && criticalAlerts!.isNotEmpty)
+          'criticalAlerts': criticalAlerts,
+        if (anamnesisReason != null && anamnesisReason!.isNotEmpty)
+          'anamnesisReason': anamnesisReason,
       };
 }
 

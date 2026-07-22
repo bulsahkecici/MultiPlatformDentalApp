@@ -87,7 +87,8 @@ async function storeRefreshToken(userId, token, userAgent, ipAddress) {
  */
 async function verifyRefreshToken(token) {
   const result = await query(
-    `SELECT rt.*, u.id, u.email, u.roles, u.email_verified, u.deleted_at
+    `SELECT rt.*, u.id, u.email, u.roles, u.email_verified, u.deleted_at,
+            u.mfa_enabled
      FROM refresh_tokens rt
      JOIN users u ON rt.user_id = u.id
      WHERE rt.token = $1 AND rt.revoked_at IS NULL AND rt.expires_at > NOW()`,
