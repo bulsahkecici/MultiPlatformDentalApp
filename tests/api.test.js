@@ -97,10 +97,20 @@ describe('Randevu iptali', () => {
 
     const res = await request(app)
       .delete('/api/appointments/6')
-      .set('Authorization', `Bearer ${adminToken()}`);
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({ reason: 'Hasta talep etti' });
 
     expect(res.status).toBe(200);
     expect(res.body.appointment.status).toBe('cancelled');
+  });
+
+  it('PUT /api/appointments/:id/cancel — gerekçesiz iptal 400 döner', async () => {
+    const res = await request(app)
+      .put('/api/appointments/5/cancel')
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({});
+
+    expect(res.status).toBe(400);
   });
 });
 

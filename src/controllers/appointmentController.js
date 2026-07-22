@@ -3,8 +3,43 @@ const { AppError } = require('../utils/errorResponder');
 const { logDataEvent, AuditEventType } = require('../utils/auditLogger');
 const { getClientIp } = require('../middlewares/accountLockout');
 const { isDentist } = require('../middlewares/auth');
+const { resolveEffectiveDentistId } = require('../utils/authorizationHelpers');
+const { sanitizeAuditChanges } = require('../utils/auditSanitizer');
 const logger = require('../utils/logger');
 const { notifyUser, notifyRole } = require('../services/notificationHub');
+
+// Merkezi randevu durum geçiş matrisi (D6). Aynı duruma "geçiş" (no-op) her
+// zaman serbesttir; burada listelenmeyen HERHANGİ bir geçiş 409 ile reddedilir.
+// - completed: değiştirilemez (nihai durum).
+// - cancelled: normal PUT üzerinden hiçbir yere geçemez — yeniden açma yalnızca
+//   ayrı bir endpoint'ten (POST /:id/reopen) yapılabilir ki çakışma kontrolü
+//   kaçınılmaz olarak çalışsın (bkz. D6 senaryosu: sadece status alanı
+//   değiştirilerek iptal edilmiş bir randevunun sessizce yeniden aktifleşmesi).
+// - no_show: aynı şekilde normal PUT ile hiçbir yere geçemez; eski kayıt
+//   değişmeden yeni bir randevu oluşturulması önerilir.
+const STATUS_TRANSITIONS = {
+  scheduled: ['confirmed', 'cancelled', 'no_show'],
+  confirmed: ['completed', 'cancelled', 'no_show'],
+  completed: [],
+  cancelled: [],
+  no_show: [],
+};
+
+function assertValidStatusTransition(currentStatus, nextStatus) {
+  if (currentStatus === nextStatus) {
+    return; // no-op, her zaman izinli
+  }
+  const allowed = STATUS_TRANSITIONS[currentStatus] || [];
+  if (!allowed.includes(nextStatus)) {
+    throw new AppError(
+      `Invalid appointment status transition: ${currentStatus} -> ${nextStatus}` +
+        (currentStatus === 'cancelled'
+          ? '. Use POST /api/appointments/:id/reopen to reactivate a cancelled appointment.'
+          : ''),
+      409,
+    );
+  }
+}
 
 // Sadece "HH:mm:ss" şekline değil, gerçek saat/dakika/saniye aralığına da
 // bakar — eski `\d{2}:\d{2}:\d{2}` deseni "09:60:00" gibi geçersiz bir saati
@@ -155,21 +190,27 @@ async function createAppointment(req, res, next) {
     return next(new AppError('End time must be after start time', 400));
   }
 
-  const effectiveDentistId = dentistId || req.user.sub;
-  const insertParams = [
-    patientId,
-    effectiveDentistId,
-    appointmentDate,
-    startTime,
-    endTime,
-    appointmentType || null,
-    notes || null,
-    status || 'scheduled',
-    req.user.sub,
-    req.user.sub,
-  ];
-
   try {
+    // Diş hekimi başka bir doktor adına randevu oluşturamaz; sekreter/admin
+    // seçtiği dentistId'nin gerçekten aktif bir dişhekimi olduğu doğrulanır.
+    const effectiveDentistId = await resolveEffectiveDentistId(
+      req,
+      query,
+      dentistId,
+    );
+    const insertParams = [
+      patientId,
+      effectiveDentistId,
+      appointmentDate,
+      startTime,
+      endTime,
+      appointmentType || null,
+      notes || null,
+      status || 'scheduled',
+      req.user.sub,
+      req.user.sub,
+    ];
+
     // Çakışma kontrolü + ekleme tek transaction içinde ve dişhekimi+tarih
     // bazında bir advisory lock ile serileştirilir. Bu olmadan iki eşzamanlı
     // istek çakışma kontrolünü birlikte geçip aynı slota iki randevu yazabilir
@@ -221,7 +262,13 @@ async function createAppointment(req, res, next) {
       userAgent,
       resourceType: 'appointment',
       resourceId: appointment.id,
-      changes: { patientId, appointmentDate, startTime, endTime },
+      changes: sanitizeAuditChanges('appointment', {
+        patientId,
+        appointmentDate,
+        startTime,
+        endTime,
+        dentistId: appointment.dentist_id,
+      }),
     });
 
     emitAppointmentNotification('created', appointment, req.user.sub);
@@ -467,11 +514,28 @@ async function updateAppointment(req, res, next) {
       cancellationReason,
     } = req.body || {};
 
-    if (dentistId) {
-      // Dişhekimi randevusunu başka bir dişhekimine devredemez (IDOR koruması)
-      if (isDentist(req) && dentistId !== req.user.sub) {
-        return next(new AppError('Forbidden', 403));
-      }
+    // Randevu durumu artık serbest metin gibi davranmıyor — sabit bir geçiş
+    // matrisine tabi (D6). Bu, "cancelled -> completed" gibi mantıksız
+    // sıçramaları ve iptal edilmiş bir randevunun normal PUT ile (çakışma
+    // kontrolünden geçmeden) sessizce yeniden aktifleşmesini de engeller:
+    // cancelled/no_show'dan çıkış listede hiç yok, bu yüzden yeniden açma
+    // yalnızca ayrı reopenAppointment endpoint'inden mümkündür.
+    if (status !== undefined && status !== existing.status) {
+      assertValidStatusTransition(existing.status, status);
+    }
+
+    // Dişhekimi randevusunu başka bir dişhekimine devredemez (IDOR koruması);
+    // sekreter/admin GERÇEKTEN farklı bir dentistId seçiyorsa (aynı değeri
+    // tekrar göndermek bir değişiklik sayılmaz), seçilenin aktif bir
+    // dişhekimi olduğu doğrulanır.
+    let effectiveDentistId = existing.dentist_id;
+    if (
+      dentistId !== undefined &&
+      dentistId !== null &&
+      dentistId !== '' &&
+      Number(dentistId) !== Number(existing.dentist_id)
+    ) {
+      effectiveDentistId = await resolveEffectiveDentistId(req, query, dentistId);
     }
 
     if (startTime !== undefined && !isValidTimeString(startTime)) {
@@ -507,7 +571,6 @@ async function updateAppointment(req, res, next) {
     // "sadece startTime gönderildi" gibi kısmi güncellemelerde de nihai
     // (kaydedilecek) aralık doğru şekilde bitiş>başlangıç ve çakışma
     // kontrolünden geçer.
-    const effectiveDentistId = dentistId || existing.dentist_id;
     const effectiveDate = appointmentDate || existing.appointment_date;
     const effectiveStart = startTime || existing.start_time;
     const effectiveEnd = endTime || existing.end_time;
@@ -522,9 +585,9 @@ async function updateAppointment(req, res, next) {
     const params = [];
     let paramIndex = 1;
 
-    if (dentistId) {
+    if (dentistId !== undefined && dentistId !== null && dentistId !== '') {
       setClauses.push(`dentist_id = $${paramIndex++}`);
-      params.push(dentistId);
+      params.push(effectiveDentistId);
     }
 
     if (appointmentDate) {
@@ -621,7 +684,7 @@ async function updateAppointment(req, res, next) {
       userAgent,
       resourceType: 'appointment',
       resourceId: appointmentId,
-      changes: req.body,
+      changes: sanitizeAuditChanges('appointment', req.body),
     });
 
     emitAppointmentNotification('updated', updated, req.user.sub);
@@ -644,6 +707,10 @@ async function cancelAppointment(req, res, next) {
     // Web istemcisi `reason`, desktop `cancellationReason` gönderir — ikisini de kabul et
     const body = req.body || {};
     const cancellationReason = body.cancellationReason ?? body.reason;
+
+    if (!cancellationReason || !String(cancellationReason).trim()) {
+      return next(new AppError('Cancellation reason is required', 400));
+    }
 
     // Diş hekimi sadece kendi randevusunu iptal edebilir (IDOR koruması)
     if (isDentist(req)) {
@@ -684,14 +751,146 @@ async function cancelAppointment(req, res, next) {
       userAgent,
       resourceType: 'appointment',
       resourceId: appointmentId,
-      changes: { status: 'cancelled', cancellationReason },
+      changes: sanitizeAuditChanges('appointment', {
+        status: 'cancelled',
+        cancellationReason,
+      }),
     });
 
     emitAppointmentNotification('cancelled', result.rows[0], req.user.sub);
 
     return res.status(200).json({ appointment: result.rows[0] });
   } catch (err) {
+    if (err instanceof AppError) {
+      return next(err);
+    }
     return next(new AppError('Failed to cancel appointment', 500));
+  }
+}
+
+/**
+ * İptal edilmiş bir randevuyu yeniden aktifleştirir — normal PUT'un aksine
+ * bu, çakışma kontrolünü HER ZAMAN (tarih/saat/doktor değişmese bile) çalıştırır
+ * (D6). Yalnızca 'cancelled' durumundaki randevular için kullanılabilir;
+ * 'no_show' için yeni bir randevu oluşturulması önerilir (bkz. matris yorumu).
+ */
+async function reopenAppointment(req, res, next) {
+  try {
+    const appointmentId = parseInt(req.params.id, 10);
+
+    const current = await query(
+      'SELECT dentist_id, appointment_date, start_time, end_time, status FROM appointments WHERE id = $1',
+      [appointmentId],
+    );
+    if (current.rows.length === 0) {
+      return next(new AppError('Appointment not found', 404));
+    }
+    const existing = current.rows[0];
+
+    if (isDentist(req) && existing.dentist_id !== req.user.sub) {
+      return next(new AppError('Forbidden', 403));
+    }
+
+    if (existing.status !== 'cancelled') {
+      return next(
+        new AppError(
+          `Only a cancelled appointment can be reopened (current status: ${existing.status})`,
+          409,
+        ),
+      );
+    }
+
+    const {
+      dentistId,
+      appointmentDate,
+      startTime,
+      endTime,
+    } = req.body || {};
+
+    let effectiveDentistId = existing.dentist_id;
+    if (
+      dentistId !== undefined &&
+      dentistId !== null &&
+      dentistId !== '' &&
+      Number(dentistId) !== Number(existing.dentist_id)
+    ) {
+      effectiveDentistId = await resolveEffectiveDentistId(req, query, dentistId);
+    }
+
+    if (startTime !== undefined && !isValidTimeString(startTime)) {
+      return next(new AppError('Invalid start time format', 400));
+    }
+    if (endTime !== undefined && !isValidTimeString(endTime)) {
+      return next(new AppError('Invalid end time format', 400));
+    }
+
+    const effectiveDate = appointmentDate || existing.appointment_date;
+    const effectiveStart = startTime || existing.start_time;
+    const effectiveEnd = endTime || existing.end_time;
+
+    if (effectiveEnd <= effectiveStart) {
+      return next(new AppError('End time must be after start time', 400));
+    }
+
+    const updated = await withTransaction(async (client) => {
+      // Çakışma kontrolü koşulsuz çalışır — bu fonksiyonun tüm amacı bu
+      // (bkz. yukarıdaki yorum ve appointmentUpdate.test.js).
+      await assertNoConflict(client, {
+        dentistId: effectiveDentistId,
+        appointmentDate: effectiveDate,
+        startTime: effectiveStart,
+        endTime: effectiveEnd,
+        excludeAppointmentId: appointmentId,
+      });
+
+      const result = await client.query(
+        `UPDATE appointments
+         SET status = 'scheduled',
+             dentist_id = $1,
+             appointment_date = $2,
+             start_time = $3,
+             end_time = $4,
+             cancellation_reason = NULL,
+             updated_by = $5,
+             updated_at = NOW()
+         WHERE id = $6
+         RETURNING *`,
+        [
+          effectiveDentistId,
+          effectiveDate,
+          effectiveStart,
+          effectiveEnd,
+          req.user.sub,
+          appointmentId,
+        ],
+      );
+      return result.rows[0];
+    });
+
+    await logDataEvent({
+      eventType: AuditEventType.APPOINTMENT_UPDATED,
+      userId: req.user.sub,
+      ipAddress: getClientIp(req),
+      userAgent: req.headers['user-agent'] || '',
+      resourceType: 'appointment',
+      resourceId: appointmentId,
+      changes: sanitizeAuditChanges('appointment', {
+        reopened: true,
+        appointmentDate: effectiveDate,
+        startTime: effectiveStart,
+        endTime: effectiveEnd,
+      }),
+    });
+
+    emitAppointmentNotification('updated', updated, req.user.sub);
+
+    return res.status(200).json({ appointment: updated });
+  } catch (err) {
+    if (err instanceof AppError) {
+      return next(err);
+    }
+    logger.error({ err }, 'Failed to reopen appointment');
+    return next(new AppError('Failed to reopen appointment', 500));
   }
 }
 
@@ -701,4 +900,5 @@ module.exports = {
   getAppointmentById,
   updateAppointment,
   cancelAppointment,
+  reopenAppointment,
 };
