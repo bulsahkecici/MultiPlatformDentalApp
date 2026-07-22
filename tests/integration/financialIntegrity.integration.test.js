@@ -1,5 +1,10 @@
 const request = require('supertest');
-const { pool, resetDatabase, createUser, createPatient } = require('./dbHelper');
+const {
+  pool,
+  resetDatabase,
+  createUser,
+  createPatient,
+} = require('./dbHelper');
 const { app } = require('../../src/server');
 
 async function createApprovedPlan(app, admin, patient, dentist, items) {
@@ -29,10 +34,16 @@ describe('Finansal bütünlük (gerçek PostgreSQL)', () => {
     const admin = await createUser({ roles: ['admin'] });
     const patient = await createPatient();
 
-    const { planId, approved } = await createApprovedPlan(app, admin, patient, null, [
-      { toothNumber: '11', treatmentType: 'Dolgu', cost: 1000 },
-      { toothNumber: '12', treatmentType: 'Kanal', cost: 2000 },
-    ]);
+    const { planId, approved } = await createApprovedPlan(
+      app,
+      admin,
+      patient,
+      null,
+      [
+        { toothNumber: '11', treatmentType: 'Dolgu', cost: 1000 },
+        { toothNumber: '12', treatmentType: 'Kanal', cost: 2000 },
+      ],
+    );
     expect(approved.status).toBe(200);
     expect(parseFloat(approved.body.plan.total_estimated_cost)).toBe(3000);
 
@@ -44,7 +55,7 @@ describe('Finansal bütünlük (gerçek PostgreSQL)', () => {
     expect(parseFloat(debt.rows[0].remaining_debt)).toBe(3000);
 
     const charge = await pool.query(
-      `SELECT * FROM financial_transactions WHERE treatment_plan_id = $1 AND transaction_type = 'charge'`,
+      "SELECT * FROM financial_transactions WHERE treatment_plan_id = $1 AND transaction_type = 'charge'",
       [planId],
     );
     expect(charge.rows).toHaveLength(1);
@@ -86,7 +97,11 @@ describe('Finansal bütünlük (gerçek PostgreSQL)', () => {
     const discountRes = await request(app)
       .post('/api/payments/discount')
       .set('Authorization', `Bearer ${admin.token}`)
-      .send({ treatmentPlanId: planId, discountAmount: 150, reason: 'Sadık hasta' });
+      .send({
+        treatmentPlanId: planId,
+        discountAmount: 150,
+        reason: 'Sadık hasta',
+      });
     expect(discountRes.status).toBe(200);
 
     const approved = await request(app)
@@ -151,7 +166,7 @@ describe('Finansal bütünlük (gerçek PostgreSQL)', () => {
     expect(parseFloat(debt.rows[0].remaining_debt)).toBe(0);
 
     const reversal = await pool.query(
-      `SELECT * FROM financial_transactions WHERE treatment_plan_id = $1 AND transaction_type = 'reversal'`,
+      "SELECT * FROM financial_transactions WHERE treatment_plan_id = $1 AND transaction_type = 'reversal'",
       [planId],
     );
     expect(reversal.rows).toHaveLength(1);
@@ -183,7 +198,10 @@ describe('Finansal bütünlük (gerçek PostgreSQL)', () => {
 
   it('doktor komisyonu plansız ödemede oluşmaz, planlı ödemede oluşur ve iade oranında geri düşer', async () => {
     const admin = await createUser({ roles: ['admin'] });
-    const dentist = await createUser({ roles: ['dentist'], commissionRate: 20 });
+    const dentist = await createUser({
+      roles: ['dentist'],
+      commissionRate: 20,
+    });
     const patient = await createPatient();
 
     // Plansız ödeme — komisyon oluşmamalı.

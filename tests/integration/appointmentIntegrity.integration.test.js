@@ -1,5 +1,10 @@
 const request = require('supertest');
-const { pool, resetDatabase, createUser, createPatient } = require('./dbHelper');
+const {
+  pool,
+  resetDatabase,
+  createUser,
+  createPatient,
+} = require('./dbHelper');
 const { app } = require('../../src/server');
 
 describe('Randevu bütünlüğü (gerçek PostgreSQL)', () => {
@@ -81,7 +86,7 @@ describe('Randevu bütünlüğü (gerçek PostgreSQL)', () => {
     expect(statuses).toEqual([201, 409]);
 
     const count = await pool.query(
-      `SELECT COUNT(*) FROM appointments WHERE dentist_id = $1 AND appointment_date = '2026-08-05'`,
+      "SELECT COUNT(*) FROM appointments WHERE dentist_id = $1 AND appointment_date = '2026-08-05'",
       [dentist.id],
     );
     expect(parseInt(count.rows[0].count, 10)).toBe(1);

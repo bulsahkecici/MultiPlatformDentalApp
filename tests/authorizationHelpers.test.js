@@ -1,4 +1,6 @@
-const { resolveEffectiveDentistId } = require('../src/utils/authorizationHelpers');
+const {
+  resolveEffectiveDentistId,
+} = require('../src/utils/authorizationHelpers');
 
 function makeReq(roles, sub) {
   return { user: { sub, roles } };

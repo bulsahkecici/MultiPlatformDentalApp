@@ -123,7 +123,9 @@ describe('Tedavi güncelleme (deleted_at regresyonu)', () => {
   it('PUT /api/treatments/:id — UPDATE sorgusu voided (deleted_at dolu) kaydı hariç tutar', async () => {
     db.query.mockImplementation((sql) => {
       if (sql.includes('SELECT dentist_id, status, currency FROM treatments')) {
-        return Promise.resolve({ rows: [{ dentist_id: null, status: 'in_progress', currency: 'TRY' }] });
+        return Promise.resolve({
+          rows: [{ dentist_id: null, status: 'in_progress', currency: 'TRY' }],
+        });
       }
       if (sql.includes('UPDATE treatments')) {
         return Promise.resolve({
@@ -158,7 +160,9 @@ describe('DELETE /api/treatments/:id — tedavi kaydı asla hard-delete edilmez 
   it('DELETE isteği bir UPDATE (soft void) üretir, hiçbir zaman DELETE FROM treatments çalıştırmaz', async () => {
     db.query.mockImplementation((sql) => {
       if (sql.includes('SELECT dentist_id, void_status FROM treatments')) {
-        return Promise.resolve({ rows: [{ dentist_id: null, void_status: null }] });
+        return Promise.resolve({
+          rows: [{ dentist_id: null, void_status: null }],
+        });
       }
       if (
         sql.includes('UPDATE treatments') &&
@@ -590,7 +594,14 @@ describe('Tedavi planı oluşturma — plan ve kalemler tek transaction', () => 
       }
       if (sql.includes('UPDATE treatment_plans SET total_estimated_cost')) {
         return Promise.resolve({
-          rows: [{ id: 41, patient_id: 5, title: 'Dolgu', total_estimated_cost: 500 }],
+          rows: [
+            {
+              id: 41,
+              patient_id: 5,
+              title: 'Dolgu',
+              total_estimated_cost: 500,
+            },
+          ],
         });
       }
       return Promise.resolve({ rows: [], rowCount: 0 });

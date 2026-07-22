@@ -55,7 +55,11 @@ describe('POST /api/payments/approve-plan/:id — manuel indirim onayda kaybolma
 
   it('pending planda uygulanmış manuel indirim, kurum indirimli toplamdan düşülür', async () => {
     db.query.mockImplementation((sql) => {
-      if (sql.includes('SELECT id, treatment_type, cost FROM treatment_plan_items')) {
+      if (
+        sql.includes(
+          'SELECT id, treatment_type, cost FROM treatment_plan_items',
+        )
+      ) {
         return Promise.resolve({
           rows: [{ id: 1, treatment_type: 'Dolgu', cost: '1000' }],
         });
@@ -70,9 +74,19 @@ describe('POST /api/payments/approve-plan/:id — manuel indirim onayda kaybolma
       if (sql.includes('category_name, discount_percentage')) {
         return Promise.resolve({ rows: [] });
       }
-      if (sql.includes("UPDATE treatment_plans") && sql.includes('SET status = $1')) {
+      if (
+        sql.includes('UPDATE treatment_plans') &&
+        sql.includes('SET status = $1')
+      ) {
         return Promise.resolve({
-          rows: [{ id: 5, patient_id: 1, dentist_id: null, total_estimated_cost: '800' }],
+          rows: [
+            {
+              id: 5,
+              patient_id: 1,
+              dentist_id: null,
+              total_estimated_cost: '800',
+            },
+          ],
         });
       }
       return Promise.resolve({ rows: [], rowCount: 0 });
@@ -86,7 +100,9 @@ describe('POST /api/payments/approve-plan/:id — manuel indirim onayda kaybolma
     expect(res.status).toBe(200);
 
     const updateCall = db.query.mock.calls.find(
-      ([sql]) => sql.includes('UPDATE treatment_plans') && sql.includes('SET status = $1'),
+      ([sql]) =>
+        sql.includes('UPDATE treatment_plans') &&
+        sql.includes('SET status = $1'),
     );
     expect(updateCall).toBeDefined();
     // item cost 1000 (kurum indirimi yok) - 200 manuel indirim = 800

@@ -6,6 +6,9 @@ module.exports = {
   // mock'lanmaz) — ayrı bir config + npm script (test:integration) ile
   // çalıştırılır (bkz. jest.integration.config.js), normal `npm test`
   // sırasında atlanır.
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/tests/integration/'],
+  testPathIgnorePatterns: [
+    '<rootDir>/node_modules/',
+    '<rootDir>/tests/integration/',
+  ],
   modulePathIgnorePatterns: ['<rootDir>/node_modules/'],
 };

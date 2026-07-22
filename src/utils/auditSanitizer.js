@@ -83,9 +83,7 @@ const VALUE_ALLOWLIST_BY_RESOURCE = {
 };
 
 function isPlainObject(value) {
-  return (
-    value !== null && typeof value === 'object' && !Array.isArray(value)
-  );
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 /**

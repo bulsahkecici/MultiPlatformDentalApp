@@ -135,7 +135,9 @@ async function getStatistics(req, res, next) {
     // olarak hesaplanır: tamamlanmış ödemeler - tamamlanmış iadeler (D4) —
     // ham SUM(payments.amount) iade edilmiş tutarları da "tahsil edilmiş"
     // gösterirdi.
-    const paymentsAggResult = await query('SELECT COUNT(*) as count FROM payments');
+    const paymentsAggResult = await query(
+      'SELECT COUNT(*) as count FROM payments',
+    );
     const ledgerAggResult = await query(
       `SELECT
          COALESCE(SUM(CASE WHEN transaction_type = 'payment' AND status = 'completed' THEN amount ELSE 0 END), 0) as gross_payments,

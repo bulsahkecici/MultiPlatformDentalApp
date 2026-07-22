@@ -1,4 +1,6 @@
-const { computeProratedSalary } = require('../src/controllers/dentistController');
+const {
+  computeProratedSalary,
+} = require('../src/controllers/dentistController');
 
 describe('computeProratedSalary', () => {
   it('tarih aralığı verilmezse (lifetime görünüm) tam maaş döner', () => {

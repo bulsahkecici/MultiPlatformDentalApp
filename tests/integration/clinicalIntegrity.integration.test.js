@@ -1,5 +1,10 @@
 const request = require('supertest');
-const { pool, resetDatabase, createUser, createPatient } = require('./dbHelper');
+const {
+  pool,
+  resetDatabase,
+  createUser,
+  createPatient,
+} = require('./dbHelper');
 const { app } = require('../../src/server');
 
 describe('Klinik kayıt bütünlüğü (gerçek PostgreSQL)', () => {
@@ -7,7 +12,7 @@ describe('Klinik kayıt bütünlüğü (gerçek PostgreSQL)', () => {
     await resetDatabase();
   });
 
-  it('treatment asla hard-delete edilmez — void sonrası satır DB\'de aynen kalır', async () => {
+  it("treatment asla hard-delete edilmez — void sonrası satır DB'de aynen kalır", async () => {
     const admin = await createUser({ roles: ['admin'] });
     const dentist = await createUser({ roles: ['dentist'] });
     const patient = await createPatient();
@@ -46,7 +51,11 @@ describe('Klinik kayıt bütünlüğü (gerçek PostgreSQL)', () => {
     const created = await request(app)
       .post('/api/treatments')
       .set('Authorization', `Bearer ${admin.token}`)
-      .send({ patientId: patient.id, treatmentDate: '2026-07-01', treatmentType: 'Kontrol' });
+      .send({
+        patientId: patient.id,
+        treatmentDate: '2026-07-01',
+        treatmentType: 'Kontrol',
+      });
     const treatmentId = created.body.treatment.id;
 
     const res = await request(app)
@@ -92,7 +101,10 @@ describe('Klinik kayıt bütünlüğü (gerçek PostgreSQL)', () => {
     const amendRes = await request(app)
       .post(`/api/treatments/${treatmentId}/amend`)
       .set('Authorization', `Bearer ${dentist.token}`)
-      .send({ changes: { diagnosis: 'Güncellenmiş tanı' }, reason: 'Kontrol sonrası netleşti' });
+      .send({
+        changes: { diagnosis: 'Güncellenmiş tanı' },
+        reason: 'Kontrol sonrası netleşti',
+      });
     expect(amendRes.status).toBe(200);
 
     const revisions = await pool.query(

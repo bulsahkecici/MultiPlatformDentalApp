@@ -322,7 +322,9 @@ async function updateTreatment(req, res, next) {
     // değiştirilmeye çalışılması engellenir; istemcinin zaten aynı olan
     // değeri (ör. "TRY") tekrar göndermesi klinik not güncellemesini bloke etmez.
     const changingCost =
-      updates.cost !== undefined && updates.cost !== null && updates.cost !== '';
+      updates.cost !== undefined &&
+      updates.cost !== null &&
+      updates.cost !== '';
     const changingCurrency =
       updates.currency !== undefined &&
       updates.currency !== null &&
@@ -370,7 +372,10 @@ async function updateTreatment(req, res, next) {
     // değiştirilemez — sekreter ya da hekim, tanı/prosedür notu/diş no/
     // tedavi türü/tarih/durumu değiştirmek istiyorsa POST /amend akışını
     // (gerekçe zorunlu, revizyon geçmişi saklanır) kullanmalı (bkz. D3).
-    if (existingTreatment.status === 'completed' && touchedClinicalFields.length > 0) {
+    if (
+      existingTreatment.status === 'completed' &&
+      touchedClinicalFields.length > 0
+    ) {
       return next(
         new AppError(
           'Completed treatments are read-only for clinical fields. Use POST /api/treatments/:id/amend with a reason to record a revision.',
@@ -476,7 +481,11 @@ async function deleteTreatment(req, res, next) {
     const existingTreatment = current.rows[0];
 
     // Diş hekimi sadece kendi tedavisi için talep açabilir (IDOR koruması)
-    if (isDentist(req) && !isAdmin(req) && existingTreatment.dentist_id !== req.user.sub) {
+    if (
+      isDentist(req) &&
+      !isAdmin(req) &&
+      existingTreatment.dentist_id !== req.user.sub
+    ) {
       return next(new AppError('Forbidden', 403));
     }
 
@@ -510,7 +519,10 @@ async function deleteTreatment(req, res, next) {
         userAgent,
         resourceType: 'treatment',
         resourceId: treatmentId,
-        changes: sanitizeAuditChanges('treatment', { voidReason, direct: true }),
+        changes: sanitizeAuditChanges('treatment', {
+          voidReason,
+          direct: true,
+        }),
       });
 
       return res.status(204).send();
@@ -676,12 +688,18 @@ async function decideTreatmentVoid(req, res, next) {
     });
 
     const { treatment } = outcome;
-    if (treatment.void_requested_by && treatment.void_requested_by !== req.user.sub) {
+    if (
+      treatment.void_requested_by &&
+      treatment.void_requested_by !== req.user.sub
+    ) {
       notifyUser(treatment.void_requested_by, {
         type: 'treatment',
         title: approved ? 'Void talebi onaylandı' : 'Void talebi reddedildi',
         message: `Tedavi #${treatmentId}`,
-        data: { treatmentId, action: approved ? 'void_approved' : 'void_rejected' },
+        data: {
+          treatmentId,
+          action: approved ? 'void_approved' : 'void_rejected',
+        },
       });
     }
 

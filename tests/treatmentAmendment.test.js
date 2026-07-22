@@ -101,7 +101,9 @@ describe('POST /api/treatments/:id/amend — revizyon akışı (D3)', () => {
     db.query.mockImplementation((sql) => {
       if (sql.includes('FOR UPDATE')) {
         return Promise.resolve({
-          rows: [{ id: 9, dentist_id: 99, status: 'completed', diagnosis: 'Eski' }],
+          rows: [
+            { id: 9, dentist_id: 99, status: 'completed', diagnosis: 'Eski' },
+          ],
         });
       }
       return Promise.resolve({ rows: [], rowCount: 0 });
@@ -119,7 +121,9 @@ describe('POST /api/treatments/:id/amend — revizyon akışı (D3)', () => {
     db.query.mockImplementation((sql) => {
       if (sql.includes('FOR UPDATE')) {
         return Promise.resolve({
-          rows: [{ id: 9, dentist_id: 7, status: 'planned', diagnosis: 'Eski' }],
+          rows: [
+            { id: 9, dentist_id: 7, status: 'planned', diagnosis: 'Eski' },
+          ],
         });
       }
       return Promise.resolve({ rows: [], rowCount: 0 });
@@ -165,7 +169,10 @@ describe('POST /api/treatments/:id/amend — revizyon akışı (D3)', () => {
     const res = await request(app)
       .post('/api/treatments/9/amend')
       .set('Authorization', `Bearer ${dentistToken(7)}`)
-      .send({ changes: { diagnosis: 'Yeni tanı' }, reason: 'Hasta ek şikayet bildirdi' });
+      .send({
+        changes: { diagnosis: 'Yeni tanı' },
+        reason: 'Hasta ek şikayet bildirdi',
+      });
 
     expect(res.status).toBe(200);
     expect(res.body.revisionNumber).toBe(1);
@@ -199,7 +206,14 @@ describe('POST /api/treatments/:id/amend — revizyon akışı (D3)', () => {
     db.query.mockImplementation((sql) => {
       if (sql.includes('FOR UPDATE')) {
         return Promise.resolve({
-          rows: [{ id: 9, dentist_id: 7, status: 'completed', diagnosis: 'Aynı tanı' }],
+          rows: [
+            {
+              id: 9,
+              dentist_id: 7,
+              status: 'completed',
+              diagnosis: 'Aynı tanı',
+            },
+          ],
         });
       }
       return Promise.resolve({ rows: [], rowCount: 0 });

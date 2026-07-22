@@ -65,7 +65,13 @@ async function createUser({
     `INSERT INTO users (email, password_hash, roles, commission_rate, salary, email_verified, created_at, updated_at)
      VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
      RETURNING *`,
-    [finalEmail, passwordHash, serializeRolesCsv(roles), commissionRate, salary],
+    [
+      finalEmail,
+      passwordHash,
+      serializeRolesCsv(roles),
+      commissionRate,
+      salary,
+    ],
   );
   const user = result.rows[0];
   const token = jwt.sign(

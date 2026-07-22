@@ -29,7 +29,11 @@ function computeProratedSalary(salary, startDate, endDate) {
 
   const start = new Date(`${startDate}T00:00:00Z`);
   const end = new Date(`${endDate}T00:00:00Z`);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
+  if (
+    Number.isNaN(start.getTime()) ||
+    Number.isNaN(end.getTime()) ||
+    end < start
+  ) {
     return 0;
   }
 
@@ -165,8 +169,7 @@ async function getDentistEarnings(req, res, next) {
       0,
       Math.round((grossCommission - reversedCommission) * 100) / 100,
     );
-    const totalEarnings =
-      Math.round((salary + paidTurnoverShare) * 100) / 100;
+    const totalEarnings = Math.round((salary + paidTurnoverShare) * 100) / 100;
 
     return res.status(200).json({
       earnings: {

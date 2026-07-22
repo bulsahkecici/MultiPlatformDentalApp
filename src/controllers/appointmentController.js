@@ -535,7 +535,11 @@ async function updateAppointment(req, res, next) {
       dentistId !== '' &&
       Number(dentistId) !== Number(existing.dentist_id)
     ) {
-      effectiveDentistId = await resolveEffectiveDentistId(req, query, dentistId);
+      effectiveDentistId = await resolveEffectiveDentistId(
+        req,
+        query,
+        dentistId,
+      );
     }
 
     if (startTime !== undefined && !isValidTimeString(startTime)) {
@@ -800,12 +804,7 @@ async function reopenAppointment(req, res, next) {
       );
     }
 
-    const {
-      dentistId,
-      appointmentDate,
-      startTime,
-      endTime,
-    } = req.body || {};
+    const { dentistId, appointmentDate, startTime, endTime } = req.body || {};
 
     let effectiveDentistId = existing.dentist_id;
     if (
@@ -814,7 +813,11 @@ async function reopenAppointment(req, res, next) {
       dentistId !== '' &&
       Number(dentistId) !== Number(existing.dentist_id)
     ) {
-      effectiveDentistId = await resolveEffectiveDentistId(req, query, dentistId);
+      effectiveDentistId = await resolveEffectiveDentistId(
+        req,
+        query,
+        dentistId,
+      );
     }
 
     if (startTime !== undefined && !isValidTimeString(startTime)) {

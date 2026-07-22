@@ -32,7 +32,12 @@ router.get('/api/treatments/:id', requireAuth, getTreatmentById);
 router.put('/api/treatments/:id', requireAuth, mutateLimiter, updateTreatment);
 // Artık asla anında bir hard delete değil: admin için anında void, sekreter/
 // dişhekimi için onay bekleyen bir void talebi (bkz. treatmentController.deleteTreatment).
-router.delete('/api/treatments/:id', requireAuth, mutateLimiter, deleteTreatment);
+router.delete(
+  '/api/treatments/:id',
+  requireAuth,
+  mutateLimiter,
+  deleteTreatment,
+);
 
 router.post(
   '/api/treatments/:id/void-decision',

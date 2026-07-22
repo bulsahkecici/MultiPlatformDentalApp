@@ -32,7 +32,9 @@ describe('DELETE /api/treatments/:id — void talep/onay akışı (D2)', () => {
   it('sekreter void talebi oluşturur (202), hard/soft void hemen uygulanmaz', async () => {
     db.query.mockImplementation((sql) => {
       if (sql.includes('SELECT dentist_id, void_status FROM treatments')) {
-        return Promise.resolve({ rows: [{ dentist_id: 7, void_status: null }] });
+        return Promise.resolve({
+          rows: [{ dentist_id: 7, void_status: null }],
+        });
       }
       if (sql.includes("SET void_status = 'pending'")) {
         return Promise.resolve({ rows: [{ id: 9 }] });
@@ -57,7 +59,9 @@ describe('DELETE /api/treatments/:id — void talep/onay akışı (D2)', () => {
   it('dişhekimi başka bir doktorun tedavisi için void talebi açamaz (403)', async () => {
     db.query.mockImplementation((sql) => {
       if (sql.includes('SELECT dentist_id, void_status FROM treatments')) {
-        return Promise.resolve({ rows: [{ dentist_id: 99, void_status: null }] });
+        return Promise.resolve({
+          rows: [{ dentist_id: 99, void_status: null }],
+        });
       }
       return Promise.resolve({ rows: [], rowCount: 0 });
     });
@@ -73,7 +77,9 @@ describe('DELETE /api/treatments/:id — void talep/onay akışı (D2)', () => {
   it('dişhekimi kendi tedavisi için void talebi açabilir (202)', async () => {
     db.query.mockImplementation((sql) => {
       if (sql.includes('SELECT dentist_id, void_status FROM treatments')) {
-        return Promise.resolve({ rows: [{ dentist_id: 7, void_status: null }] });
+        return Promise.resolve({
+          rows: [{ dentist_id: 7, void_status: null }],
+        });
       }
       if (sql.includes("SET void_status = 'pending'")) {
         return Promise.resolve({ rows: [{ id: 9 }] });
@@ -92,7 +98,9 @@ describe('DELETE /api/treatments/:id — void talep/onay akışı (D2)', () => {
   it('admin voidu anında uygular (204) — bu hâlâ bir soft void, hard delete değil', async () => {
     db.query.mockImplementation((sql) => {
       if (sql.includes('SELECT dentist_id, void_status FROM treatments')) {
-        return Promise.resolve({ rows: [{ dentist_id: 7, void_status: null }] });
+        return Promise.resolve({
+          rows: [{ dentist_id: 7, void_status: null }],
+        });
       }
       if (sql.includes('deleted_at = NOW()')) {
         return Promise.resolve({ rows: [{ id: 9 }] });
@@ -116,7 +124,9 @@ describe('DELETE /api/treatments/:id — void talep/onay akışı (D2)', () => {
   it('zaten bekleyen bir void talebi varken ikinci talep 409 döner', async () => {
     db.query.mockImplementation((sql) => {
       if (sql.includes('SELECT dentist_id, void_status FROM treatments')) {
-        return Promise.resolve({ rows: [{ dentist_id: 7, void_status: 'pending' }] });
+        return Promise.resolve({
+          rows: [{ dentist_id: 7, void_status: 'pending' }],
+        });
       }
       return Promise.resolve({ rows: [], rowCount: 0 });
     });
